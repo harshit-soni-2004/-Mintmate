@@ -1,0 +1,4 @@
+# Local development only. Override JWT_SECRET for anything beyond this machine.
+app:
+  jwt:
+    secret: ${JWT_SECRET:local-dev-only-change-me-spendsense-jwt-hs256-key-32b}

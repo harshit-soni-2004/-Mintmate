@@ -1,0 +1,36 @@
+---
+description: SpendSense product, stack, and engineering rules
+alwaysApply: true
+---
+
+# SpendSense
+
+AI-powered personal financial intelligence. Turn raw transactions into useful insight.
+
+## Stack (do not change without an explicit request)
+
+- Frontend: Angular + TypeScript
+- Backend: Java + Spring Boot
+- Database: MySQL
+- Architecture: modular monolith — Angular → Spring Boot REST → MySQL
+- Do not add Redis, Kafka, extra services, vector DBs, or MCP unless there is a concrete requirement
+
+## How we build
+
+- Incremental. Do not build the whole product in one pass.
+- Inspect existing code, plan briefly, implement only the requested slice, add tests, run tests/build, summarize.
+- Do not modify unrelated files, rewrite working code, add unjustified libraries, or create unnecessary abstractions.
+- Use DTOs at API boundaries, Bean Validation, and global exception handling.
+- Paginate transaction APIs. Scope every financial row by authenticated `user_id`. Never trust a client-supplied owner id.
+- Financial totals, percentages, budgets, comparisons, and forecasts are calculated in the backend. LLMs explain verified numbers; they do not invent them.
+- Never log amounts, account numbers, full statements, or passwords. Never hardcode credentials.
+
+## Product sequence
+
+Foundation → transactions → hierarchical categories → rule-based intelligence → CSV import → personalization → dashboard/analytics → budgets → ML experiments → LLM → assistant → tools → workflows → agents → MCP.
+
+Do not introduce ML/LLM/agents/MCP before the earlier layer works.
+
+## UI
+
+Polished, modern, responsive. Loading, empty, and error states. No visual clutter. Core routes: Login, Dashboard, Transactions, Budgets, Analytics, AI Insights, AI Assistant, Settings.

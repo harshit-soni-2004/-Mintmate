@@ -1,0 +1,3 @@
+app:
+  jwt:
+    secret: test-only-spendsense-jwt-hs256-secret-key-32b

@@ -1,0 +1,33 @@
+# Java / Maven
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+*.war
+hs_err_pid*
+
+# Node / Angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+npm-debug.log*
+.npm
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Secrets / local overrides
+.env
+.env.local
+backend/src/main/resources/application-local.yml
+frontend/src/environments/environment.local.ts
+
+# Logs
+*.log

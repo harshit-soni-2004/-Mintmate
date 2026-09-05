@@ -1,0 +1,33 @@
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="mark">S</span>
+      <div>
+        <strong>SpendSense</strong>
+        <small>Financial intelligence</small>
+      </div>
+    </div>
+    <nav>
+      <a routerLink="/app/dashboard" routerLinkActive="active">Dashboard</a>
+      <a routerLink="/app/transactions" routerLinkActive="active">Transactions</a>
+      <a routerLink="/app/budgets" routerLinkActive="active">Budgets</a>
+      <a routerLink="/app/analytics" routerLinkActive="active">Analytics</a>
+      <a routerLink="/app/insights" routerLinkActive="active">AI Insights</a>
+      <a routerLink="/app/assistant" routerLinkActive="active">AI Assistant</a>
+      <a routerLink="/app/settings" routerLinkActive="active">Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user">
+        <span class="avatar">{{ (auth.currentUser()?.displayName || 'U').charAt(0) }}</span>
+        <div>
+          <strong>{{ auth.currentUser()?.displayName }}</strong>
+          <small>{{ auth.currentUser()?.email }}</small>
+        </div>
+      </div>
+      <button type="button" class="linkish" (click)="auth.logout()">Sign out</button>
+    </div>
+  </aside>
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

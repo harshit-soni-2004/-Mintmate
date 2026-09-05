@@ -1,0 +1,28 @@
+.page h1 {
+  margin: 0.15rem 0 0.4rem;
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  color: var(--accent);
+}
+
+.lede {
+  color: var(--muted);
+  max-width: 40rem;
+}
+
+.empty {
+  margin-top: 1.75rem;
+  padding: 2rem;
+  border: 1px dashed var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+}
+
+.empty h2 {
+  margin: 0 0 0.4rem;
+}
