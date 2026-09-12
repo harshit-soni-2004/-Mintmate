@@ -1,0 +1,12 @@
+package com.spendsense.analytics;
+
+public enum InsightType {
+    CATEGORY_INCREASE,
+    CATEGORY_DECREASE,
+    TOP_SPENDING_CATEGORY,
+    SAVINGS_IMPROVED,
+    SAVINGS_DETERIORATED,
+    LARGE_TRANSACTION,
+    BUDGET_WARNING,
+    BUDGET_EXCEEDED
+}

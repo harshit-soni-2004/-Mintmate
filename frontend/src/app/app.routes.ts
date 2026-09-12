@@ -48,11 +48,8 @@ export const routes: Routes = [
       },
       {
         path: 'insights',
-        component: PlaceholderPageComponent,
-        data: {
-          title: 'Insights',
-          description: 'Useful spending patterns will appear here as your transaction history grows.',
-        },
+        loadComponent: () =>
+          import('./features/insights/insights.component').then((m) => m.InsightsComponent),
       },
       {
         path: 'settings',

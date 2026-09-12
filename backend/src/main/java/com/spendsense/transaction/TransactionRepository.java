@@ -65,4 +65,25 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
 
     List<Transaction> findByUser_IdAndTransactionDateBetweenOrderByTransactionDateDescCreatedAtDesc(
             UUID userId, LocalDate fromDate, LocalDate toDate);
+
+    @Query("SELECT MAX(t.amount) FROM Transaction t " +
+           "WHERE t.user.id = :userId AND t.transactionType = :type " +
+           "AND t.transactionDate >= :fromDate AND t.transactionDate <= :toDate")
+    BigDecimal maxAmountByUserIdAndTypeAndDateBetween(
+            @Param("userId") UUID userId,
+            @Param("type") TransactionType type,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT COUNT(t.id) FROM Transaction t " +
+           "WHERE t.user.id = :userId AND t.transactionType = :type " +
+           "AND t.transactionDate >= :fromDate AND t.transactionDate <= :toDate")
+    long countByUserIdAndTypeAndDateBetween(
+            @Param("userId") UUID userId,
+            @Param("type") TransactionType type,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
+    List<Transaction> findByUser_IdAndTransactionTypeAndTransactionDateBetweenOrderByAmountDesc(
+            UUID userId, TransactionType transactionType, LocalDate fromDate, LocalDate toDate);
 }

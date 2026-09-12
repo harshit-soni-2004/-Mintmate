@@ -393,6 +393,49 @@
             </div>
           }
         </section>
+
+        <!-- Financial Intelligence & Insights Widget -->
+        <section class="panel insights-widget-panel" aria-labelledby="dash-insights-heading">
+          <header class="panel-header">
+            <div>
+              <h2 id="dash-insights-heading">Financial Intelligence</h2>
+              <p class="panel-sub">Automated patterns and anomaly detection</p>
+            </div>
+            <a routerLink="/app/insights" class="panel-link">View Full Analytics →</a>
+          </header>
+
+          <div class="dash-insights-content">
+            @if (topInsight) {
+              <div class="dash-insight-card" [ngClass]="topInsight.severity.toLowerCase()">
+                <div class="insight-badge-row">
+                  <span class="insight-badge" [ngClass]="'badge-' + topInsight.severity.toLowerCase()">{{ topInsight.severity }}</span>
+                  <span class="insight-title-text">{{ topInsight.title }}</span>
+                </div>
+                <p class="insight-message">{{ topInsight.description }}</p>
+                @if (topInsight.recommendation) {
+                  <div class="insight-rec-box">
+                    <span class="rec-icon" aria-hidden="true">💡</span>
+                    <span>{{ topInsight.recommendation }}</span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="empty-state-box">
+                <p>Tracking your spending over time will automatically surface actionable insights and savings opportunities.</p>
+                <a routerLink="/app/insights" class="btn-secondary">Explore Insights</a>
+              </div>
+            }
+
+            @if (recentAnomaly) {
+              <div class="dash-anomaly-alert" role="alert">
+                <span class="alert-icon" aria-hidden="true">⚠️</span>
+                <div class="alert-body">
+                  <strong>{{ recentAnomaly.title }}</strong>: {{ recentAnomaly.description }}
+                </div>
+              </div>
+            }
+          </div>
+        </section>
       </div>
 
       <!-- Right Column: Interactive Calendar & Day Detail & Recent Transactions -->

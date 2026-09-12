@@ -161,3 +161,117 @@ export interface Goal {
   updatedAt: string;
 }
 
+export type TrendDirection = 'INCREASED' | 'DECREASED' | 'UNCHANGED';
+export type AggregationPeriod = 'DAILY' | 'WEEKLY' | 'MONTHLY';
+export type InsightType =
+  | 'CATEGORY_INCREASE'
+  | 'CATEGORY_DECREASE'
+  | 'TOP_SPENDING_CATEGORY'
+  | 'SAVINGS_IMPROVED'
+  | 'SAVINGS_DETERIORATED'
+  | 'LARGE_TRANSACTION'
+  | 'BUDGET_WARNING'
+  | 'BUDGET_EXCEEDED';
+export type InsightSeverity = 'INFO' | 'POSITIVE' | 'WARNING' | 'CRITICAL';
+export type AnomalyType = 'LARGE_TRANSACTION' | 'CATEGORY_SPIKE' | 'PERIOD_SPIKE';
+
+export interface SpendingSummary {
+  totalIncome: number;
+  totalExpenses: number;
+  netSavings: number;
+  savingsRate: number;
+  transactionCount: number;
+  averageExpense: number;
+  largestExpense: number;
+  fromDate: string;
+  toDate: string;
+}
+
+export interface TrendMetric {
+  currentAmount: number;
+  previousAmount: number;
+  changeAmount: number;
+  percentageChange: number;
+  direction: TrendDirection;
+}
+
+export interface PeriodComparison {
+  currentFrom: string;
+  currentTo: string;
+  previousFrom: string;
+  previousTo: string;
+  income: TrendMetric;
+  expenses: TrendMetric;
+  netSavings: TrendMetric;
+  currentSavingsRate: number;
+  previousSavingsRate: number;
+  savingsRateChange: number;
+}
+
+export interface CategoryAnalysis {
+  category: TransactionCategory;
+  amount: number;
+  percentage: number;
+  previousAmount: number;
+  changeAmount: number;
+  percentageChange: number;
+  direction: TrendDirection;
+  transactionCount: number;
+}
+
+export interface CategoryBreakdown {
+  totalExpenses: number;
+  categories: CategoryAnalysis[];
+  topCategory?: TransactionCategory | null;
+}
+
+export interface SpendingTrendPoint {
+  label: string;
+  date: string;
+  totalExpense: number;
+  totalIncome: number;
+  transactionCount: number;
+}
+
+export interface SpendingTrend {
+  period: AggregationPeriod;
+  points: SpendingTrendPoint[];
+  fromDate: string;
+  toDate: string;
+}
+
+export interface FinancialInsight {
+  id: string;
+  type: InsightType;
+  severity: InsightSeverity;
+  title: string;
+  description: string;
+  category?: TransactionCategory | null;
+  amount?: number | null;
+  percentageChange?: number | null;
+  recommendation?: string | null;
+}
+
+export interface SpendingAnomaly {
+  id: string;
+  type: AnomalyType;
+  title: string;
+  description: string;
+  reason: string;
+  amount: number;
+  baselineAmount: number;
+  percentageOrMultiplier: number;
+  category?: TransactionCategory | null;
+  date?: string | null;
+  transactionId?: string | null;
+}
+
+export interface InsightsOverview {
+  summary: SpendingSummary;
+  comparison: PeriodComparison;
+  categories: CategoryBreakdown;
+  trends: SpendingTrend;
+  insights: FinancialInsight[];
+  anomalies: SpendingAnomaly[];
+}
+

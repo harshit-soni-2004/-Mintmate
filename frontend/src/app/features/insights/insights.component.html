@@ -1,0 +1,369 @@
+<div class="insights-page">
+  <!-- Page Header & Filter Controls -->
+  <header class="insights-header">
+    <div class="header-title-group">
+      <h1>Financial Intelligence & Analytics</h1>
+      <p class="subtitle">Deterministic patterns, trends, and actionable insights from your transactions</p>
+    </div>
+
+    <!-- Date Range Filter Bar -->
+    <div class="filter-bar">
+      <div class="preset-buttons" role="group" aria-label="Date range presets">
+        <button
+          type="button"
+          class="btn-preset"
+          [class.active]="rangePreset === 'this-month'"
+          (click)="applyPreset('this-month')"
+        >
+          This Month
+        </button>
+        <button
+          type="button"
+          class="btn-preset"
+          [class.active]="rangePreset === 'last-month'"
+          (click)="applyPreset('last-month')"
+        >
+          Last Month
+        </button>
+        <button
+          type="button"
+          class="btn-preset"
+          [class.active]="rangePreset === 'last-3-months'"
+          (click)="applyPreset('last-3-months')"
+        >
+          Last 3 Months
+        </button>
+        <button
+          type="button"
+          class="btn-preset"
+          [class.active]="rangePreset === 'custom'"
+          (click)="rangePreset = 'custom'"
+        >
+          Custom
+        </button>
+      </div>
+
+      @if (rangePreset === 'custom') {
+        <form [formGroup]="dateForm" (ngSubmit)="loadData()" class="custom-range-form">
+          <div class="date-input-group">
+            <label for="fromDate">From</label>
+            <input id="fromDate" type="date" formControlName="fromDate" class="form-input-date" />
+          </div>
+          <div class="date-input-group">
+            <label for="toDate">To</label>
+            <input id="toDate" type="date" formControlName="toDate" class="form-input-date" />
+          </div>
+          <button type="submit" class="btn-apply">Apply</button>
+        </form>
+      }
+    </div>
+  </header>
+
+  @if (error) {
+    <div class="error-banner" role="alert">
+      <span>{{ error }}</span>
+      <button (click)="loadData()" class="btn-retry">Retry</button>
+    </div>
+  }
+
+  @if (loading) {
+    <div class="loading-state" aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <p>Analyzing financial intelligence...</p>
+    </div>
+  } @else if (overview) {
+    <!-- 1. Overview KPIs -->
+    <section class="kpi-grid" aria-label="Financial Summary Metrics">
+      <div class="kpi-card income">
+        <span class="kpi-label">Total Income</span>
+        <div class="kpi-value text-income">{{ overview.summary.totalIncome | currency:'INR':'symbol':'1.2-2' }}</div>
+        <span class="kpi-sub">{{ overview.summary.fromDate | date:'mediumDate' }} � {{ overview.summary.toDate | date:'mediumDate' }}</span>
+      </div>
+
+      <div class="kpi-card expenses">
+        <span class="kpi-label">Total Expenses</span>
+        <div class="kpi-value text-expense">{{ overview.summary.totalExpenses | currency:'INR':'symbol':'1.2-2' }}</div>
+        <span class="kpi-sub">{{ overview.summary.transactionCount }} transactions total</span>
+      </div>
+
+      <div class="kpi-card savings">
+        <span class="kpi-label">Net Savings</span>
+        <div class="kpi-value" [class.text-income]="overview.summary.netSavings >= 0" [class.text-expense]="overview.summary.netSavings < 0">
+          {{ overview.summary.netSavings | currency:'INR':'symbol':'1.2-2' }}
+        </div>
+        <span class="kpi-sub">Savings Rate: <strong>{{ overview.summary.savingsRate }}%</strong></span>
+      </div>
+
+      <div class="kpi-card stats">
+        <span class="kpi-label">Average Expense</span>
+        <div class="kpi-value">{{ overview.summary.averageExpense | currency:'INR':'symbol':'1.2-2' }}</div>
+        <span class="kpi-sub">Largest: {{ overview.summary.largestExpense | currency:'INR':'symbol':'1.2-2' }}</span>
+      </div>
+    </section>
+
+    <!-- 2. Main Analytics Content: Trends & Comparisons -->
+    <div class="analytics-content-grid">
+      <!-- Spending Trends Chart -->
+      <section class="card trend-card" aria-label="Spending Trends Over Time">
+        <div class="card-header">
+          <div>
+            <h2>Spending Trends</h2>
+            <p class="card-subtitle">Expenses and income tracked across the active period</p>
+          </div>
+          <div class="period-toggle" role="group" aria-label="Trend resolution">
+            <button
+              type="button"
+              class="btn-toggle"
+              [class.active]="trendPeriod === 'DAILY'"
+              (click)="changeTrendPeriod('DAILY')"
+            >
+              Daily
+            </button>
+            <button
+              type="button"
+              class="btn-toggle"
+              [class.active]="trendPeriod === 'WEEKLY'"
+              (click)="changeTrendPeriod('WEEKLY')"
+            >
+              Weekly
+            </button>
+            <button
+              type="button"
+              class="btn-toggle"
+              [class.active]="trendPeriod === 'MONTHLY'"
+              (click)="changeTrendPeriod('MONTHLY')"
+            >
+              Monthly
+            </button>
+          </div>
+        </div>
+
+        <!-- SVG Bar Chart -->
+        <div class="chart-container">
+          @if (chartBars.length === 0) {
+            <div class="empty-chart">No spending activity in this period.</div>
+          } @else {
+            <div class="bar-chart-wrapper">
+              @for (bar of chartBars; track bar.label) {
+                <div
+                  class="chart-col"
+                  (mouseenter)="hoveredBar = bar"
+                  (mouseleave)="hoveredBar = null"
+                >
+                  <div class="bar-track">
+                    @if (bar.income > 0) {
+                      <div class="bar-fill income-fill" [style.height.%]="bar.heightPct"></div>
+                    }
+                    @if (bar.expense > 0) {
+                      <div class="bar-fill expense-fill" [style.height.%]="bar.heightPct"></div>
+                    }
+                  </div>
+                  <span class="bar-label">{{ bar.label }}</span>
+                </div>
+              }
+            </div>
+
+            @if (hoveredBar) {
+              <div class="chart-tooltip" role="tooltip">
+                <span class="tt-label">{{ hoveredBar.label }}</span>
+                <span class="tt-expense">Expense: ?{{ hoveredBar.expense | number:'1.2-2' }}</span>
+                @if (hoveredBar.income > 0) {
+                  <span class="tt-income">Income: ?{{ hoveredBar.income | number:'1.2-2' }}</span>
+                }
+              </div>
+            }
+          }
+        </div>
+      </section>
+
+      <!-- Month-over-Month Comparison -->
+      <section class="card comparison-card" aria-label="Period over Period Comparison">
+        <div class="card-header">
+          <h2>Period Comparison</h2>
+          <span class="badge-neutral">vs Prior Period</span>
+        </div>
+
+        <div class="comparison-metrics">
+          <div class="comparison-row">
+            <span class="comp-label">Expenses</span>
+            <div class="comp-values">
+              <span class="val-current">{{ overview.comparison.expenses.currentAmount | currency:'INR':'symbol':'1.2-2' }}</span>
+              <span class="val-previous">prev: {{ overview.comparison.expenses.previousAmount | currency:'INR':'symbol':'1.2-2' }}</span>
+            </div>
+            <div class="comp-badge" [ngClass]="overview.comparison.expenses.direction.toLowerCase()">
+              {{ overview.comparison.expenses.percentageChange >= 0 ? '+' : '' }}{{ overview.comparison.expenses.percentageChange }}%
+            </div>
+          </div>
+
+          <div class="comparison-row">
+            <span class="comp-label">Income</span>
+            <div class="comp-values">
+              <span class="val-current">{{ overview.comparison.income.currentAmount | currency:'INR':'symbol':'1.2-2' }}</span>
+              <span class="val-previous">prev: {{ overview.comparison.income.previousAmount | currency:'INR':'symbol':'1.2-2' }}</span>
+            </div>
+            <div class="comp-badge" [ngClass]="overview.comparison.income.direction.toLowerCase()">
+              {{ overview.comparison.income.percentageChange >= 0 ? '+' : '' }}{{ overview.comparison.income.percentageChange }}%
+            </div>
+          </div>
+
+          <div class="comparison-row">
+            <span class="comp-label">Savings Rate</span>
+            <div class="comp-values">
+              <span class="val-current">{{ overview.comparison.currentSavingsRate }}%</span>
+              <span class="val-previous">prev: {{ overview.comparison.previousSavingsRate }}%</span>
+            </div>
+            <div class="comp-badge" [class.increased]="overview.comparison.savingsRateChange >= 0" [class.decreased]="overview.comparison.savingsRateChange < 0">
+              {{ overview.comparison.savingsRateChange >= 0 ? '+' : '' }}{{ overview.comparison.savingsRateChange }}% pts
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 3. Category Breakdown -->
+    <section class="card category-card" aria-label="Category Spending Breakdown">
+      <div class="card-header">
+        <div>
+          <h2>Category Breakdown</h2>
+          <p class="card-subtitle">Spending distribution and period-over-period shift</p>
+        </div>
+        @if (overview.categories.topCategory) {
+          <span class="top-category-tag">
+            Top: <strong>{{ categoryLabel(overview.categories.topCategory) }}</strong>
+          </span>
+        }
+      </div>
+
+      <div class="category-breakdown-body">
+        <!-- Donut visualization -->
+        <div class="donut-wrapper">
+          <svg class="donut-chart" viewBox="0 0 140 140" aria-label="Category donut chart">
+            <circle class="donut-ring" cx="70" cy="70" r="54" fill="transparent" stroke="#e8edf0" stroke-width="18" />
+            @for (seg of donutSegments; track seg.category) {
+              <circle
+                class="donut-segment"
+                cx="70"
+                cy="70"
+                r="54"
+                fill="transparent"
+                [attr.stroke]="seg.color"
+                stroke-width="18"
+                [attr.stroke-dasharray]="seg.strokeDasharray"
+                [attr.stroke-dashoffset]="seg.strokeDashoffset"
+              />
+            }
+          </svg>
+          <div class="donut-center">
+            <span class="donut-total-label">Total</span>
+            <span class="donut-total-val">?{{ overview.categories.totalExpenses | number:'1.0-0' }}</span>
+          </div>
+        </div>
+
+        <!-- Ranked Category Table -->
+        <div class="category-table-wrapper">
+          <table class="category-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th class="text-right">Spent</th>
+                <th class="text-right">% of Total</th>
+                <th class="text-right">Change vs Prev</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (cat of overview.categories.categories; track cat.category) {
+                <tr>
+                  <td>
+                    <div class="cat-cell">
+                      <span class="cat-dot" [style.background-color]="getCategoryColor(cat.category)"></span>
+                      <span class="cat-name">{{ categoryLabel(cat.category) }}</span>
+                    </div>
+                  </td>
+                  <td class="text-right font-mono">{{ cat.amount | currency:'INR':'symbol':'1.2-2' }}</td>
+                  <td class="text-right font-mono">{{ cat.percentage }}%</td>
+                  <td class="text-right">
+                    <span class="change-tag" [ngClass]="cat.direction.toLowerCase()">
+                      {{ cat.percentageChange >= 0 ? '+' : '' }}{{ cat.percentageChange }}%
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Financial Insights & Recommendations -->
+    <section class="insights-section" aria-label="Actionable Financial Insights">
+      <div class="section-title-group">
+        <h2>Actionable Financial Insights</h2>
+        <p class="section-sub">Deterministic intelligence derived from your spending and budgets</p>
+      </div>
+
+      @if (overview.insights.length === 0) {
+        <div class="empty-insights">
+          <p>No significant spending anomalies or budget warnings for this period.</p>
+        </div>
+      } @else {
+        <div class="insights-cards-grid">
+          @for (insight of overview.insights; track insight.id) {
+            <div class="insight-card" [ngClass]="insight.severity.toLowerCase()">
+              <div class="insight-card-header">
+                <span class="severity-badge" [ngClass]="getSeverityClass(insight.severity)">
+                  {{ insight.severity }}
+                </span>
+                @if (insight.category) {
+                  <span class="cat-badge" [style.color]="getCategoryColor(insight.category)">
+                    {{ categoryLabel(insight.category) }}
+                  </span>
+                }
+              </div>
+              <h3 class="insight-title">{{ insight.title }}</h3>
+              <p class="insight-desc">{{ insight.description }}</p>
+              @if (insight.recommendation) {
+                <div class="insight-recommendation">
+                  <span class="rec-icon">??</span>
+                  <span class="rec-text">{{ insight.recommendation }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- 5. Spending Anomalies -->
+    <section class="anomalies-section" aria-label="Detected Spending Anomalies">
+      <div class="section-title-group">
+        <h2>Detected Anomalies & Spikes</h2>
+        <p class="section-sub">Unusual transactions and surges that deviate from historical baselines</p>
+      </div>
+
+      @if (overview.anomalies.length === 0) {
+        <div class="empty-anomalies">
+          <span>???</span>
+          <p>All spending in this period conforms to your standard baseline.</p>
+        </div>
+      } @else {
+        <div class="anomalies-grid">
+          @for (anomaly of overview.anomalies; track anomaly.id) {
+            <div class="anomaly-card">
+              <div class="anomaly-header">
+                <span class="anomaly-type-tag">{{ getAnomalyTypeLabel(anomaly.type) }}</span>
+                @if (anomaly.date) {
+                  <span class="anomaly-date">{{ anomaly.date | date:'mediumDate' }}</span>
+                }
+              </div>
+              <h3 class="anomaly-title">{{ anomaly.title }}</h3>
+              <p class="anomaly-desc">{{ anomaly.description }}</p>
+              <div class="anomaly-reason-box">
+                <strong>Why flagged:</strong> {{ anomaly.reason }}
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+</div>

@@ -9,6 +9,8 @@ import {
   CategorySpending,
   DailySpending,
   DashboardData,
+  FinancialInsight,
+  SpendingAnomaly,
   Transaction,
   TransactionCategory,
   TransactionRequest,
@@ -16,6 +18,7 @@ import {
 } from '../../core/api/api.types';
 import { AuthService } from '../../core/auth/auth.service';
 import { BudgetService } from '../budgets/budget.service';
+import { InsightsService } from '../insights/insights.service';
 import { TransactionService } from '../transactions/transaction.service';
 import { DashboardService } from './dashboard.service';
 
@@ -71,6 +74,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly dashboardService = inject(DashboardService);
   private readonly transactionService = inject(TransactionService);
   private readonly budgetService = inject(BudgetService);
+  private readonly insightsService = inject(InsightsService);
   private readonly fb = inject(FormBuilder);
 
   private mutationSub?: Subscription;
@@ -83,6 +87,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   error = '';
   dashboardData: DashboardData | null = null;
   budgetSummary: BudgetSummary | null = null;
+  topInsight: FinancialInsight | null = null;
+  recentAnomaly: SpendingAnomaly | null = null;
 
   // Selected period: "YYYY-MM"
   currentYearMonth = new Date().toISOString().slice(0, 7);
@@ -128,15 +134,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadDashboard();
     this.loadBudgets();
+    this.loadInsights();
 
-    // Automatically refresh dashboard and budgets whenever any transaction is mutated
+    // Automatically refresh dashboard, budgets, and insights whenever any transaction is mutated
     const sub1 = this.transactionService.onTransactionMutated$.subscribe(() => {
       this.loadDashboard(false);
       this.loadBudgets();
+      this.loadInsights();
     });
 
     const sub2 = this.budgetService.onBudgetMutated$.subscribe(() => {
       this.loadBudgets();
+      this.loadInsights();
     });
 
     this.mutationSub = new Subscription();
@@ -146,6 +155,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.mutationSub?.unsubscribe();
+  }
+
+  loadInsights(): void {
+    this.insightsService.getOverview({ month: this.currentYearMonth }).subscribe({
+      next: (res) => {
+        this.topInsight = res.insights && res.insights.length > 0 ? res.insights[0] : null;
+        this.recentAnomaly = res.anomalies && res.anomalies.length > 0 ? res.anomalies[0] : null;
+      },
+      error: () => {
+        // Silently ignore insights error on dashboard
+      },
+    });
   }
 
   loadBudgets(): void {
@@ -207,6 +228,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.selectedDate = `${this.currentYearMonth}-01`;
     this.form.patchValue({ transactionDate: this.selectedDate });
     this.loadDashboard();
+    this.loadInsights();
   }
 
   goToCurrentMonth(): void {
@@ -214,6 +236,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.selectedDate = new Date().toISOString().slice(0, 10);
     this.form.patchValue({ transactionDate: this.selectedDate });
     this.loadDashboard();
+    this.loadInsights();
   }
 
   setChartMode(mode: 'day' | 'week' | 'month'): void {
