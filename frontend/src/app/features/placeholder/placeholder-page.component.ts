@@ -9,7 +9,7 @@ import { map } from 'rxjs';
     <section class="page">
       <h1>{{ title() }}</h1>
       <div class="empty">
-        <p>This area is not implemented yet. It will use verified backend data when it ships.</p>
+        <p>{{ description() }}</p>
       </div>
     </section>
   `,
@@ -29,4 +29,5 @@ export class PlaceholderPageComponent {
   readonly title = toSignal(this.route.data.pipe(map((data) => (data['title'] as string) ?? '')), {
     initialValue: '',
   });
+  readonly description = toSignal(this.route.data.pipe(map((data) => (data['description'] as string) ?? 'This part of your financial workspace is coming soon.')), { initialValue: '' });
 }

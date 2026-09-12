@@ -17,6 +17,11 @@ export const routes: Routes = [
       import('./features/auth/register.component').then((m) => m.RegisterComponent),
   },
   {
+    path: 'onboarding',
+    loadComponent: () =>
+      import('./features/onboarding/onboarding-page.component').then((m) => m.OnboardingPageComponent),
+  },
+  {
     path: 'app',
     component: ShellComponent,
     canActivate: [authGuard],
@@ -26,12 +31,26 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },
-      { path: 'transactions', component: PlaceholderPageComponent, data: { title: 'Transactions' } },
+      {
+        path: 'transactions',
+        loadComponent: () =>
+          import('./features/transactions/transactions.component').then((m) => m.TransactionsComponent),
+      },
       { path: 'budgets', component: PlaceholderPageComponent, data: { title: 'Budgets' } },
-      { path: 'analytics', component: PlaceholderPageComponent, data: { title: 'Analytics' } },
-      { path: 'insights', component: PlaceholderPageComponent, data: { title: 'AI Insights' } },
-      { path: 'assistant', component: PlaceholderPageComponent, data: { title: 'AI Assistant' } },
-      { path: 'settings', component: PlaceholderPageComponent, data: { title: 'Settings' } },
+      { path: 'goals', component: PlaceholderPageComponent, data: { title: 'Goals' } },
+      {
+        path: 'insights',
+        component: PlaceholderPageComponent,
+        data: {
+          title: 'Insights',
+          description: 'Useful spending patterns will appear here as your transaction history grows.',
+        },
+      },
+      {
+        path: 'settings',
+        component: PlaceholderPageComponent,
+        data: { title: 'Settings', description: 'Manage your personal SpendSense workspace.' },
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },

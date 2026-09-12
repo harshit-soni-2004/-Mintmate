@@ -1,13 +1,16 @@
+import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiResponse } from '../../core/api/api.types';
+import { OnboardingHeroComponent } from './onboarding-hero.component';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, OnboardingHeroComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })
@@ -18,11 +21,21 @@ export class LoginComponent {
 
   submitting = false;
   errorMessage = '';
+  showPassword = false;
 
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
   });
+
+  isFieldInvalid(field: string): boolean {
+    const ctrl = this.form.get(field);
+    return !!ctrl && ctrl.invalid && (ctrl.touched || ctrl.dirty);
+  }
+
+  togglePassword(): void {
+    this.showPassword = !this.showPassword;
+  }
 
   submit(): void {
     if (this.form.invalid) {
@@ -45,5 +58,5 @@ export class LoginComponent {
 
 export function messageFrom(err: HttpErrorResponse): string {
   const body = err.error as ApiResponse<unknown> | undefined;
-  return body?.error?.message ?? 'Something went wrong. Please try again.';
+  return body?.error?.message ?? 'Invalid email or password. Please try again.';
 }

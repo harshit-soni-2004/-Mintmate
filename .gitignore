@@ -1,10 +1,14 @@
 # Java / Maven
 backend/target/
+backend/.m2/
 backend/.mvn/wrapper/maven-wrapper.jar
 *.class
 *.jar
 *.war
 hs_err_pid*
+
+# Scratch / temporary scripts
+scratch/
 
 # Node / Angular
 frontend/node_modules/

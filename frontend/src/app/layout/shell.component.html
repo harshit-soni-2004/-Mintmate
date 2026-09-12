@@ -4,16 +4,15 @@
       <span class="mark">S</span>
       <div>
         <strong>SpendSense</strong>
-        <small>Financial intelligence</small>
+        <small>Your money, made clearer</small>
       </div>
     </div>
     <nav>
       <a routerLink="/app/dashboard" routerLinkActive="active">Dashboard</a>
       <a routerLink="/app/transactions" routerLinkActive="active">Transactions</a>
       <a routerLink="/app/budgets" routerLinkActive="active">Budgets</a>
-      <a routerLink="/app/analytics" routerLinkActive="active">Analytics</a>
-      <a routerLink="/app/insights" routerLinkActive="active">AI Insights</a>
-      <a routerLink="/app/assistant" routerLinkActive="active">AI Assistant</a>
+      <a routerLink="/app/goals" routerLinkActive="active">Goals</a>
+      <a routerLink="/app/insights" routerLinkActive="active">Insights</a>
       <a routerLink="/app/settings" routerLinkActive="active">Settings</a>
     </nav>
     <div class="sidebar-footer">
@@ -30,4 +29,7 @@
   <main class="content">
     <router-outlet />
   </main>
+  <nav class="mobile-nav">
+    <a routerLink="/app/dashboard" routerLinkActive="active">Home</a><a routerLink="/app/transactions" routerLinkActive="active">Activity</a><a routerLink="/app/budgets" routerLinkActive="active">Budgets</a><a routerLink="/app/goals" routerLinkActive="active">Goals</a><a routerLink="/app/settings" routerLinkActive="active">Profile</a>
+  </nav>
 </div>
