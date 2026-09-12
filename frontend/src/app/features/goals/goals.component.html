@@ -1,0 +1,315 @@
+<section class="page goals-page">
+  <!-- Page Header -->
+  <header class="page-header">
+    <div>
+      <div class="eyebrow-row">
+        <span class="live-badge"><i class="live-dot"></i> Wealth Growth</span>
+        <span class="range-tag">Long-term Objectives</span>
+      </div>
+      <h1>Financial Goals</h1>
+      <p class="lede">Plan savings targets, track milestones, and celebrate financial victories.</p>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="btn-primary add-btn" (click)="openCreate()">
+        <span class="plus-icon">+</span> New Goal
+      </button>
+    </div>
+  </header>
+
+  @if (error) {
+    <div class="notice error-banner" role="alert">
+      <span class="alert-icon">⚠</span>
+      <div class="notice-text">
+        <strong>Error</strong>
+        <p>{{ error }}</p>
+      </div>
+      <button type="button" class="retry-btn" (click)="loadGoals()">Retry</button>
+    </div>
+  }
+
+  @if (loading && !goals.length) {
+    <div class="state loading-state">
+      <div class="fintech-spinner"></div>
+      <p>Loading financial goals and savings trajectories...</p>
+    </div>
+  } @else {
+    <!-- Summary Metrics -->
+    <section class="summary-cards" aria-label="Goals summary metrics">
+      <!-- Total Target -->
+      <article class="metric-card">
+        <div class="card-top">
+          <div class="metric-info">
+            <span class="metric-label">Total Target Capital</span>
+            <strong class="metric-value">
+              {{ totalTarget | currency:'INR':'symbol-narrow':'1.2-2' }}
+            </strong>
+          </div>
+          <div class="metric-icon-wrap target-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="6"></circle>
+              <circle cx="12" cy="12" r="2"></circle>
+            </svg>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="comparison-note">{{ goals.length }} planned {{ goals.length === 1 ? 'goal' : 'goals' }}</span>
+        </div>
+      </article>
+
+      <!-- Total Saved -->
+      <article class="metric-card">
+        <div class="card-top">
+          <div class="metric-info">
+            <span class="metric-label">Accumulated Savings</span>
+            <strong class="metric-value positive">
+              {{ totalSaved | currency:'INR':'symbol-narrow':'1.2-2' }}
+            </strong>
+          </div>
+          <div class="metric-icon-wrap saved-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="pill positive">{{ overallProgress }}% funded</span>
+          <span class="comparison-note">of total objectives</span>
+        </div>
+      </article>
+
+      <!-- Active vs Completed -->
+      <article class="metric-card">
+        <div class="card-top">
+          <div class="metric-info">
+            <span class="metric-label">Milestones Achieved</span>
+            <div class="milestone-counts">
+              <strong class="metric-value">{{ completedCount }}</strong>
+              <span class="completed-label">Completed / {{ goals.length }} Total</span>
+            </div>
+          </div>
+          <div class="metric-icon-wrap completed-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="comparison-note">{{ activeCount }} active {{ activeCount === 1 ? 'goal' : 'goals' }} in progress</span>
+        </div>
+      </article>
+    </section>
+
+    <!-- Goals Grid -->
+    <section class="goals-section">
+      <div class="section-title-row">
+        <h2>Your Savings Portfolios</h2>
+        <span class="count-badge">{{ goals.length }} goals</span>
+      </div>
+
+      @if (!goals.length) {
+        <div class="empty-state-box">
+          <div class="empty-icon-circle">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="6"></circle>
+              <circle cx="12" cy="12" r="2"></circle>
+            </svg>
+          </div>
+          <h3>No financial goals set yet</h3>
+          <p>Whether you're building an emergency fund, buying a car, or investing in your future, start with clear targets.</p>
+          <button type="button" class="btn-primary" (click)="openCreate()">+ Create Your First Goal</button>
+        </div>
+      } @else {
+        <div class="goals-grid">
+          @for (g of goals; track g.id) {
+            <article class="goal-card" [class.is-completed]="g.isCompleted">
+              <!-- Goal Header -->
+              <div class="goal-card-header">
+                <div class="goal-title-wrap">
+                  <h3 class="goal-name" [title]="g.name">{{ g.name }}</h3>
+                  <span class="target-date">Target: {{ g.targetDate | date:'d MMM yyyy' }}</span>
+                </div>
+                @if (g.isCompleted) {
+                  <span class="status-pill completed-pill">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Completed
+                  </span>
+                } @else {
+                  <span class="status-pill in-progress-pill">In Progress</span>
+                }
+              </div>
+
+              <!-- Figures -->
+              <div class="goal-figures">
+                <div class="figure-saved">
+                  <span class="fig-label">Saved</span>
+                  <strong class="fig-val">{{ g.currentAmount | currency:'INR':'symbol-narrow':'1.2-2' }}</strong>
+                </div>
+                <div class="figure-target">
+                  <span class="fig-label">Target</span>
+                  <span class="fig-val">{{ g.targetAmount | currency:'INR':'symbol-narrow':'1.2-2' }}</span>
+                </div>
+              </div>
+
+              <!-- Progress Bar -->
+              <div class="progress-wrap">
+                <div class="progress-track">
+                  <div class="progress-fill" [style.width.%]="g.progressPercentage > 100 ? 100 : g.progressPercentage"></div>
+                </div>
+                <div class="progress-meta">
+                  <span class="pct-num">{{ g.progressPercentage }}%</span>
+                  <span class="rem-num">
+                    @if (g.isCompleted) {
+                      <strong class="goal-reached-text">🎉 Target Achieved!</strong>
+                    } @else {
+                      {{ g.remainingAmount | currency:'INR':'symbol-narrow':'1.0-0' }} remaining
+                    }
+                  </span>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="goal-card-footer">
+                <button type="button" class="btn-contribute" (click)="openContribution(g)">
+                  + Add Funds
+                </button>
+                <div class="secondary-actions">
+                  <button type="button" class="action-btn" (click)="openEdit(g)" title="Edit goal">Edit</button>
+                  <button type="button" class="action-btn delete-btn" (click)="deleteGoal(g)" title="Delete goal">Delete</button>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  <!-- Create / Edit Goal Modal -->
+  @if (showGoalModal) {
+    <div class="modal-backdrop" (click)="closeGoalModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()" role="dialog" [attr.aria-label]="editingGoal ? 'Edit Goal' : 'Create Goal'">
+        <header class="modal-header">
+          <div>
+            <h3>{{ editingGoal ? 'Edit Financial Goal' : 'Create Financial Goal' }}</h3>
+            <p class="modal-sub">Set an achievable financial objective with a target amount and target date.</p>
+          </div>
+          <button type="button" class="modal-close" (click)="closeGoalModal()" aria-label="Close modal">×</button>
+        </header>
+
+        <form [formGroup]="goalForm" (ngSubmit)="saveGoal()" class="dialog-form">
+          @if (goalFormError) {
+            <div class="form-error-banner" role="alert">{{ goalFormError }}</div>
+          }
+
+          <div class="form-group">
+            <label for="goal-name">Goal Name *</label>
+            <input
+              id="goal-name"
+              type="text"
+              maxlength="120"
+              formControlName="name"
+              placeholder="e.g. Emergency Fund, Vacation, Down Payment"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="goal-target">Target Amount (₹) *</label>
+            <input
+              id="goal-target"
+              type="number"
+              step="0.01"
+              min="0.01"
+              formControlName="targetAmount"
+              placeholder="e.g. 150000"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="goal-current">Initial Saved Amount (₹)</label>
+              <input
+                id="goal-current"
+                type="number"
+                step="0.01"
+                min="0"
+                formControlName="currentAmount"
+                class="form-input"
+              />
+            </div>
+            <div class="form-group">
+              <label for="goal-date">Target Date *</label>
+              <input
+                id="goal-date"
+                type="date"
+                formControlName="targetDate"
+                class="form-input"
+              />
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeGoalModal()">Cancel</button>
+            <button type="submit" class="btn-primary" [disabled]="submitting || goalForm.invalid">
+              {{ submitting ? 'Saving...' : (editingGoal ? 'Update Goal' : 'Create Goal') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Add Contribution Modal -->
+  @if (showContributionModal && contributingGoal) {
+    <div class="modal-backdrop" (click)="closeContributionModal()">
+      <div class="modal-dialog contribute-dialog" (click)="$event.stopPropagation()" role="dialog" aria-label="Add Funds to Goal">
+        <header class="modal-header">
+          <div>
+            <h3>Contribute to "{{ contributingGoal.name }}"</h3>
+            <p class="modal-sub">Add funds towards this goal's target of {{ contributingGoal.targetAmount | currency:'INR':'symbol-narrow':'1.0-0' }}.</p>
+          </div>
+          <button type="button" class="modal-close" (click)="closeContributionModal()" aria-label="Close modal">×</button>
+        </header>
+
+        <form [formGroup]="contributionForm" (ngSubmit)="submitContribution()" class="dialog-form">
+          @if (contributionFormError) {
+            <div class="form-error-banner" role="alert">{{ contributionFormError }}</div>
+          }
+
+          <div class="form-group">
+            <label for="contrib-amount">Contribution Amount (₹) *</label>
+            <input
+              id="contrib-amount"
+              type="number"
+              step="0.01"
+              min="0.01"
+              formControlName="amount"
+              placeholder="e.g. 5000"
+              class="form-input"
+              autofocus
+            />
+          </div>
+
+          <div class="contrib-preview">
+            <span class="preview-label">Currently saved:</span>
+            <strong>{{ contributingGoal.currentAmount | currency:'INR':'symbol-narrow':'1.2-2' }}</strong>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeContributionModal()">Cancel</button>
+            <button type="submit" class="btn-primary" [disabled]="submitting || contributionForm.invalid">
+              {{ submitting ? 'Adding...' : 'Confirm Contribution' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</section>

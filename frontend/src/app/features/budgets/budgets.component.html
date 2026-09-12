@@ -1,0 +1,304 @@
+<section class="page budgets-page">
+  <!-- Page Header -->
+  <header class="page-header">
+    <div>
+      <div class="eyebrow-row">
+        <span class="live-badge"><i class="live-dot"></i> Real-time Tracking</span>
+        <span class="range-tag">Active Budgets</span>
+      </div>
+      <h1>Budgets & Spending Limits</h1>
+      <p class="lede">Establish spending thresholds by category and keep your cash flow disciplined.</p>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="btn-primary add-btn" (click)="openCreate()">
+        <span class="plus-icon">+</span> Create Budget
+      </button>
+    </div>
+  </header>
+
+  @if (error) {
+    <div class="notice error-banner" role="alert">
+      <span class="alert-icon">⚠</span>
+      <div class="notice-text">
+        <strong>Error</strong>
+        <p>{{ error }}</p>
+      </div>
+      <button type="button" class="retry-btn" (click)="loadData()">Retry</button>
+    </div>
+  }
+
+  @if (loading && !summary) {
+    <div class="state loading-state">
+      <div class="fintech-spinner"></div>
+      <p>Calculating category budgets and expenditures...</p>
+    </div>
+  } @else if (summary) {
+    <!-- Summary Cards -->
+    <section class="summary-cards" aria-label="Budget summary metrics">
+      <!-- Total Budget Limit -->
+      <article class="metric-card">
+        <div class="card-top">
+          <div class="metric-info">
+            <span class="metric-label">Total Allocated Budget</span>
+            <strong class="metric-value">
+              {{ summary.totalBudget | currency:'INR':'symbol-narrow':'1.2-2' }}
+            </strong>
+          </div>
+          <div class="metric-icon-wrap budget-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+              <line x1="2" y1="10" x2="22" y2="10"></line>
+            </svg>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="comparison-note">{{ summary.totalBudgets }} active {{ summary.totalBudgets === 1 ? 'category' : 'categories' }}</span>
+        </div>
+      </article>
+
+      <!-- Total Spent -->
+      <article class="metric-card">
+        <div class="card-top">
+          <div class="metric-info">
+            <span class="metric-label">Total Spent In Budgets</span>
+            <strong class="metric-value expense">
+              {{ summary.totalSpent | currency:'INR':'symbol-narrow':'1.2-2' }}
+            </strong>
+          </div>
+          <div class="metric-icon-wrap expense-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="17" y1="7" x2="7" y2="17"></line>
+              <polyline points="17 17 7 17 7 7"></polyline>
+            </svg>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="pill" [class.negative]="summary.percentageUsed >= 100"
+                             [class.positive]="summary.percentageUsed < 75">
+            {{ summary.percentageUsed }}% used
+          </span>
+          <span class="comparison-note">of total allocation</span>
+        </div>
+      </article>
+
+      <!-- Total Remaining -->
+      <article class="metric-card">
+        <div class="card-top">
+          <div class="metric-info">
+            <span class="metric-label">Remaining Safe Spend</span>
+            <strong class="metric-value" [class.positive]="summary.totalRemaining > 0" [class.negative]="summary.totalRemaining <= 0">
+              {{ summary.totalRemaining | currency:'INR':'symbol-narrow':'1.2-2' }}
+            </strong>
+          </div>
+          <div class="metric-icon-wrap remaining-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="comparison-note">Available across all active categories</span>
+        </div>
+      </article>
+
+      <!-- Health Breakdown -->
+      <article class="metric-card health-card">
+        <div class="card-top">
+          <div class="metric-info">
+            <span class="metric-label">Health Overview</span>
+            <div class="status-counters">
+              <span class="badge on-track" title="Spent under 75%">{{ summary.onTrackCount }} On Track</span>
+              <span class="badge warning" title="Spent between 75% and 100%">{{ summary.warningCount }} Warning</span>
+              <span class="badge exceeded" title="Exceeded 100%">{{ summary.exceededCount }} Exceeded</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="comparison-note">Threshold: 75% warning &bull; 100% cap</span>
+        </div>
+      </article>
+    </section>
+
+    <!-- Budgets List / Grid -->
+    <section class="budgets-section">
+      <div class="section-title-row">
+        <h2>Active Category Budgets</h2>
+        <span class="count-badge">{{ budgets.length }} budgets</span>
+      </div>
+
+      @if (!budgets.length) {
+        <div class="empty-state-box">
+          <div class="empty-icon-circle">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+              <line x1="2" y1="10" x2="22" y2="10"></line>
+            </svg>
+          </div>
+          <h3>No category budgets defined</h3>
+          <p>Setting budgets helps you take control of recurring expenses and build long-term wealth.</p>
+          <button type="button" class="btn-primary" (click)="openCreate()">+ Create Your First Budget</button>
+        </div>
+      } @else {
+        <div class="budgets-grid">
+          @for (b of budgets; track b.id) {
+            <article class="budget-card" [ngClass]="getStatusClass(b.status)">
+              <!-- Card Header -->
+              <div class="budget-card-header">
+                <div class="cat-badge-wrap">
+                  <span class="cat-pill">{{ categoryLabel(b.category) }}</span>
+                  <span class="period-pill">{{ b.period }}</span>
+                </div>
+                <div class="status-pill" [ngClass]="getStatusClass(b.status)">
+                  <span class="status-dot"></span>
+                  {{ statusLabel(b.status) }}
+                </div>
+              </div>
+
+              <!-- Main Amount Figure -->
+              <div class="budget-amounts">
+                <div class="spent-info">
+                  <span class="amt-label">Spent</span>
+                  <strong class="spent-val">{{ b.spentAmount | currency:'INR':'symbol-narrow':'1.2-2' }}</strong>
+                </div>
+                <div class="limit-info">
+                  <span class="amt-label">Cap</span>
+                  <span class="limit-val">{{ b.limitAmount | currency:'INR':'symbol-narrow':'1.2-2' }}</span>
+                </div>
+              </div>
+
+              <!-- Progress Bar -->
+              <div class="progress-wrap">
+                <div class="progress-track">
+                  <div class="progress-fill"
+                       [ngClass]="getProgressBarClass(b.status)"
+                       [style.width.%]="b.percentageUsed > 100 ? 100 : b.percentageUsed">
+                  </div>
+                </div>
+                <div class="progress-meta">
+                  <span class="pct-text" [ngClass]="getStatusClass(b.status)">
+                    {{ b.percentageUsed }}% spent
+                  </span>
+                  <span class="rem-text">
+                    @if (b.remainingAmount >= 0) {
+                      {{ b.remainingAmount | currency:'INR':'symbol-narrow':'1.0-0' }} left
+                    } @else {
+                      <strong class="over-text">{{ (b.spentAmount - b.limitAmount) | currency:'INR':'symbol-narrow':'1.0-0' }} over cap</strong>
+                    }
+                  </span>
+                </div>
+              </div>
+
+              <!-- Card Details & Actions -->
+              <div class="budget-card-footer">
+                <span class="date-range" title="Effective budget dates">
+                  📅 {{ b.startDate | date:'d MMM' }} – {{ b.endDate | date:'d MMM yyyy' }}
+                </span>
+                <div class="card-actions">
+                  <button type="button" class="action-btn edit-btn" (click)="openEdit(b)" title="Edit budget limits">
+                    Edit
+                  </button>
+                  <button type="button" class="action-btn delete-btn" (click)="deleteBudget(b)" title="Delete budget">
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  <!-- Create / Edit Budget Modal -->
+  @if (showModal) {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()" role="dialog" [attr.aria-label]="editingBudget ? 'Edit Budget' : 'Create Budget'">
+        <header class="modal-header">
+          <div>
+            <h3>{{ editingBudget ? 'Edit Category Budget' : 'Create Category Budget' }}</h3>
+            <p class="modal-sub">Allocate spending limits to automatically track expenses against targets.</p>
+          </div>
+          <button type="button" class="modal-close" (click)="closeModal()" aria-label="Close modal">×</button>
+        </header>
+
+        <form [formGroup]="form" (ngSubmit)="saveBudget()" class="budget-form">
+          @if (formError) {
+            <div class="form-error-banner" role="alert">
+              {{ formError }}
+            </div>
+          }
+
+          <!-- Category -->
+          <div class="form-group">
+            <label for="budget-category">Category *</label>
+            <select id="budget-category" formControlName="category" class="form-input">
+              @for (cat of categories; track cat) {
+                <option [value]="cat">{{ categoryLabel(cat) }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Limit Amount -->
+          <div class="form-group">
+            <label for="budget-amount">Spending Limit Amount (₹) *</label>
+            <input
+              id="budget-amount"
+              type="number"
+              step="0.01"
+              min="0.01"
+              formControlName="limitAmount"
+              placeholder="e.g. 10000"
+              class="form-input"
+            />
+          </div>
+
+          <!-- Period -->
+          <div class="form-group">
+            <label for="budget-period">Period *</label>
+            <select
+              id="budget-period"
+              formControlName="period"
+              class="form-input"
+              (change)="onPeriodChange(form.controls.period.value)"
+            >
+              @for (p of periods; track p) {
+                <option [value]="p">{{ p }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Start & End Date -->
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="budget-start">Start Date *</label>
+              <input
+                id="budget-start"
+                type="date"
+                formControlName="startDate"
+                class="form-input"
+              />
+            </div>
+            <div class="form-group">
+              <label for="budget-end">End Date *</label>
+              <input
+                id="budget-end"
+                type="date"
+                formControlName="endDate"
+                class="form-input"
+              />
+            </div>
+          </div>
+
+          <!-- Modal Actions -->
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
+            <button type="submit" class="btn-primary" [disabled]="submitting || form.invalid">
+              {{ submitting ? 'Saving...' : (editingBudget ? 'Update Budget' : 'Create Budget') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</section>

@@ -1,14 +1,631 @@
-<section class="page">
-  <header>
-    <p class="eyebrow">Overview</p>
-    <h1>Welcome back, {{ auth.currentUser()?.displayName }}</h1>
-    <p class="lede">
-      Income, expenses, and budgets will appear here once transactions are connected.
-    </p>
+<section class="page dashboard-page">
+  <!-- Top Application Bar / Dashboard Header -->
+  <header class="dash-header">
+    <div class="header-titles">
+      <div class="eyebrow-row">
+        <span class="live-badge"><i class="live-dot"></i> Live Portfolio</span>
+        <span class="range-tag">{{ selectedDate | date:'MMMM yyyy' }}</span>
+      </div>
+      <h1>Good evening, {{ auth.currentUser()?.displayName || 'Investor' }}</h1>
+      <p class="lede">Here is your financial overview, cash flow, and activity for this period.</p>
+    </div>
+
+    <div class="dash-controls">
+      <!-- Period Selector / Month Navigation -->
+      <div class="period-navigator" role="group" aria-label="Month navigation">
+        <button type="button" class="nav-arrow" (click)="changeMonth(-1)" title="Previous month" aria-label="Previous month">‹</button>
+        <span class="current-period">{{ currentYearMonth | date:'MMM yyyy' }}</span>
+        <button type="button" class="nav-arrow" (click)="changeMonth(1)" title="Next month" aria-label="Next month">›</button>
+        <button type="button" class="today-btn" (click)="goToCurrentMonth()">Current</button>
+      </div>
+
+      <button type="button" class="btn-primary add-btn" (click)="openCreate()">
+        <span class="plus-icon">+</span> Add transaction
+      </button>
+    </div>
   </header>
 
-  <div class="empty">
-    <h2>No activity yet</h2>
-    <p>Phase 1 is authentication and workspace setup. Import and tracking come next.</p>
-  </div>
+  @if (error) {
+    <div class="notice error-banner" role="alert">
+      <span class="alert-icon">⚠</span>
+      <div class="notice-text">
+        <strong>Unable to sync dashboard</strong>
+        <p>{{ error }}</p>
+      </div>
+      <button type="button" class="retry-btn" (click)="loadDashboard()">Retry Sync</button>
+    </div>
+  }
+
+  @if (loading && !dashboardData) {
+    <div class="state loading-state">
+      <div class="fintech-spinner"></div>
+      <p>Syncing financial ledgers...</p>
+    </div>
+  } @else if (dashboardData) {
+    <!-- Financial Overview Summary Cards -->
+    <section class="summary-cards" aria-label="Financial summary metrics">
+      <!-- Total Income Card -->
+      <article class="metric-card income-card">
+        <div class="card-top">
+          <div class="metric-info">
+            <span class="metric-label">Total Income</span>
+            <strong class="metric-value income">
+              {{ dashboardData.summary.totalIncome | currency:'INR':'symbol-narrow':'1.2-2' }}
+            </strong>
+          </div>
+          <div class="metric-icon-wrap income-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="7" y1="17" x2="17" y2="7"></line>
+              <polyline points="7 7 17 7 17 17"></polyline>
+            </svg>
+          </div>
+        </div>
+        <div class="card-footer">
+          @if (dashboardData.summary.incomeChangePercentage !== null) {
+            <span class="pill" [class.positive]="dashboardData.summary.incomeChangePercentage >= 0"
+                               [class.negative]="dashboardData.summary.incomeChangePercentage < 0">
+              {{ dashboardData.summary.incomeChangePercentage >= 0 ? '↑ +' : '↓ ' }}{{ dashboardData.summary.incomeChangePercentage }}%
+            </span>
+            <span class="comparison-note">vs prior period</span>
+          } @else {
+            <span class="comparison-note">Baseline period</span>
+          }
+        </div>
+      </article>
+
+      <!-- Total Expenses Card -->
+      <article class="metric-card expense-card">
+        <div class="card-top">
+          <div class="metric-info">
+            <span class="metric-label">Total Expenses</span>
+            <strong class="metric-value expense">
+              {{ dashboardData.summary.totalExpenses | currency:'INR':'symbol-narrow':'1.2-2' }}
+            </strong>
+          </div>
+          <div class="metric-icon-wrap expense-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="17" y1="7" x2="7" y2="17"></line>
+              <polyline points="17 17 7 17 7 7"></polyline>
+            </svg>
+          </div>
+        </div>
+        <div class="card-footer">
+          @if (dashboardData.summary.expenseChangePercentage !== null) {
+            <span class="pill" [class.positive]="dashboardData.summary.expenseChangePercentage <= 0"
+                               [class.negative]="dashboardData.summary.expenseChangePercentage > 0">
+              {{ dashboardData.summary.expenseChangePercentage <= 0 ? '↓ ' : '↑ +' }}{{ dashboardData.summary.expenseChangePercentage }}%
+            </span>
+            <span class="comparison-note">vs prior period</span>
+          } @else {
+            <span class="comparison-note">Baseline period</span>
+          }
+        </div>
+      </article>
+
+      <!-- Net Savings Card -->
+      <article class="metric-card savings-card">
+        <div class="card-top">
+          <div class="metric-info">
+            <span class="metric-label">Net Savings</span>
+            <strong class="metric-value" [class.positive]="dashboardData.summary.netSavings >= 0" [class.negative]="dashboardData.summary.netSavings < 0">
+              {{ dashboardData.summary.netSavings | currency:'INR':'symbol-narrow':'1.2-2' }}
+            </strong>
+          </div>
+          <div class="metric-icon-wrap savings-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="status-badge" [class.surplus]="dashboardData.summary.netSavings >= 0" [class.deficit]="dashboardData.summary.netSavings < 0">
+            {{ dashboardData.summary.netSavings >= 0 ? 'Cashflow Surplus' : 'Deficit Alert' }}
+          </span>
+        </div>
+      </article>
+
+      <!-- Savings Rate Card -->
+      <article class="metric-card rate-card">
+        <div class="card-top">
+          <div class="metric-info">
+            <span class="metric-label">Savings Rate</span>
+            <strong class="metric-value rate">
+              {{ dashboardData.summary.savingsRate }}%
+            </strong>
+          </div>
+          <div class="metric-icon-wrap rate-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+        </div>
+        <div class="card-footer rate-footer">
+          <div class="rate-bar-track">
+            <div class="rate-bar-fill" [style.width.%]="dashboardData.summary.savingsRate > 100 ? 100 : dashboardData.summary.savingsRate"></div>
+          </div>
+          <span class="rate-target">Benchmark: 20%+</span>
+        </div>
+      </article>
+    </section>
+
+    <!-- Analytics & Calendar Layout -->
+    <div class="analytics-grid">
+      <!-- Left Column: Spending Trend, Category Breakdown, Budget Benchmarks -->
+      <div class="analytics-col-left">
+        <!-- Spending Trend Chart Panel -->
+        <section class="panel chart-panel" aria-labelledby="chart-heading">
+          <header class="panel-header">
+            <div>
+              <h2 id="chart-heading">Spending Analytics</h2>
+              <p class="panel-sub">Expenditure distribution across time</p>
+            </div>
+
+            <!-- Day / Week / Month Mode Switcher -->
+            <div class="chart-toggles" role="tablist" aria-label="Chart view period">
+              <button type="button" role="tab" [attr.aria-selected]="chartMode === 'day'" [class.active]="chartMode === 'day'" (click)="setChartMode('day')">Day</button>
+              <button type="button" role="tab" [attr.aria-selected]="chartMode === 'week'" [class.active]="chartMode === 'week'" (click)="setChartMode('week')">Week</button>
+              <button type="button" role="tab" [attr.aria-selected]="chartMode === 'month'" [class.active]="chartMode === 'month'" (click)="setChartMode('month')">Month</button>
+            </div>
+          </header>
+
+          <div class="chart-viewport">
+            @if (!chartBars.length) {
+              <div class="empty-state-box">
+                <p>No spending data found for this period.</p>
+              </div>
+            } @else {
+              <!-- Bar Chart Container -->
+              <div class="fintech-bar-chart" [ngClass]="'chart-' + chartMode">
+                @for (bar of chartBars; track bar.label) {
+                  <div class="chart-col"
+                       (mouseenter)="hoveredBar = bar"
+                       (mouseleave)="hoveredBar = null"
+                       (focus)="hoveredBar = bar"
+                       (blur)="hoveredBar = null"
+                       tabindex="0"
+                       [class.has-spend]="bar.expense > 0"
+                       [attr.aria-label]="bar.label + ': ' + (bar.expense | currency:'INR':'symbol-narrow')">
+                    <div class="bar-slot">
+                      <div class="bar-pill" [style.height.%]="bar.heightPct">
+                        @if (bar.expense > 0) {
+                          <span class="bar-glow"></span>
+                        }
+                      </div>
+                    </div>
+                    <span class="bar-axis-label">{{ bar.label }}</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Interactive Chart Hover Tooltip -->
+              @if (hoveredBar) {
+                <div class="chart-tooltip-badge">
+                  <strong>{{ hoveredBar.label }}:</strong>
+                  <span>{{ hoveredBar.expense | currency:'INR':'symbol-narrow':'1.2-2' }}</span>
+                  @if (hoveredBar.income > 0) {
+                    <small class="tip-income">Income: +{{ hoveredBar.income | currency:'INR':'symbol-narrow':'1.0-0' }}</small>
+                  }
+                </div>
+              }
+            }
+          </div>
+        </section>
+
+        <!-- Category Spending Panel -->
+        <section class="panel category-panel" aria-labelledby="category-heading">
+          <header class="panel-header">
+            <div>
+              <h2 id="category-heading">Category Allocation</h2>
+              <p class="panel-sub">{{ dashboardData.categorySpending.length }} active categories in {{ currentYearMonth | date:'MMM yyyy' }}</p>
+            </div>
+            <a routerLink="/app/transactions" class="panel-link">All Activity →</a>
+          </header>
+
+          @if (!dashboardData.categorySpending.length) {
+            <div class="empty-state-box">
+              <p>No category expenses recorded for this month.</p>
+              <button type="button" class="btn-secondary" (click)="openCreate()">+ Log expense</button>
+            </div>
+          } @else {
+            <div class="category-body">
+              <!-- Modern SVG Donut Chart -->
+              <div class="donut-wrapper">
+                <svg class="donut-svg" viewBox="0 0 140 140">
+                  <circle class="donut-bg" cx="70" cy="70" r="54"></circle>
+                  @for (seg of donutSegments; track seg.category) {
+                    <circle class="donut-segment"
+                            cx="70" cy="70" r="54"
+                            [attr.stroke]="seg.color"
+                            [attr.stroke-dasharray]="seg.strokeDasharray"
+                            [attr.stroke-dashoffset]="seg.strokeDashoffset">
+                    </circle>
+                  }
+                </svg>
+                <div class="donut-center">
+                  <span class="donut-label">Total Spend</span>
+                  <strong class="donut-val">{{ dashboardData.summary.totalExpenses | currency:'INR':'symbol-narrow':'1.0-0' }}</strong>
+                </div>
+              </div>
+
+              <!-- Category Allocation Breakdown List -->
+              <div class="category-list">
+                @for (cat of dashboardData.categorySpending; track cat.category) {
+                  <div class="cat-item"
+                       [class.active-cat]="selectedCategory === cat.category"
+                       (click)="selectCategory(cat.category)"
+                       tabindex="0"
+                       role="button">
+                    <div class="cat-leading">
+                      <span class="cat-color-dot" [style.background]="getCategoryColor(cat.category)"></span>
+                      <div>
+                        <strong class="cat-name">{{ categoryLabel(cat.category) }}</strong>
+                        <span class="cat-count">{{ cat.transactionCount }} transaction{{ cat.transactionCount === 1 ? '' : 's' }}</span>
+                      </div>
+                    </div>
+                    <div class="cat-middle">
+                      <div class="cat-progress-track">
+                        <div class="cat-progress-fill" [style.width.%]="cat.percentage" [style.background]="getCategoryColor(cat.category)"></div>
+                      </div>
+                      <span class="cat-pct">{{ cat.percentage }}%</span>
+                    </div>
+                    <div class="cat-trailing">
+                      <strong class="cat-amt">{{ cat.amount | currency:'INR':'symbol-narrow':'1.2-2' }}</strong>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </section>
+
+        <!-- Budget & Benchmark Insights -->
+        <section class="panel budget-panel" aria-labelledby="budget-heading">
+          <header class="panel-header">
+            <div>
+              <h2 id="budget-heading">Budget Benchmarks</h2>
+              <p class="panel-sub">Category spending pace vs recommended ratios</p>
+            </div>
+            <a routerLink="/app/budgets" class="panel-link">Manage Targets</a>
+          </header>
+
+          <div class="budget-body">
+            <div class="roadmap-note">
+              <span class="note-tag">Roadmap</span>
+              <span>Custom user budget limits are planned. Below is your current allocation against total period spend.</span>
+            </div>
+
+            @if (dashboardData.categorySpending.length) {
+              <div class="benchmark-list">
+                @for (cat of dashboardData.categorySpending.slice(0, 3); track cat.category) {
+                  <div class="bench-item">
+                    <div class="bench-head">
+                      <span class="bench-name">{{ categoryLabel(cat.category) }}</span>
+                      <span class="bench-val">{{ cat.percentage }}% of total spend ({{ cat.amount | currency:'INR':'symbol-narrow':'1.0-0' }})</span>
+                    </div>
+                    <div class="bench-track">
+                      <div class="bench-fill" [style.width.%]="cat.percentage" [style.background]="getCategoryColor(cat.category)"></div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- Budget Status Panel -->
+        <section class="panel budget-panel" aria-labelledby="dash-budgets-heading">
+          <header class="panel-header">
+            <div>
+              <h2 id="dash-budgets-heading">Budget Status</h2>
+              <p class="panel-sub">Active category spending limits and threshold alerts</p>
+            </div>
+            <a routerLink="/app/budgets" class="panel-link">Manage Budgets →</a>
+          </header>
+
+          @if (!budgetSummary || !budgetSummary.budgets.length) {
+            <div class="empty-state-box">
+              <p>No budgets established. Set limits to keep spending on track.</p>
+              <a routerLink="/app/budgets" class="btn-secondary">+ Set First Budget</a>
+            </div>
+          } @else {
+            <div class="dash-budget-content">
+              <!-- Top quick KPI bar -->
+              <div class="dash-budget-kpis">
+                <div class="kpi-item">
+                  <span class="kpi-label">Allocated Cap</span>
+                  <strong class="kpi-val">{{ budgetSummary.totalBudget | currency:'INR':'symbol-narrow':'1.0-0' }}</strong>
+                </div>
+                <div class="kpi-item">
+                  <span class="kpi-label">Spent in Budgets</span>
+                  <strong class="kpi-val" [class.expense]="budgetSummary.percentageUsed >= 100">
+                    {{ budgetSummary.totalSpent | currency:'INR':'symbol-narrow':'1.0-0' }} ({{ budgetSummary.percentageUsed }}%)
+                  </strong>
+                </div>
+                <div class="kpi-item health-pills">
+                  @if (budgetSummary.onTrackCount > 0) {
+                    <span class="pill-mini on-track">{{ budgetSummary.onTrackCount }} on track</span>
+                  }
+                  @if (budgetSummary.warningCount > 0) {
+                    <span class="pill-mini warning">{{ budgetSummary.warningCount }} warning</span>
+                  }
+                  @if (budgetSummary.exceededCount > 0) {
+                    <span class="pill-mini exceeded">{{ budgetSummary.exceededCount }} exceeded</span>
+                  }
+                </div>
+              </div>
+
+              <!-- List of active category budget tracks -->
+              <div class="dash-budget-list">
+                @for (b of budgetSummary.budgets.slice(0, 4); track b.id) {
+                  <div class="dash-budget-item">
+                    <div class="b-item-header">
+                      <div class="b-item-left">
+                        <strong class="b-cat-name">{{ categoryLabel(b.category) }}</strong>
+                        <span class="b-status-pill" [ngClass]="getBudgetStatusClass(b.status)">
+                          {{ b.status === 'ON_TRACK' ? 'On Track' : (b.status === 'WARNING' ? 'Warning' : 'Exceeded') }}
+                        </span>
+                      </div>
+                      <div class="b-item-right">
+                        <span class="b-spent">{{ b.spentAmount | currency:'INR':'symbol-narrow':'1.0-0' }}</span>
+                        <span class="b-sep">/</span>
+                        <span class="b-limit">{{ b.limitAmount | currency:'INR':'symbol-narrow':'1.0-0' }}</span>
+                      </div>
+                    </div>
+                    <div class="b-item-track">
+                      <div class="b-item-fill"
+                           [ngClass]="getBudgetFillClass(b.status)"
+                           [style.width.%]="b.percentageUsed > 100 ? 100 : b.percentageUsed"></div>
+                    </div>
+                    <div class="b-item-footer">
+                      <span class="b-pct" [ngClass]="getBudgetStatusClass(b.status)">{{ b.percentageUsed }}% used</span>
+                      <span class="b-rem">
+                        @if (b.remainingAmount >= 0) {
+                          {{ b.remainingAmount | currency:'INR':'symbol-narrow':'1.0-0' }} remaining
+                        } @else {
+                          <span class="over-alert">{{ (b.spentAmount - b.limitAmount) | currency:'INR':'symbol-narrow':'1.0-0' }} over cap</span>
+                        }
+                      </span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </section>
+      </div>
+
+      <!-- Right Column: Interactive Calendar & Day Detail & Recent Transactions -->
+      <div class="analytics-col-right">
+        <!-- Interactive Calendar Heatmap -->
+        <section class="panel calendar-panel" aria-labelledby="calendar-heading">
+          <header class="panel-header">
+            <div>
+              <h2 id="calendar-heading">Activity Calendar</h2>
+              <p class="panel-sub">Select any date to inspect transactions</p>
+            </div>
+            <span class="cal-current-label">{{ currentYearMonth | date:'MMMM yyyy' }}</span>
+          </header>
+
+          <div class="calendar-wrapper">
+            <!-- Day of Week Headers -->
+            <div class="cal-weekdays">
+              <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+            </div>
+
+            <!-- Calendar Days Grid -->
+            <div class="cal-grid" role="grid">
+              @for (day of calendarDays; track day.dateString) {
+                <button type="button"
+                        class="cal-cell"
+                        [class.current-month]="day.isCurrentMonth"
+                        [class.adjacent-month]="!day.isCurrentMonth"
+                        [class.is-today]="day.isToday"
+                        [class.is-selected]="day.dateString === selectedDate"
+                        [ngClass]="'heat-' + day.intensity"
+                        [disabled]="!day.isCurrentMonth"
+                        (click)="selectDate(day.dateString)"
+                        [attr.aria-label]="day.dateString + ', ' + day.totalExpense + ' spent'">
+                  <span class="cal-num">{{ day.dayNumber }}</span>
+                  @if (day.totalExpense > 0) {
+                    <span class="cal-spend-indicator"></span>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Selected Day Inspection Card -->
+          <div class="day-inspector" aria-live="polite">
+            <div class="inspector-head">
+              <div>
+                <span class="inspector-date">{{ selectedDateSummary.date | date:'EEEE, MMM d, yyyy' }}</span>
+                <span class="inspector-meta">{{ selectedDateSummary.transactionCount }} transaction{{ selectedDateSummary.transactionCount === 1 ? '' : 's' }} recorded</span>
+              </div>
+              <div class="inspector-totals">
+                @if (selectedDateSummary.totalExpense > 0) {
+                  <div class="inspector-spend">
+                    <small>Spent</small>
+                    <strong>{{ selectedDateSummary.totalExpense | currency:'INR':'symbol-narrow':'1.2-2' }}</strong>
+                  </div>
+                }
+                @if (selectedDateSummary.totalIncome > 0) {
+                  <div class="inspector-income">
+                    <small>Income</small>
+                    <strong>+{{ selectedDateSummary.totalIncome | currency:'INR':'symbol-narrow':'1.2-2' }}</strong>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Category Breakdown Pills for the Selected Day -->
+            @if (selectedDateSummary.categoryBreakdown.length) {
+              <div class="inspector-categories">
+                @for (c of selectedDateSummary.categoryBreakdown; track c.category) {
+                  <span class="inspector-cat-pill">
+                    <i class="pill-dot" [style.background]="c.color"></i>
+                    {{ categoryLabel(c.category) }}
+                    <b>{{ c.amount | currency:'INR':'symbol-narrow':'1.0-0' }}</b>
+                  </span>
+                }
+              </div>
+            }
+
+            <!-- Transactions for the Selected Day -->
+            @if (selectedDateSummary.transactions.length) {
+              <div class="day-tx-stream">
+                @for (tx of selectedDateSummary.transactions; track tx.id) {
+                  <div class="day-tx-card">
+                    <div class="day-tx-main">
+                      <strong class="day-tx-merchant">{{ tx.merchant }}</strong>
+                      <span class="day-tx-cat">{{ categoryLabel(tx.category) }}</span>
+                    </div>
+                    <strong class="day-tx-val" [class.income]="tx.transactionType === 'INCOME'" [class.expense]="tx.transactionType === 'EXPENSE'">
+                      {{ tx.transactionType === 'INCOME' ? '+' : '−' }}{{ tx.amount | currency:'INR':'symbol-narrow':'1.2-2' }}
+                    </strong>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="day-empty-block">
+                <p>No financial entries recorded on this day.</p>
+                <button type="button" class="btn-text" (click)="openCreate(selectedDate)">+ Record transaction for this date</button>
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- Recent Transactions Panel -->
+        <section class="panel recent-panel" aria-labelledby="recent-heading">
+          <header class="panel-header">
+            <div>
+              <h2 id="recent-heading">Recent Transactions</h2>
+              <p class="panel-sub">Real-time ledger updates</p>
+            </div>
+            <a routerLink="/app/transactions" class="panel-link">View All →</a>
+          </header>
+
+          @if (!dashboardData.recentTransactions.length) {
+            <div class="empty-state-box">
+              <p>Your ledger is clear. Add a transaction to begin.</p>
+              <button type="button" class="btn-primary" (click)="openCreate()">+ Add first transaction</button>
+            </div>
+          } @else {
+            <div class="recent-stream">
+              @for (tx of dashboardData.recentTransactions.slice(0, 6); track tx.id) {
+                <article class="recent-entry">
+                  <div class="entry-avatar" [class.is-income]="tx.transactionType === 'INCOME'">
+                    {{ tx.merchant.charAt(0) }}
+                  </div>
+                  <div class="entry-meta">
+                    <strong class="entry-merchant" [title]="tx.merchant">{{ tx.merchant }}</strong>
+                    <span class="entry-details">
+                      <span class="entry-cat" [style.color]="getCategoryColor(tx.category)">{{ categoryLabel(tx.category) }}</span>
+                      <span class="entry-sep">·</span>
+                      <time class="entry-time">{{ tx.transactionDate | date:'d MMM' }}</time>
+                    </span>
+                  </div>
+                  <div class="entry-figure" [class.is-income]="tx.transactionType === 'INCOME'" [class.is-expense]="tx.transactionType === 'EXPENSE'">
+                    {{ tx.transactionType === 'INCOME' ? '+' : '−' }}{{ tx.amount | currency:'INR':'symbol-narrow':'1.2-2' }}
+                  </div>
+                  <div class="entry-actions">
+                    <button type="button" class="action-btn edit-action" title="Edit entry" (click)="openEdit(tx)">✎</button>
+                    <button type="button" class="action-btn del-action" title="Delete entry" (click)="removeTransaction(tx)">✕</button>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </section>
+      </div>
+    </div>
+  }
 </section>
+
+<!-- Add / Edit Transaction Modal Dialog -->
+@if (showForm) {
+  <div class="modal-backdrop" (click)="closeForm()" role="presentation">
+    <section class="form-sheet" role="dialog" aria-modal="true"
+             [attr.aria-label]="editing ? 'Edit transaction entry' : 'Add new transaction entry'"
+             (click)="$event.stopPropagation()">
+      <header class="sheet-head">
+        <div>
+          <span class="sheet-badge">{{ editing ? 'Update Ledger Entry' : 'Quick Capture' }}</span>
+          <h2>{{ editing ? 'Edit Transaction' : 'Add Transaction' }}</h2>
+        </div>
+        <button type="button" class="sheet-close-btn" (click)="closeForm()" aria-label="Close form">×</button>
+      </header>
+
+      @if (formError) {
+        <div class="notice error-banner" role="alert">
+          <span class="alert-icon">⚠</span>
+          <p>{{ formError }}</p>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="saveTransaction()">
+        <!-- Type Switcher -->
+        <div class="type-segmented-toggle">
+          <label [class.active]="form.controls.transactionType.value === 'EXPENSE'">
+            <input type="radio" formControlName="transactionType" value="EXPENSE"> Expense
+          </label>
+          <label [class.active]="form.controls.transactionType.value === 'INCOME'">
+            <input type="radio" formControlName="transactionType" value="INCOME"> Income
+          </label>
+        </div>
+
+        <!-- Amount -->
+        <div class="form-field">
+          <label for="tx-amount">Amount (INR)</label>
+          <div class="input-with-affix">
+            <span class="affix">₹</span>
+            <input id="tx-amount" type="number" inputmode="decimal" min="0.01" step="0.01"
+                   formControlName="amount" placeholder="0.00" autofocus>
+          </div>
+          @if (form.controls.amount.touched && form.controls.amount.invalid) {
+            <small class="field-error">Enter an amount greater than zero.</small>
+          }
+        </div>
+
+        <!-- Merchant / Source -->
+        <div class="form-field">
+          <label for="tx-merchant">Merchant / Source</label>
+          <input id="tx-merchant" type="text" formControlName="merchant" placeholder="e.g. Swiggy, Apple, Monthly Salary">
+          @if (form.controls.merchant.touched && form.controls.merchant.invalid) {
+            <small class="field-error">Merchant name is required.</small>
+          }
+        </div>
+
+        <!-- Category & Date -->
+        <div class="form-row-two">
+          <div class="form-field">
+            <label for="tx-category">Category</label>
+            <select id="tx-category" formControlName="category">
+              @for (category of categories; track category) {
+                <option [value]="category">{{ categoryLabel(category) }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="tx-date">Date</label>
+            <input id="tx-date" type="date" formControlName="transactionDate">
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-field">
+          <label for="tx-notes">Notes <span class="opt-label">(optional)</span></label>
+          <textarea id="tx-notes" formControlName="notes" rows="2" placeholder="Context or remarks for this transaction"></textarea>
+        </div>
+
+        <!-- Modal Actions -->
+        <div class="sheet-buttons">
+          <button type="button" class="btn-secondary" (click)="closeForm()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="submitting">
+            {{ submitting ? 'Recording...' : editing ? 'Update Transaction' : 'Save Transaction' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}

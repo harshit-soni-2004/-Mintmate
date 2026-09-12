@@ -1,28 +1,1625 @@
-.page h1 {
-  margin: 0.15rem 0 0.4rem;
+/* ==========================================================================
+   SpendSense Enterprise Fintech Dashboard Styles
+   ========================================================================== */
+
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 1360px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-.eyebrow {
-  margin: 0;
+/* --------------------------------------------------------------------------
+   Header & Period Controls
+   -------------------------------------------------------------------------- */
+.dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.5rem;
+}
+
+.header-titles {
+  h1 {
+    margin: 0.2rem 0 0.3rem;
+    font-size: clamp(1.6rem, 2.3vw, 2.1rem);
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: -0.035em;
+  }
+
+  .lede {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 450;
+  }
+}
+
+.eyebrow-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 750;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 0.75rem;
-  color: var(--accent);
+  color: var(--brand);
+  background: var(--brand-soft);
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
 }
 
-.lede {
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 0 0 2px rgba(22, 119, 90, 0.2);
+}
+
+.range-tag {
+  font-size: 0.76rem;
+  font-weight: 600;
   color: var(--muted);
-  max-width: 40rem;
 }
 
-.empty {
-  margin-top: 1.75rem;
-  padding: 2rem;
-  border: 1px dashed var(--border);
-  border-radius: 1rem;
+.dash-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.period-navigator {
+  display: inline-flex;
+  align-items: center;
   background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  padding: 0.2rem 0.35rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+
+  .nav-arrow {
+    border: none;
+    background: transparent;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+    color: var(--muted);
+    display: grid;
+    place-items: center;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background: var(--surface-subtle);
+      color: var(--ink);
+    }
+  }
+
+  .current-period {
+    padding: 0 0.65rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ink);
+    min-width: 6.8rem;
+    text-align: center;
+  }
+
+  .today-btn {
+    border: 1px solid var(--line);
+    background: var(--surface-subtle);
+    border-radius: 0.5rem;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--brand);
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: var(--brand-soft);
+    }
+  }
 }
 
-.empty h2 {
-  margin: 0 0 0.4rem;
+.add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.65rem 1.15rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  background: var(--brand);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(22, 119, 90, 0.22);
+  transition: all 0.15s ease;
+
+  .plus-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+
+  &:hover {
+    background: var(--brand-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(22, 119, 90, 0.28);
+  }
 }
+
+/* --------------------------------------------------------------------------
+   Notice & Loading States
+   -------------------------------------------------------------------------- */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 1.25rem;
+  border-radius: 0.85rem;
+  background: #fdf2f2;
+  border: 1px solid #f8b4b4;
+  color: #9b1c1c;
+
+  .alert-icon {
+    font-size: 1.2rem;
+  }
+
+  .notice-text {
+    flex: 1;
+    strong { display: block; font-size: 0.88rem; }
+    p { margin: 0.15rem 0 0; font-size: 0.8rem; }
+  }
+
+  .retry-btn {
+    border: 1px solid #e02424;
+    background: #fff;
+    color: #9b1c1c;
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+}
+
+.loading-state {
+  border: 1px dashed var(--line);
+  background: var(--surface);
+  border-radius: 1.1rem;
+  min-height: 22rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  color: var(--muted);
+
+  p {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+}
+
+.fintech-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid rgba(22, 119, 90, 0.15);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --------------------------------------------------------------------------
+   Top Summary Metric Cards
+   -------------------------------------------------------------------------- */
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.3rem 1.35rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.9rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.025);
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: transparent;
+  }
+
+  &.income-card::before { background: linear-gradient(90deg, #168456, #34d399); }
+  &.expense-card::before { background: linear-gradient(90deg, #c04f45, #f87171); }
+  &.savings-card::before { background: linear-gradient(90deg, #16775a, #3b82f6); }
+  &.rate-card::before { background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .metric-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .metric-label {
+    font-size: 0.8rem;
+    font-weight: 650;
+    color: var(--muted);
+    letter-spacing: 0.01em;
+  }
+
+  .metric-value {
+    font-size: clamp(1.45rem, 1.9vw, 1.95rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    color: var(--ink);
+
+    &.income { color: var(--income); }
+    &.expense { color: var(--expense); }
+    &.positive { color: var(--income); }
+    &.negative { color: var(--expense); }
+    &.rate { color: #4338ca; }
+  }
+
+  .metric-icon-wrap {
+    width: 2.35rem;
+    height: 2.35rem;
+    border-radius: 0.7rem;
+    display: grid;
+    place-items: center;
+
+    &.income-icon { background: var(--income-soft); color: var(--income); }
+    &.expense-icon { background: var(--expense-soft); color: var(--expense); }
+    &.savings-icon { background: var(--brand-soft); color: var(--brand); }
+    &.rate-icon { background: #eef2ff; color: #4f46e5; }
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+
+    .pill {
+      font-weight: 750;
+      padding: 0.15rem 0.5rem;
+      border-radius: 0.45rem;
+
+      &.positive {
+        background: var(--income-soft);
+        color: #0d6842;
+      }
+      &.negative {
+        background: var(--expense-soft);
+        color: #a82e25;
+      }
+    }
+
+    .comparison-note {
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    .status-badge {
+      font-size: 0.74rem;
+      font-weight: 750;
+      padding: 0.18rem 0.55rem;
+      border-radius: 0.45rem;
+
+      &.surplus { background: var(--brand-soft); color: var(--brand-dark); }
+      &.deficit { background: var(--expense-soft); color: var(--expense); }
+    }
+  }
+
+  .rate-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+
+    .rate-bar-track {
+      width: 100%;
+      height: 0.45rem;
+      background: #eef2ff;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .rate-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #6366f1, #4f46e5);
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+
+    .rate-target {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Analytics & Calendar Main Grid
+   -------------------------------------------------------------------------- */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.82fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.analytics-col-left,
+.analytics-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+/* Panels */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.4rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.025);
+  min-width: 0;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 750;
+    color: var(--ink);
+  }
+
+  .panel-sub {
+    margin: 0.2rem 0 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .panel-link {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--brand);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .cal-current-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--surface-subtle);
+    padding: 0.25rem 0.55rem;
+    border-radius: 0.45rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Spending Analytics Chart
+   -------------------------------------------------------------------------- */
+.chart-toggles {
+  display: inline-flex;
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  padding: 0.2rem;
+  border-radius: 0.65rem;
+  gap: 0.2rem;
+
+  button {
+    border: none;
+    background: transparent;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.15s ease;
+
+    &.active {
+      background: var(--surface);
+      color: var(--brand-dark);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    &:hover:not(.active) {
+      color: var(--ink);
+    }
+  }
+}
+
+.chart-viewport {
+  position: relative;
+  min-height: 12.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-top: 1rem;
+}
+
+.fintech-bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+  width: 100%;
+  height: 11rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+
+  &.chart-week, &.chart-month {
+    justify-content: space-around;
+    gap: 1.5rem;
+  }
+}
+
+.chart-col {
+  flex: 1;
+  min-width: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  cursor: pointer;
+  outline: none;
+
+  &:hover .bar-pill, &:focus .bar-pill {
+    background: var(--brand-dark);
+  }
+}
+
+.bar-slot {
+  width: 100%;
+  max-width: 1.35rem;
+  height: 8.5rem;
+  background: rgba(22, 119, 90, 0.06);
+  border-radius: 0.4rem;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.bar-pill {
+  width: 100%;
+  background: var(--brand);
+  border-radius: 0.4rem;
+  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.15s ease;
+  min-height: 3px;
+  position: relative;
+}
+
+.bar-axis-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 0.45rem;
+  font-weight: 600;
+}
+
+.chart-tooltip-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: var(--ink);
+  color: #fff;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.55rem;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.15s ease;
+
+  .tip-income {
+    color: #6ee7b7;
+    margin-left: 0.3rem;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --------------------------------------------------------------------------
+   Category Spending Allocation & Donut Chart
+   -------------------------------------------------------------------------- */
+.category-body {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.donut-wrapper {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  margin: 0 auto;
+}
+
+.donut-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.donut-bg {
+  fill: none;
+  stroke: var(--surface-subtle);
+  stroke-width: 14;
+}
+
+.donut-segment {
+  fill: none;
+  stroke-width: 14;
+  transition: stroke-dasharray 0.5s ease;
+}
+
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+
+  .donut-label {
+    font-size: 0.68rem;
+    color: var(--muted);
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .donut-val {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--ink);
+  }
+}
+
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.cat-item {
+  display: grid;
+  grid-template-columns: 1.4fr 1.6fr 1fr;
+  gap: 0.85rem;
+  align-items: center;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.65rem;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.15s ease;
+
+  &:hover, &.active-cat {
+    background: var(--surface-subtle);
+  }
+
+  .cat-leading {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+
+    .cat-color-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .cat-name {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .cat-count {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+  }
+
+  .cat-middle {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+
+    .cat-progress-track {
+      flex: 1;
+      height: 0.42rem;
+      background: var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .cat-progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      min-width: 3px;
+    }
+
+    .cat-pct {
+      font-size: 0.75rem;
+      font-weight: 650;
+      color: var(--muted);
+      min-width: 2.2rem;
+      text-align: right;
+    }
+  }
+
+  .cat-trailing {
+    text-align: right;
+
+    .cat-amt {
+      font-size: 0.88rem;
+      font-weight: 750;
+      color: var(--ink);
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Budget Benchmarks
+   -------------------------------------------------------------------------- */
+.budget-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.roadmap-note {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--surface-subtle);
+  border: 1px dashed var(--line);
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.65rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+
+  .note-tag {
+    background: var(--brand-soft);
+    color: var(--brand-dark);
+    font-weight: 750;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+}
+
+.benchmark-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.bench-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+
+  .bench-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+
+    .bench-name {
+      font-weight: 650;
+      color: var(--ink);
+    }
+    .bench-val {
+      color: var(--muted);
+      font-size: 0.76rem;
+    }
+  }
+
+  .bench-track {
+    height: 0.38rem;
+    background: var(--surface-subtle);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .bench-fill {
+    height: 100%;
+    border-radius: 999px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Activity Calendar Heatmap
+   -------------------------------------------------------------------------- */
+.calendar-wrapper {
+  margin-bottom: 1.25rem;
+}
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.3rem;
+}
+
+.cal-cell {
+  aspect-ratio: 1;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 0.65rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 0.84rem;
+  font-weight: 550;
+  color: var(--ink);
+  transition: all 0.12s ease;
+
+  &:hover:not(:disabled) {
+    background: #eef6f2;
+  }
+
+  &.adjacent-month {
+    opacity: 0.22;
+    cursor: default;
+  }
+
+  &.is-today {
+    font-weight: 850;
+    border-color: var(--brand);
+  }
+
+  &.heat-low {
+    background: #f0f7f3;
+  }
+
+  &.heat-moderate {
+    background: #d8eee2;
+    font-weight: 700;
+  }
+
+  &.heat-high {
+    background: #b6e2cb;
+    font-weight: 800;
+  }
+
+  &.is-selected {
+    background: var(--brand) !important;
+    color: #fff !important;
+    font-weight: 800;
+    box-shadow: 0 4px 12px rgba(22, 119, 90, 0.35);
+
+    .cal-spend-indicator {
+      background: #fff !important;
+    }
+  }
+
+  .cal-spend-indicator {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--brand);
+    position: absolute;
+    bottom: 4px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Selected Day Inspector Card
+   -------------------------------------------------------------------------- */
+.day-inspector {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 0.95rem;
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.inspector-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+
+  .inspector-date {
+    display: block;
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: var(--ink);
+  }
+
+  .inspector-meta {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .inspector-totals {
+    text-align: right;
+    display: flex;
+    gap: 0.75rem;
+
+    small {
+      display: block;
+      font-size: 0.68rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    strong {
+      font-size: 0.95rem;
+      font-weight: 800;
+    }
+
+    .inspector-spend strong { color: var(--expense); }
+    .inspector-income strong { color: var(--income); }
+  }
+}
+
+.inspector-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.inspector-cat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 0.22rem 0.55rem;
+  border-radius: 0.5rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--ink);
+
+  .pill-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+
+  b {
+    color: var(--expense);
+  }
+}
+
+.day-tx-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 11rem;
+  overflow-y: auto;
+}
+
+.day-tx-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+
+  .day-tx-main {
+    .day-tx-merchant {
+      display: block;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .day-tx-cat {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+  }
+
+  .day-tx-val {
+    font-size: 0.88rem;
+    font-weight: 800;
+
+    &.income { color: var(--income); }
+    &.expense { color: var(--expense); }
+  }
+}
+
+.day-empty-block {
+  text-align: center;
+  padding: 0.75rem 0 0.25rem;
+
+  p {
+    margin: 0 0 0.4rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .btn-text {
+    border: none;
+    background: transparent;
+    color: var(--brand);
+    font-size: 0.78rem;
+    font-weight: 750;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Recent Transactions Stream
+   -------------------------------------------------------------------------- */
+.recent-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.recent-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.75rem;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--surface-subtle);
+  }
+
+  .entry-avatar {
+    width: 2.35rem;
+    height: 2.35rem;
+    border-radius: 50%;
+    background: #fdf2e9;
+    color: #c05621;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+
+    &.is-income {
+      background: var(--income-soft);
+      color: var(--income);
+    }
+  }
+
+  .entry-meta {
+    flex: 1;
+    min-width: 0;
+
+    .entry-merchant {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .entry-details {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.74rem;
+
+      .entry-cat {
+        font-weight: 650;
+      }
+
+      .entry-sep, .entry-time {
+        color: var(--muted);
+      }
+    }
+  }
+
+  .entry-figure {
+    font-weight: 800;
+    font-size: 0.95rem;
+    text-align: right;
+
+    &.is-income { color: var(--income); }
+    &.is-expense { color: var(--expense); }
+  }
+
+  .entry-actions {
+    display: flex;
+    gap: 0.25rem;
+
+    .action-btn {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: 0.45rem;
+      width: 1.75rem;
+      height: 1.75rem;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 0.78rem;
+      color: var(--muted);
+      transition: all 0.15s ease;
+
+      &:hover {
+        color: var(--ink);
+        border-color: var(--brand);
+      }
+
+      &.del-action:hover {
+        color: #b33939;
+        border-color: #b33939;
+      }
+    }
+  }
+}
+
+.empty-state-box {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 1.75rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* --------------------------------------------------------------------------
+   Add / Edit Modal Dialog Sheet
+   -------------------------------------------------------------------------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(18, 28, 23, 0.48);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.form-sheet {
+  width: min(32rem, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: 1.25rem;
+  padding: 1.6rem;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.2);
+
+  .sheet-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.2rem;
+
+    .sheet-badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--brand);
+    }
+
+    h2 {
+      margin: 0.15rem 0 0;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .sheet-close-btn {
+      border: none;
+      background: none;
+      font-size: 1.75rem;
+      color: var(--muted);
+      cursor: pointer;
+      line-height: 1;
+
+      &:hover {
+        color: var(--ink);
+      }
+    }
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.05rem;
+  }
+
+  .type-segmented-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.45rem;
+    background: var(--surface-subtle);
+    border: 1px solid var(--line);
+    padding: 0.3rem;
+    border-radius: 0.75rem;
+
+    label {
+      text-align: center;
+      padding: 0.55rem;
+      border-radius: 0.55rem;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--muted);
+      transition: all 0.15s ease;
+
+      input { display: none; }
+
+      &.active {
+        background: var(--surface);
+        color: var(--brand-dark);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      }
+    }
+  }
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--ink);
+
+      .opt-label {
+        font-weight: 400;
+        color: var(--muted);
+        font-size: 0.74rem;
+      }
+    }
+
+    input, select, textarea {
+      border: 1px solid var(--line);
+      border-radius: 0.7rem;
+      padding: 0.65rem 0.85rem;
+      font: inherit;
+      background: var(--surface);
+      color: var(--ink);
+      transition: border-color 0.15s ease;
+
+      &:focus {
+        border-color: var(--brand);
+        outline: none;
+      }
+    }
+  }
+
+  .input-with-affix {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 0.7rem;
+    background: var(--surface);
+    overflow: hidden;
+
+    &:focus-within {
+      border-color: var(--brand);
+    }
+
+    .affix {
+      padding: 0.65rem 0.85rem;
+      font-weight: 800;
+      color: var(--muted);
+      background: var(--surface-subtle);
+      border-right: 1px solid var(--line);
+    }
+
+    input {
+      border: none !important;
+      border-radius: 0;
+      flex: 1;
+      width: 100%;
+    }
+  }
+
+  .field-error {
+    color: var(--expense);
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .form-row-two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem;
+  }
+
+  .sheet-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+
+    button {
+      padding: 0.7rem 1.25rem;
+      border-radius: 0.7rem;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+    }
+
+    .btn-secondary {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+
+      &:hover {
+        background: var(--surface-subtle);
+      }
+    }
+
+    .btn-primary {
+      border: none;
+      background: var(--brand);
+      color: #fff;
+
+      &:hover {
+        background: var(--brand-dark);
+      }
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Layout & Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 1280px) {
+  .summary-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analytics-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .dash-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dash-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .period-navigator {
+    flex: 1;
+    justify-content: space-between;
+  }
+
+  .category-body {
+    grid-template-columns: 1fr;
+  }
+
+  .donut-wrapper {
+    margin-bottom: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .summary-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .form-sheet {
+    border-radius: 1.25rem 1.25rem 0 0;
+    max-height: 94vh;
+  }
+
+  .form-row-two {
+    grid-template-columns: 1fr;
+  }
+
+  .cat-item {
+    grid-template-columns: 1fr auto;
+    .cat-middle { display: none; }
+  }
+
+  .inspector-head {
+    flex-direction: column;
+    gap: 0.5rem;
+    .inspector-totals { text-align: left; }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Dashboard Budget Status Panel
+   -------------------------------------------------------------------------- */
+.budget-panel {
+  margin-top: 1.5rem;
+}
+
+.dash-budget-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dash-budget-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--border);
+}
+
+.kpi-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.kpi-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.kpi-val {
+  font-size: 1rem;
+  font-weight: 750;
+  color: var(--ink);
+}
+
+.kpi-val.expense {
+  color: #dc2626;
+}
+
+.health-pills {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pill-mini {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+}
+
+.pill-mini.on-track {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.pill-mini.warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+}
+
+.pill-mini.exceeded {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+}
+
+.dash-budget-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.dash-budget-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-subtle, rgba(0,0,0,0.05));
+}
+
+.dash-budget-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.b-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.b-item-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.b-cat-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.b-status-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+}
+
+.b-status-pill.status-on-track {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.b-status-pill.status-warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+
+.b-status-pill.status-exceeded {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+.b-item-right {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.b-spent {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.b-sep {
+  color: var(--muted);
+  margin: 0 0.2rem;
+}
+
+.b-limit {
+  color: var(--muted);
+}
+
+.b-item-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.b-item-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+
+.b-item-fill.fill-on-track {
+  background: #10b981;
+}
+
+.b-item-fill.fill-warning {
+  background: #f59e0b;
+}
+
+.b-item-fill.fill-exceeded {
+  background: #dc2626;
+}
+
+.b-item-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.b-pct.status-on-track { color: #059669; }
+.b-pct.status-warning { color: #d97706; }
+.b-pct.status-exceeded { color: #dc2626; }
+
+.b-rem {
+  color: var(--muted);
+}
+
+.over-alert {
+  color: #dc2626;
+  font-weight: 700;
+}
+

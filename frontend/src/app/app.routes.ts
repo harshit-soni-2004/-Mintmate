@@ -36,8 +36,16 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/transactions/transactions.component').then((m) => m.TransactionsComponent),
       },
-      { path: 'budgets', component: PlaceholderPageComponent, data: { title: 'Budgets' } },
-      { path: 'goals', component: PlaceholderPageComponent, data: { title: 'Goals' } },
+      {
+        path: 'budgets',
+        loadComponent: () =>
+          import('./features/budgets/budgets.component').then((m) => m.BudgetsComponent),
+      },
+      {
+        path: 'goals',
+        loadComponent: () =>
+          import('./features/goals/goals.component').then((m) => m.GoalsComponent),
+      },
       {
         path: 'insights',
         component: PlaceholderPageComponent,
