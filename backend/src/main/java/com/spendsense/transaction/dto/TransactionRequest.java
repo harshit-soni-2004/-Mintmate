@@ -15,7 +15,7 @@ public record TransactionRequest(
         @NotNull @DecimalMin(value = "0.00", inclusive = false) @Digits(integer = 17, fraction = 2) BigDecimal amount,
         @NotBlank @Size(max = 120) String merchant,
         @Size(max = 255) String description,
-        @NotNull TransactionCategory category,
+        TransactionCategory category,
         @NotNull TransactionType transactionType,
         PaymentMethod paymentMethod,
         @NotNull LocalDate transactionDate,

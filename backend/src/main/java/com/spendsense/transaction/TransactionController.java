@@ -1,6 +1,7 @@
 package com.spendsense.transaction;
 
 import com.spendsense.common.api.ApiResponse;
+import com.spendsense.transaction.dto.CategoryCorrectionRequest;
 import com.spendsense.transaction.dto.TransactionRequest;
 import com.spendsense.transaction.dto.TransactionResponse;
 import jakarta.validation.Valid;
@@ -14,6 +15,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -46,9 +48,10 @@ public class TransactionController {
             @RequestParam(required = false) BigDecimal minAmount,
             @RequestParam(required = false) BigDecimal maxAmount,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false, defaultValue = "newest") String sort) {
+            @RequestParam(required = false, defaultValue = "newest") String sort,
+            @RequestParam(required = false) Boolean needsReview) {
         TransactionService.TransactionPage result = transactionService.list(
-                page, size, category, type, paymentMethod, fromDate, toDate, minAmount, maxAmount, search, sort);
+                page, size, category, type, paymentMethod, fromDate, toDate, minAmount, maxAmount, search, sort, needsReview);
         return ApiResponse.of(result.content(), result.meta());
     }
 
@@ -66,6 +69,18 @@ public class TransactionController {
     @PutMapping("/{id}")
     public ApiResponse<TransactionResponse> update(@PathVariable UUID id, @Valid @RequestBody TransactionRequest request) {
         return ApiResponse.of(transactionService.update(id, request));
+    }
+
+    @PatchMapping("/{id}/category")
+    public ApiResponse<TransactionResponse> correctCategory(
+            @PathVariable UUID id,
+            @Valid @RequestBody CategoryCorrectionRequest request) {
+        return ApiResponse.of(transactionService.correctCategory(id, request.category()));
+    }
+
+    @PostMapping("/{id}/confirm-category")
+    public ApiResponse<TransactionResponse> confirmCategory(@PathVariable UUID id) {
+        return ApiResponse.of(transactionService.confirmCategory(id));
     }
 
     @DeleteMapping("/{id}")

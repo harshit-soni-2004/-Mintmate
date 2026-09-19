@@ -2,6 +2,7 @@ import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
+  CategorizationAlternative,
   PaymentMethod,
   Transaction,
   TransactionCategory,
@@ -50,6 +51,7 @@ export class TransactionsComponent implements OnInit {
   submitting = false;
   showForm = false;
   editing: Transaction | null = null;
+  activeReviewTransaction: Transaction | null = null;
   page = 0;
   totalPages = 0;
   totalElements = 0;
@@ -59,6 +61,7 @@ export class TransactionsComponent implements OnInit {
     category: '' as TransactionCategory | '',
     type: '' as TransactionType | '',
     paymentMethod: '' as PaymentMethod | '',
+    reviewStatus: '' as 'NEEDS_REVIEW' | '',
     sort: 'newest',
   });
 
@@ -66,7 +69,7 @@ export class TransactionsComponent implements OnInit {
     amount: [null as number | null, [Validators.required, Validators.min(0.01)]],
     merchant: ['', [Validators.required, Validators.maxLength(120)]],
     description: ['', [Validators.maxLength(255)]],
-    category: ['OTHER' as TransactionCategory, Validators.required],
+    category: ['AUTO' as TransactionCategory | 'AUTO'],
     transactionType: ['EXPENSE' as TransactionType, Validators.required],
     paymentMethod: ['UPI' as PaymentMethod | ''],
     transactionDate: [new Date().toISOString().slice(0, 10), Validators.required],
@@ -90,6 +93,7 @@ export class TransactionsComponent implements OnInit {
       category: filterValues.category || undefined,
       type: filterValues.type || undefined,
       paymentMethod: filterValues.paymentMethod || undefined,
+      needsReview: filterValues.reviewStatus === 'NEEDS_REVIEW' ? true : undefined,
       sort: filterValues.sort || 'newest',
     };
 
@@ -113,6 +117,7 @@ export class TransactionsComponent implements OnInit {
       category: '',
       type: '',
       paymentMethod: '',
+      reviewStatus: '',
       sort: 'newest',
     });
     this.load(0);
@@ -124,7 +129,7 @@ export class TransactionsComponent implements OnInit {
       amount: null,
       merchant: '',
       description: '',
-      category: 'OTHER',
+      category: 'AUTO',
       transactionType: 'EXPENSE',
       paymentMethod: 'UPI',
       transactionDate: new Date().toISOString().slice(0, 10),
@@ -160,11 +165,12 @@ export class TransactionsComponent implements OnInit {
     }
     this.submitting = true;
     const raw = this.form.getRawValue();
+    const isAuto = raw.category === 'AUTO' || !raw.category;
     const payload: TransactionRequest = {
       amount: raw.amount!,
       merchant: raw.merchant.trim(),
       description: raw.description.trim() || null,
-      category: raw.category,
+      category: isAuto ? null : (raw.category as TransactionCategory),
       transactionType: raw.transactionType,
       paymentMethod: (raw.paymentMethod as PaymentMethod) || null,
       transactionDate: raw.transactionDate,
@@ -207,14 +213,92 @@ export class TransactionsComponent implements OnInit {
     }
   }
 
-  categoryLabel(category: string): string {
+  // --- Phase 6H: Categorization Review & Correction Actions ---
+
+  openCategoryPicker(transaction: Transaction, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.activeReviewTransaction = transaction;
+  }
+
+  closeCategoryPicker(): void {
+    this.activeReviewTransaction = null;
+  }
+
+  selectCategory(category: TransactionCategory): void {
+    if (!this.activeReviewTransaction) {
+      return;
+    }
+    const target = this.activeReviewTransaction;
+    const previousCategory = target.category;
+    const previousReviewState = target.requiresUserConfirmation;
+
+    // Optimistic UI update
+    target.category = category;
+    target.requiresUserConfirmation = false;
+    this.closeCategoryPicker();
+
+    this.transactionsApi.correctCategory(target.id, category).subscribe({
+      next: (response) => {
+        if (response.data) {
+          Object.assign(target, response.data);
+        }
+      },
+      error: () => {
+        target.category = previousCategory;
+        target.requiresUserConfirmation = previousReviewState;
+        this.error = 'Could not update transaction category. Please try again.';
+      },
+    });
+  }
+
+  confirmCategory(transaction: Transaction, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    const previousReviewState = transaction.requiresUserConfirmation;
+    transaction.requiresUserConfirmation = false;
+
+    this.transactionsApi.confirmCategory(transaction.id).subscribe({
+      next: (response) => {
+        if (response.data) {
+          Object.assign(transaction, response.data);
+        }
+      },
+      error: () => {
+        transaction.requiresUserConfirmation = previousReviewState;
+        this.error = 'Could not confirm category. Please try again.';
+      },
+    });
+  }
+
+  quickChangeCategory(transaction: Transaction, newCategory: TransactionCategory, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.activeReviewTransaction = transaction;
+    this.selectCategory(newCategory);
+  }
+
+  getTopAlternatives(transaction: Transaction): CategorizationAlternative[] {
+    if (!transaction.alternatives || !transaction.alternatives.length) {
+      return [];
+    }
+    return transaction.alternatives
+      .filter((alt) => alt.category !== transaction.category && alt.confidence >= 0.05)
+      .slice(0, 2);
+  }
+
+  categoryLabel(category?: string | null): string {
+    if (!category) return 'Other';
     switch (category) {
       case 'FOOD': return 'Food & Dining';
       case 'TRAVEL': return 'Travel & Commute';
       case 'SHOPPING': return 'Shopping';
       case 'ENTERTAINMENT': return 'Entertainment';
       case 'BILLS': return 'Bills & Utilities';
-      case 'HEALTH': return 'Health';
+      case 'HEALTH': return 'Health & Wellness';
       case 'EDUCATION': return 'Education';
       case 'PERSONAL': return 'Personal Care';
       default: return 'Other';

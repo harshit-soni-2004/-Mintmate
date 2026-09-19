@@ -29,6 +29,8 @@ describe('TransactionsComponent', () => {
       'create',
       'update',
       'delete',
+      'confirmCategory',
+      'correctCategory',
     ]);
 
     apiSpy.list.and.returnValue(
@@ -105,6 +107,42 @@ describe('TransactionsComponent', () => {
     expect(component.showForm).toBeFalse();
   });
 
+  it('creates transaction with auto-categorization when category is AUTO', () => {
+    apiSpy.create.and.returnValue(
+      of({
+        data: mockTransaction,
+        error: null,
+        meta: null,
+      }),
+    );
+
+    component.openCreate();
+    component.form.setValue({
+      amount: 150,
+      merchant: 'Uber Ride',
+      description: 'Trip to office',
+      category: 'AUTO',
+      transactionType: 'EXPENSE',
+      paymentMethod: 'UPI',
+      transactionDate: '2026-09-08',
+      notes: '',
+    });
+
+    component.save();
+
+    expect(apiSpy.create).toHaveBeenCalledWith({
+      amount: 150,
+      merchant: 'Uber Ride',
+      description: 'Trip to office',
+      category: null,
+      transactionType: 'EXPENSE' as TransactionType,
+      paymentMethod: 'UPI',
+      transactionDate: '2026-09-08',
+      notes: null,
+    });
+    expect(component.showForm).toBeFalse();
+  });
+
   it('opens edit modal and populates all fields', () => {
     component.openEdit(mockTransaction);
     expect(component.showForm).toBeTrue();
@@ -114,12 +152,13 @@ describe('TransactionsComponent', () => {
     expect(component.form.value.description).toBe('Dinner delivery');
   });
 
-  it('applies filters with search, category, type, and paymentMethod', () => {
+  it('applies filters with search, category, type, paymentMethod, and reviewStatus', () => {
     component.filters.setValue({
       search: 'Swiggy',
       category: 'FOOD',
       type: 'EXPENSE',
       paymentMethod: 'UPI',
+      reviewStatus: 'NEEDS_REVIEW',
       sort: 'highest_amount',
     });
 
@@ -131,8 +170,76 @@ describe('TransactionsComponent', () => {
         category: 'FOOD',
         type: 'EXPENSE',
         paymentMethod: 'UPI',
+        needsReview: true,
         sort: 'highest_amount',
       }),
     );
+  });
+
+  it('confirms suggested category and updates transaction state', () => {
+    const pendingTx: Transaction = {
+      ...mockTransaction,
+      id: 'tx-2',
+      category: 'FOOD',
+      requiresUserConfirmation: true,
+    };
+
+    apiSpy.confirmCategory.and.returnValue(
+      of({
+        data: { ...pendingTx, requiresUserConfirmation: false },
+        error: null,
+        meta: null,
+      }),
+    );
+
+    component.confirmCategory(pendingTx);
+
+    expect(pendingTx.requiresUserConfirmation).toBeFalse();
+    expect(apiSpy.confirmCategory).toHaveBeenCalledWith('tx-2');
+  });
+
+  it('corrects category and updates transaction state', () => {
+    const reviewTx: Transaction = {
+      ...mockTransaction,
+      id: 'tx-3',
+      category: 'OTHER',
+      requiresUserConfirmation: true,
+    };
+
+    apiSpy.correctCategory.and.returnValue(
+      of({
+        data: { ...reviewTx, category: 'FOOD', requiresUserConfirmation: false },
+        error: null,
+        meta: null,
+      }),
+    );
+
+    component.openCategoryPicker(reviewTx);
+    expect(component.activeReviewTransaction).toBe(reviewTx);
+
+    component.selectCategory('FOOD');
+
+    expect(reviewTx.category).toBe('FOOD');
+    expect(reviewTx.requiresUserConfirmation).toBeFalse();
+    expect(component.activeReviewTransaction).toBeNull();
+    expect(apiSpy.correctCategory).toHaveBeenCalledWith('tx-3', 'FOOD');
+  });
+
+  it('extracts top alternatives excluding the current category', () => {
+    const txWithAlts: Transaction = {
+      ...mockTransaction,
+      category: 'OTHER',
+      alternatives: [
+        { category: 'OTHER', confidence: 0.5 },
+        { category: 'FOOD', confidence: 0.35 },
+        { category: 'SHOPPING', confidence: 0.12 },
+        { category: 'TRAVEL', confidence: 0.03 },
+      ],
+    };
+
+    const alts = component.getTopAlternatives(txWithAlts);
+    expect(alts.length).toBe(2);
+    expect(alts[0].category).toBe('FOOD');
+    expect(alts[1].category).toBe('SHOPPING');
   });
 });

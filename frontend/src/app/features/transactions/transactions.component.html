@@ -42,6 +42,11 @@
       }
     </select>
 
+    <select formControlName="reviewStatus" aria-label="Filter review status">
+      <option value="">All Review Statuses</option>
+      <option value="NEEDS_REVIEW">Needs Review</option>
+    </select>
+
     <select formControlName="sort" aria-label="Sort transactions">
       <option value="newest">Newest First</option>
       <option value="oldest">Oldest First</option>
@@ -97,13 +102,74 @@
                 <span class="merchant-desc">{{ transaction.description }}</span>
               }
               <small class="mobile-sub">
-                {{ categoryLabel(transaction.category) }} • {{ paymentMethodLabel(transaction.paymentMethod) }} • {{ transaction.transactionDate | date:'d MMM' }}
+                {{ categoryLabel(transaction.category) }}
+                @if (transaction.requiresUserConfirmation) {
+                  <span class="mobile-review-pill">Needs Review</span>
+                  <button type="button" class="mobile-review-btn" (click)="openCategoryPicker(transaction, $event)">Review</button>
+                } • {{ paymentMethodLabel(transaction.paymentMethod) }} • {{ transaction.transactionDate | date:'d MMM' }}
               </small>
             </div>
           </div>
 
           <div class="category-cell">
-            <span class="category-tag">{{ categoryLabel(transaction.category) }}</span>
+            @if (transaction.requiresUserConfirmation) {
+              <div class="review-box">
+                <div class="review-badge-row">
+                  <span class="category-tag suggested" [title]="'Suggested: ' + categoryLabel(transaction.predictedCategory || transaction.category)">
+                    {{ categoryLabel(transaction.category) }}
+                  </span>
+                  <span class="review-pill" title="Needs review">Review</span>
+                </div>
+                <div class="review-actions">
+                  <button
+                    type="button"
+                    class="btn-accept"
+                    (click)="confirmCategory(transaction, $event)"
+                    title="Accept suggested category"
+                    aria-label="Accept category"
+                  >
+                    ✓ Accept
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-change"
+                    (click)="openCategoryPicker(transaction, $event)"
+                    title="Change category"
+                    aria-label="Change category"
+                  >
+                    Change
+                  </button>
+                </div>
+                @if (getTopAlternatives(transaction).length > 0) {
+                  <div class="alternatives-row">
+                    @for (alt of getTopAlternatives(transaction); track alt.category) {
+                      <button
+                        type="button"
+                        class="alt-chip"
+                        (click)="quickChangeCategory(transaction, alt.category, $event)"
+                        [title]="'Switch to ' + categoryLabel(alt.category)"
+                      >
+                        {{ categoryLabel(alt.category) }}
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="confirmed-category-wrapper">
+                <button
+                  type="button"
+                  class="category-tag confirmed"
+                  (click)="openCategoryPicker(transaction, $event)"
+                  title="Click to change category"
+                >
+                  {{ categoryLabel(transaction.category) }}
+                  @if (transaction.confidenceLevel === 'HIGH' || transaction.categorizationSource === 'USER_MEMORY') {
+                    <span class="verified-icon" title="High confidence / Verified">✓</span>
+                  }
+                </button>
+              </div>
+            }
           </div>
 
           <div class="method-cell">
@@ -225,6 +291,9 @@
           <div class="field-item">
             <label for="f-category">Category <span class="req">*</span></label>
             <select id="f-category" formControlName="category">
+              @if (!editing) {
+                <option value="AUTO">✨ Auto-categorize (Recommended)</option>
+              }
               @for (category of categories; track category) {
                 <option [value]="category">{{ categoryLabel(category) }}</option>
               }
@@ -269,6 +338,68 @@
           {{ submitting ? 'Saving transaction…' : editing ? 'Update transaction' : 'Create transaction' }}
         </button>
       </form>
+    </section>
+  </div>
+}
+
+<!-- Category Picker Modal Sheet -->
+@if (activeReviewTransaction) {
+  <div class="modal-backdrop" (click)="closeCategoryPicker()">
+    <section
+      class="picker-sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Change Category"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="sheet-header">
+        <div>
+          <p class="eyebrow">Category Assignment</p>
+          <h2>Change Category</h2>
+          <p class="picker-sub">
+            For <strong>{{ activeReviewTransaction.merchant }}</strong>
+            @if (activeReviewTransaction.description) {
+              <span> • {{ activeReviewTransaction.description }}</span>
+            }
+          </p>
+        </div>
+        <button class="close-btn" (click)="closeCategoryPicker()" aria-label="Close category picker">×</button>
+      </header>
+
+      @if (activeReviewTransaction.alternatives && activeReviewTransaction.alternatives.length > 0) {
+        <div class="picker-section">
+          <span class="picker-section-title">AI Suggested Matches</span>
+          <div class="suggestions-grid">
+            @for (alt of activeReviewTransaction.alternatives; track alt.category) {
+              <button
+                type="button"
+                class="suggestion-btn"
+                [class.active]="activeReviewTransaction.category === alt.category"
+                (click)="selectCategory(alt.category)"
+              >
+                <span class="suggestion-name">{{ categoryLabel(alt.category) }}</span>
+                <span class="suggestion-confidence">{{ (alt.confidence * 100 | number:'1.0-0') }}% match</span>
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="picker-section">
+        <span class="picker-section-title">All Categories</span>
+        <div class="category-grid">
+          @for (cat of categories; track cat) {
+            <button
+              type="button"
+              class="category-option-btn"
+              [class.selected]="activeReviewTransaction.category === cat"
+              (click)="selectCategory(cat)"
+            >
+              {{ categoryLabel(cat) }}
+            </button>
+          }
+        </div>
+      </div>
     </section>
   </div>
 }

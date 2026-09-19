@@ -24,6 +24,7 @@ export interface TransactionFilterParams {
   minAmount?: number | null;
   maxAmount?: number | null;
   sort?: string;
+  needsReview?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -50,6 +51,9 @@ export class TransactionService {
       params = params.set('maxAmount', filters.maxAmount.toString());
     }
     if (filters.sort) params = params.set('sort', filters.sort);
+    if (filters.needsReview !== undefined && filters.needsReview !== null) {
+      params = params.set('needsReview', filters.needsReview.toString());
+    }
 
     return this.http.get<ApiResponse<Transaction[], PageMeta>>(this.url, { params });
   }
@@ -62,6 +66,18 @@ export class TransactionService {
 
   update(id: string, payload: TransactionRequest): Observable<ApiResponse<Transaction>> {
     return this.http.put<ApiResponse<Transaction>>(`${this.url}/${id}`, payload).pipe(
+      tap(() => this.mutationSubject.next())
+    );
+  }
+
+  correctCategory(id: string, category: TransactionCategory): Observable<ApiResponse<Transaction>> {
+    return this.http.patch<ApiResponse<Transaction>>(`${this.url}/${id}/category`, { category }).pipe(
+      tap(() => this.mutationSubject.next())
+    );
+  }
+
+  confirmCategory(id: string): Observable<ApiResponse<Transaction>> {
+    return this.http.post<ApiResponse<Transaction>>(`${this.url}/${id}/confirm-category`, {}).pipe(
       tap(() => this.mutationSubject.next())
     );
   }

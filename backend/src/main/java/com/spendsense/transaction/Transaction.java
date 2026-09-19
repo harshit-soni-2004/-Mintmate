@@ -59,6 +59,27 @@ public class Transaction {
     @Column(length = 1000)
     private String notes;
 
+    @Column(name = "categorization_confidence", precision = 5, scale = 4)
+    private BigDecimal categorizationConfidence;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "categorization_confidence_level", length = 16)
+    private com.spendsense.categorization.ConfidenceLevel categorizationConfidenceLevel;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "categorization_source", length = 32)
+    private com.spendsense.categorization.CategorizationSource categorizationSource;
+
+    @Column(name = "requires_review", nullable = false)
+    private boolean requiresReview;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "predicted_category", length = 32)
+    private TransactionCategory predictedCategory;
+
+    @Column(name = "categorization_alternatives", length = 1000)
+    private String categorizationAlternatives;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -76,9 +97,25 @@ public class Transaction {
     public Transaction(User user, BigDecimal amount, String merchant, String description,
                        TransactionCategory category, TransactionType transactionType,
                        PaymentMethod paymentMethod, LocalDate transactionDate, String notes) {
+        this(user, amount, merchant, description, category, transactionType, paymentMethod, transactionDate, notes,
+                null, null, null, false, null, null);
+    }
+
+    public Transaction(User user, BigDecimal amount, String merchant, String description,
+                       TransactionCategory category, TransactionType transactionType,
+                       PaymentMethod paymentMethod, LocalDate transactionDate, String notes,
+                       BigDecimal categorizationConfidence, com.spendsense.categorization.ConfidenceLevel categorizationConfidenceLevel,
+                       com.spendsense.categorization.CategorizationSource categorizationSource, boolean requiresReview,
+                       TransactionCategory predictedCategory, String categorizationAlternatives) {
         this.id = UUID.randomUUID();
         this.user = user;
         update(amount, merchant, description, category, transactionType, paymentMethod, transactionDate, notes);
+        this.categorizationConfidence = categorizationConfidence;
+        this.categorizationConfidenceLevel = categorizationConfidenceLevel;
+        this.categorizationSource = categorizationSource;
+        this.requiresReview = requiresReview;
+        this.predictedCategory = predictedCategory;
+        this.categorizationAlternatives = categorizationAlternatives;
     }
 
     public void update(BigDecimal amount, String merchant, TransactionCategory category,
@@ -97,6 +134,34 @@ public class Transaction {
         this.paymentMethod = paymentMethod;
         this.transactionDate = transactionDate;
         this.notes = notes;
+    }
+
+    public void setCategory(TransactionCategory category) {
+        this.category = category;
+    }
+
+    public void setRequiresReview(boolean requiresReview) {
+        this.requiresReview = requiresReview;
+    }
+
+    public void setCategorizationSource(com.spendsense.categorization.CategorizationSource categorizationSource) {
+        this.categorizationSource = categorizationSource;
+    }
+
+    public void setPredictedCategory(TransactionCategory predictedCategory) {
+        this.predictedCategory = predictedCategory;
+    }
+
+    public void setCategorizationConfidence(BigDecimal categorizationConfidence) {
+        this.categorizationConfidence = categorizationConfidence;
+    }
+
+    public void setCategorizationConfidenceLevel(com.spendsense.categorization.ConfidenceLevel categorizationConfidenceLevel) {
+        this.categorizationConfidenceLevel = categorizationConfidenceLevel;
+    }
+
+    public void setCategorizationAlternatives(String categorizationAlternatives) {
+        this.categorizationAlternatives = categorizationAlternatives;
     }
 
     @PrePersist
@@ -122,6 +187,12 @@ public class Transaction {
     public PaymentMethod getPaymentMethod() { return paymentMethod; }
     public LocalDate getTransactionDate() { return transactionDate; }
     public String getNotes() { return notes; }
+    public BigDecimal getCategorizationConfidence() { return categorizationConfidence; }
+    public com.spendsense.categorization.ConfidenceLevel getCategorizationConfidenceLevel() { return categorizationConfidenceLevel; }
+    public com.spendsense.categorization.CategorizationSource getCategorizationSource() { return categorizationSource; }
+    public boolean isRequiresReview() { return requiresReview; }
+    public TransactionCategory getPredictedCategory() { return predictedCategory; }
+    public String getCategorizationAlternatives() { return categorizationAlternatives; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

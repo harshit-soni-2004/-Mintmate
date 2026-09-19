@@ -27,6 +27,13 @@ export interface AuthResponse {
 export type TransactionCategory = 'FOOD' | 'TRAVEL' | 'SHOPPING' | 'ENTERTAINMENT' | 'BILLS' | 'HEALTH' | 'EDUCATION' | 'PERSONAL' | 'OTHER';
 export type TransactionType = 'EXPENSE' | 'INCOME';
 export type PaymentMethod = 'UPI' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CASH' | 'BANK_TRANSFER' | 'OTHER';
+export type CategorizationConfidenceLevel = 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
+export type CategorizationSource = 'RULE' | 'USER_MEMORY' | 'ML' | 'FALLBACK' | 'MANUAL';
+
+export interface CategorizationAlternative {
+  category: TransactionCategory;
+  confidence: number;
+}
 
 export interface Transaction {
   id: string;
@@ -40,13 +47,19 @@ export interface Transaction {
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
+  confidence?: number | null;
+  confidenceLevel?: CategorizationConfidenceLevel | null;
+  categorizationSource?: CategorizationSource | null;
+  requiresUserConfirmation?: boolean;
+  predictedCategory?: TransactionCategory | null;
+  alternatives?: CategorizationAlternative[];
 }
 
 export interface TransactionRequest {
   amount: number;
   merchant: string;
   description?: string | null;
-  category: TransactionCategory;
+  category?: TransactionCategory | null;
   transactionType: TransactionType;
   paymentMethod?: PaymentMethod | null;
   transactionDate: string;
