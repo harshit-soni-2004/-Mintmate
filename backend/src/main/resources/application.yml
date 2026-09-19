@@ -35,3 +35,23 @@ logging:
   level:
     com.spendsense: INFO
     org.springframework.security: WARN
+
+spendsense:
+  categorization:
+    ml:
+      enabled: ${ML_CATEGORIZATION_ENABLED:true}
+      artifact-path: ${ML_MODEL_ARTIFACT_PATH:classpath:model/baseline_model_v1.json}
+    semantic:
+      enabled: ${SEMANTIC_CATEGORIZATION_ENABLED:false}
+      artifact-path: ${SEMANTIC_MODEL_ARTIFACT_PATH:classpath:model/semantic_classifier_v1.json}
+      onnx-path: ${SEMANTIC_ONNX_PATH:ml/models/semantic_v1/minilm_l6_v2.onnx}
+      vocab-path: ${SEMANTIC_VOCAB_PATH:classpath:model/minilm_vocab.txt}
+      escalation-threshold: ${SEMANTIC_ESCALATION_THRESHOLD:0.60}
+    hybrid:
+      enabled: ${HYBRID_CATEGORIZATION_ENABLED:false}
+      artifact-path: ${HYBRID_MODEL_ARTIFACT_PATH:classpath:model/hybrid_model_v1.json}
+    policy:
+      high-threshold: ${CATEGORIZATION_HIGH_THRESHOLD:0.85}
+      medium-threshold: ${CATEGORIZATION_MEDIUM_THRESHOLD:0.60}
+
+

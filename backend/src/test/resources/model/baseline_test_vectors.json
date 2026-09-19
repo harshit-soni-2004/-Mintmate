@@ -1,0 +1,242 @@
+[
+  {
+    "inputText": "starbucks coffee seattle",
+    "expectedCategory": "FOOD",
+    "confidence": 0.9563859081845576,
+    "probabilities": {
+      "BILLS": 0.003757342459526678,
+      "EDUCATION": 0.0024986802866907693,
+      "ENTERTAINMENT": 0.010244767951712275,
+      "FOOD": 0.9563859081845576,
+      "HEALTH": 0.002921314992582732,
+      "OTHER": 0.004514442354636033,
+      "PERSONAL": 0.002827711093180756,
+      "SHOPPING": 0.01103787291593311,
+      "TRAVEL": 0.005811959761180097
+    }
+  },
+  {
+    "inputText": "uber trip help.uber.com",
+    "expectedCategory": "TRAVEL",
+    "confidence": 0.9286462426924237,
+    "probabilities": {
+      "BILLS": 0.0025769834375964722,
+      "EDUCATION": 0.0012489977068111072,
+      "ENTERTAINMENT": 0.05006290279803367,
+      "FOOD": 0.005801980336054763,
+      "HEALTH": 0.004178560412473455,
+      "OTHER": 0.001357001135748627,
+      "PERSONAL": 0.001392558294120995,
+      "SHOPPING": 0.004734773186737105,
+      "TRAVEL": 0.9286462426924237
+    }
+  },
+  {
+    "inputText": "walmart supercenter store",
+    "expectedCategory": "SHOPPING",
+    "confidence": 0.9937134800289422,
+    "probabilities": {
+      "BILLS": 0.00044594919077239545,
+      "EDUCATION": 0.00025129070868712167,
+      "ENTERTAINMENT": 0.0003841244155004142,
+      "FOOD": 0.0011444242863063675,
+      "HEALTH": 0.002001688457342839,
+      "OTHER": 0.0003198871178395458,
+      "PERSONAL": 0.0010403305565408888,
+      "SHOPPING": 0.9937134800289422,
+      "TRAVEL": 0.0006988252380680384
+    }
+  },
+  {
+    "inputText": "netflix streaming sub",
+    "expectedCategory": "ENTERTAINMENT",
+    "confidence": 0.8987430510397412,
+    "probabilities": {
+      "BILLS": 0.00873979688325137,
+      "EDUCATION": 0.005298025576096115,
+      "ENTERTAINMENT": 0.8987430510397412,
+      "FOOD": 0.03649034390660854,
+      "HEALTH": 0.007502195758364725,
+      "OTHER": 0.005036905205506604,
+      "PERSONAL": 0.0055636919698472094,
+      "SHOPPING": 0.015507087316805487,
+      "TRAVEL": 0.017118902343778764
+    }
+  },
+  {
+    "inputText": "duke energy electric web payment",
+    "expectedCategory": "BILLS",
+    "confidence": 0.983243439621531,
+    "probabilities": {
+      "BILLS": 0.983243439621531,
+      "EDUCATION": 0.0008375366951534597,
+      "ENTERTAINMENT": 0.0023428118909757513,
+      "FOOD": 0.0024576821050087843,
+      "HEALTH": 0.0025139429659322226,
+      "OTHER": 0.0007887493379188243,
+      "PERSONAL": 0.0009457117688561952,
+      "SHOPPING": 0.0033938034732698312,
+      "TRAVEL": 0.0034763221413541554
+    }
+  },
+  {
+    "inputText": "mayo clinic medical pmt web",
+    "expectedCategory": "HEALTH",
+    "confidence": 0.9854209861019362,
+    "probabilities": {
+      "BILLS": 0.0041908351750941505,
+      "EDUCATION": 0.0009264178182323566,
+      "ENTERTAINMENT": 0.001789954242847616,
+      "FOOD": 0.00214251084332512,
+      "HEALTH": 0.9854209861019362,
+      "OTHER": 0.0006057964450600531,
+      "PERSONAL": 0.0008814079102298688,
+      "SHOPPING": 0.00211135836491022,
+      "TRAVEL": 0.0019307330983643154
+    }
+  },
+  {
+    "inputText": "coursera online course subscription",
+    "expectedCategory": "EDUCATION",
+    "confidence": 0.6405545773907348,
+    "probabilities": {
+      "BILLS": 0.003299725381611742,
+      "EDUCATION": 0.6405545773907348,
+      "ENTERTAINMENT": 0.30102163252912156,
+      "FOOD": 0.005177675021366787,
+      "HEALTH": 0.0028597600460609452,
+      "OTHER": 0.00206427553050131,
+      "PERSONAL": 0.004199849563325744,
+      "SHOPPING": 0.030752011816642718,
+      "TRAVEL": 0.010070492720634185
+    }
+  },
+  {
+    "inputText": "great clips hair salon haircut",
+    "expectedCategory": "PERSONAL",
+    "confidence": 0.9972695562534052,
+    "probabilities": {
+      "BILLS": 0.00014788566182887035,
+      "EDUCATION": 0.0001103308165557471,
+      "ENTERTAINMENT": 0.00022266149025543215,
+      "FOOD": 0.0012275100052641524,
+      "HEALTH": 0.00013909603058706067,
+      "OTHER": 0.00011536788915476004,
+      "PERSONAL": 0.9972695562534052,
+      "SHOPPING": 0.00044647685778658955,
+      "TRAVEL": 0.0003211149951622137
+    }
+  },
+  {
+    "inputText": "bank fee monthly service charge",
+    "expectedCategory": "OTHER",
+    "confidence": 0.9979741490452871,
+    "probabilities": {
+      "BILLS": 0.00037547752481130415,
+      "EDUCATION": 0.00012398393678113355,
+      "ENTERTAINMENT": 0.0006809415674443478,
+      "FOOD": 0.00010461909101632095,
+      "HEALTH": 0.00023821518653376137,
+      "OTHER": 0.9979741490452871,
+      "PERSONAL": 0.00011992698352606829,
+      "SHOPPING": 0.00010821221475475512,
+      "TRAVEL": 0.00027447444984523433
+    }
+  },
+  {
+    "inputText": "upi swiggy 123456 okhdfcbank",
+    "expectedCategory": "FOOD",
+    "confidence": 0.2836065810189741,
+    "probabilities": {
+      "BILLS": 0.10045147694833863,
+      "EDUCATION": 0.0241602879795154,
+      "ENTERTAINMENT": 0.2562678547088532,
+      "FOOD": 0.2836065810189741,
+      "HEALTH": 0.054228986057687494,
+      "OTHER": 0.02600144308358898,
+      "PERSONAL": 0.026061408328271574,
+      "SHOPPING": 0.14330773811597938,
+      "TRAVEL": 0.08591422375879122
+    }
+  },
+  {
+    "inputText": "upi zomato pay 789012 icici",
+    "expectedCategory": "FOOD",
+    "confidence": 0.21514507494844123,
+    "probabilities": {
+      "BILLS": 0.12243534017280776,
+      "EDUCATION": 0.031156685618975433,
+      "ENTERTAINMENT": 0.18362597501713848,
+      "FOOD": 0.21514507494844123,
+      "HEALTH": 0.09185223119777164,
+      "OTHER": 0.029919867247960565,
+      "PERSONAL": 0.02908536226841726,
+      "SHOPPING": 0.17947307521552197,
+      "TRAVEL": 0.11730638831296568
+    }
+  },
+  {
+    "inputText": "paytm billpay electricity",
+    "expectedCategory": "TRAVEL",
+    "confidence": 0.3312962197940088,
+    "probabilities": {
+      "BILLS": 0.22248185907889861,
+      "EDUCATION": 0.02987374008500359,
+      "ENTERTAINMENT": 0.12370306626215642,
+      "FOOD": 0.09572886534621719,
+      "HEALTH": 0.04290385234177599,
+      "OTHER": 0.01571437897125592,
+      "PERSONAL": 0.027112952375327133,
+      "SHOPPING": 0.1111850657453564,
+      "TRAVEL": 0.3312962197940088
+    }
+  },
+  {
+    "inputText": "irctc railway ticket new delhi",
+    "expectedCategory": "ENTERTAINMENT",
+    "confidence": 0.6221924638500165,
+    "probabilities": {
+      "BILLS": 0.03248276060213603,
+      "EDUCATION": 0.006746224542149167,
+      "ENTERTAINMENT": 0.6221924638500165,
+      "FOOD": 0.20870546520617891,
+      "HEALTH": 0.013823126820448646,
+      "OTHER": 0.006799554217663404,
+      "PERSONAL": 0.011027323384689794,
+      "SHOPPING": 0.06512610934008527,
+      "TRAVEL": 0.033096972036632276
+    }
+  },
+  {
+    "inputText": "upi p sharma merchant okaxis",
+    "expectedCategory": "FOOD",
+    "confidence": 0.28632072607392306,
+    "probabilities": {
+      "BILLS": 0.046535599096463126,
+      "EDUCATION": 0.0562032058906039,
+      "ENTERTAINMENT": 0.10718963375509334,
+      "FOOD": 0.28632072607392306,
+      "HEALTH": 0.09511301067978722,
+      "OTHER": 0.03321440317383394,
+      "PERSONAL": 0.03691883722134354,
+      "SHOPPING": 0.24010942638073712,
+      "TRAVEL": 0.09839515772821476
+    }
+  },
+  {
+    "inputText": "xyzqwk 987234",
+    "expectedCategory": "FOOD",
+    "confidence": 0.2711222325820984,
+    "probabilities": {
+      "BILLS": 0.07066066437831701,
+      "EDUCATION": 0.029306084887760923,
+      "ENTERTAINMENT": 0.20266127344949383,
+      "FOOD": 0.2711222325820984,
+      "HEALTH": 0.05986560189486433,
+      "OTHER": 0.03384683977433886,
+      "PERSONAL": 0.03176646443449533,
+      "SHOPPING": 0.1824718505939315,
+      "TRAVEL": 0.11829898800469975
+    }
+  }
+]
