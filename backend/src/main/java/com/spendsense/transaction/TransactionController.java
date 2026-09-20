@@ -49,9 +49,10 @@ public class TransactionController {
             @RequestParam(required = false) BigDecimal maxAmount,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "newest") String sort,
-            @RequestParam(required = false) Boolean needsReview) {
+            @RequestParam(required = false) Boolean needsReview,
+            @RequestParam(required = false) UUID sourceDocumentId) {
         TransactionService.TransactionPage result = transactionService.list(
-                page, size, category, type, paymentMethod, fromDate, toDate, minAmount, maxAmount, search, sort, needsReview);
+                page, size, category, type, paymentMethod, fromDate, toDate, minAmount, maxAmount, search, sort, needsReview, sourceDocumentId);
         return ApiResponse.of(result.content(), result.meta());
     }
 

@@ -1,6 +1,7 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import {
   CategorizationAlternative,
   PaymentMethod,
@@ -14,13 +15,14 @@ import { TransactionFilterParams, TransactionService } from './transaction.servi
 @Component({
   selector: 'app-transactions',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CurrencyPipe, DatePipe],
+  imports: [CommonModule, ReactiveFormsModule, CurrencyPipe, DatePipe, RouterModule],
   templateUrl: './transactions.component.html',
   styleUrl: './transactions.component.scss',
 })
 export class TransactionsComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly transactionsApi = inject(TransactionService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
 
   readonly categories: TransactionCategory[] = [
     'FOOD',
@@ -55,6 +57,7 @@ export class TransactionsComponent implements OnInit {
   page = 0;
   totalPages = 0;
   totalElements = 0;
+  sourceDocumentId?: string;
 
   readonly filters = this.fb.nonNullable.group({
     search: '',
@@ -77,7 +80,24 @@ export class TransactionsComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.load();
+    if (this.route) {
+      this.route.queryParams.subscribe((queryParams) => {
+        if (queryParams['sourceDocumentId']) {
+          this.sourceDocumentId = queryParams['sourceDocumentId'];
+        }
+        if (queryParams['needsReview'] === 'true') {
+          this.filters.patchValue({ reviewStatus: 'NEEDS_REVIEW' });
+        }
+        this.load();
+      });
+    } else {
+      this.load();
+    }
+  }
+
+  clearStatementFilter(): void {
+    this.sourceDocumentId = undefined;
+    this.load(0);
   }
 
   load(page = this.page): void {
@@ -94,6 +114,7 @@ export class TransactionsComponent implements OnInit {
       type: filterValues.type || undefined,
       paymentMethod: filterValues.paymentMethod || undefined,
       needsReview: filterValues.reviewStatus === 'NEEDS_REVIEW' ? true : undefined,
+      sourceDocumentId: this.sourceDocumentId,
       sort: filterValues.sort || 'newest',
     };
 

@@ -170,6 +170,14 @@ public class TransactionService {
                                 PaymentMethod paymentMethod, LocalDate fromDate, LocalDate toDate,
                                 BigDecimal minAmount, BigDecimal maxAmount, String search, String sort,
                                 Boolean needsReview) {
+        return list(page, size, category, type, paymentMethod, fromDate, toDate, minAmount, maxAmount, search, sort, needsReview, null);
+    }
+
+    @Transactional(readOnly = true)
+    public TransactionPage list(int page, int size, TransactionCategory category, TransactionType type,
+                                PaymentMethod paymentMethod, LocalDate fromDate, LocalDate toDate,
+                                BigDecimal minAmount, BigDecimal maxAmount, String search, String sort,
+                                Boolean needsReview, UUID sourceDocumentId) {
         Pageable pageable = PageRequest.of(page, size, resolveSort(sort));
         Specification<Transaction> specification = Specification.where(ownedBy(currentUser.require().getUserId()))
                 .and(category == null ? null : (root, query, cb) -> cb.equal(root.get("category"), category))
@@ -180,7 +188,8 @@ public class TransactionService {
                 .and(minAmount == null ? null : (root, query, cb) -> cb.greaterThanOrEqualTo(root.get("amount"), minAmount))
                 .and(maxAmount == null ? null : (root, query, cb) -> cb.lessThanOrEqualTo(root.get("amount"), maxAmount))
                 .and(search == null || search.isBlank() ? null : searchFilter(search.trim()))
-                .and(needsReview == null ? null : (root, query, cb) -> cb.equal(root.get("requiresReview"), needsReview));
+                .and(needsReview == null ? null : (root, query, cb) -> cb.equal(root.get("requiresReview"), needsReview))
+                .and(sourceDocumentId == null ? null : (root, query, cb) -> cb.equal(root.get("sourceDocument").get("id"), sourceDocumentId));
 
         Page<Transaction> results = transactionRepository.findAll(specification, pageable);
         return new TransactionPage(

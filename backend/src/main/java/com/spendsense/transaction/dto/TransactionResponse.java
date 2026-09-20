@@ -32,7 +32,10 @@ public record TransactionResponse(
         CategorizationSource categorizationSource,
         Boolean requiresUserConfirmation,
         TransactionCategory predictedCategory,
-        List<CategorizationCandidateDto> alternatives
+        List<CategorizationCandidateDto> alternatives,
+        com.spendsense.transaction.TransactionSourceType sourceType,
+        UUID sourceDocumentId,
+        String sourceReference
 ) {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -50,7 +53,8 @@ public record TransactionResponse(
             Instant updatedAt
     ) {
         this(id, amount, merchant, description, category, transactionType, paymentMethod, transactionDate, notes,
-                createdAt, updatedAt, null, null, null, false, null, List.of());
+                createdAt, updatedAt, null, null, null, false, null, List.of(),
+                com.spendsense.transaction.TransactionSourceType.MANUAL, null, null);
     }
 
     public static TransactionResponse from(Transaction transaction) {
@@ -74,6 +78,13 @@ public record TransactionResponse(
                 ? transaction.getCategorizationConfidence().doubleValue()
                 : null;
 
+        com.spendsense.transaction.TransactionSourceType srcType = transaction.getSourceType() != null
+                ? transaction.getSourceType()
+                : com.spendsense.transaction.TransactionSourceType.MANUAL;
+        UUID docId = transaction.getSourceDocument() != null
+                ? transaction.getSourceDocument().getId()
+                : null;
+
         return new TransactionResponse(
                 transaction.getId(),
                 transaction.getAmount(),
@@ -91,7 +102,10 @@ public record TransactionResponse(
                 transaction.getCategorizationSource(),
                 transaction.isRequiresReview(),
                 transaction.getPredictedCategory(),
-                alts
+                alts,
+                srcType,
+                docId,
+                transaction.getSourceReference()
         );
     }
 }

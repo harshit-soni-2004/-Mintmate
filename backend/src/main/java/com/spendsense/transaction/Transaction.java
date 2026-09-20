@@ -80,6 +80,17 @@ public class Transaction {
     @Column(name = "categorization_alternatives", length = 1000)
     private String categorizationAlternatives;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source_type", nullable = false, length = 32)
+    private TransactionSourceType sourceType = TransactionSourceType.MANUAL;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_document_id")
+    private com.spendsense.document.FinancialDocument sourceDocument;
+
+    @Column(name = "source_reference", length = 120)
+    private String sourceReference;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -107,6 +118,19 @@ public class Transaction {
                        BigDecimal categorizationConfidence, com.spendsense.categorization.ConfidenceLevel categorizationConfidenceLevel,
                        com.spendsense.categorization.CategorizationSource categorizationSource, boolean requiresReview,
                        TransactionCategory predictedCategory, String categorizationAlternatives) {
+        this(user, amount, merchant, description, category, transactionType, paymentMethod, transactionDate, notes,
+                categorizationConfidence, categorizationConfidenceLevel, categorizationSource, requiresReview,
+                predictedCategory, categorizationAlternatives, TransactionSourceType.MANUAL, null, null);
+    }
+
+    public Transaction(User user, BigDecimal amount, String merchant, String description,
+                       TransactionCategory category, TransactionType transactionType,
+                       PaymentMethod paymentMethod, LocalDate transactionDate, String notes,
+                       BigDecimal categorizationConfidence, com.spendsense.categorization.ConfidenceLevel categorizationConfidenceLevel,
+                       com.spendsense.categorization.CategorizationSource categorizationSource, boolean requiresReview,
+                       TransactionCategory predictedCategory, String categorizationAlternatives,
+                       TransactionSourceType sourceType, com.spendsense.document.FinancialDocument sourceDocument,
+                       String sourceReference) {
         this.id = UUID.randomUUID();
         this.user = user;
         update(amount, merchant, description, category, transactionType, paymentMethod, transactionDate, notes);
@@ -116,6 +140,9 @@ public class Transaction {
         this.requiresReview = requiresReview;
         this.predictedCategory = predictedCategory;
         this.categorizationAlternatives = categorizationAlternatives;
+        this.sourceType = sourceType != null ? sourceType : TransactionSourceType.MANUAL;
+        this.sourceDocument = sourceDocument;
+        this.sourceReference = sourceReference;
     }
 
     public void update(BigDecimal amount, String merchant, TransactionCategory category,
@@ -193,6 +220,12 @@ public class Transaction {
     public boolean isRequiresReview() { return requiresReview; }
     public TransactionCategory getPredictedCategory() { return predictedCategory; }
     public String getCategorizationAlternatives() { return categorizationAlternatives; }
+    public TransactionSourceType getSourceType() { return sourceType; }
+    public void setSourceType(TransactionSourceType sourceType) { this.sourceType = sourceType; }
+    public com.spendsense.document.FinancialDocument getSourceDocument() { return sourceDocument; }
+    public void setSourceDocument(com.spendsense.document.FinancialDocument sourceDocument) { this.sourceDocument = sourceDocument; }
+    public String getSourceReference() { return sourceReference; }
+    public void setSourceReference(String sourceReference) { this.sourceReference = sourceReference; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

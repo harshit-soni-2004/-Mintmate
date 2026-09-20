@@ -60,6 +60,13 @@
     </div>
   </form>
 
+  @if (sourceDocumentId) {
+    <div class="notice info statement-filter-notice" role="status">
+      <span>Filtering transactions imported from statement: <code>{{ sourceDocumentId }}</code></span>
+      <button type="button" class="ghost" (click)="clearStatementFilter()">Clear statement filter</button>
+    </div>
+  }
+
   @if (error) {
     <div class="notice error" role="alert">
       <span>{{ error }}</span>

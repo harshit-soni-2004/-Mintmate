@@ -1,0 +1,537 @@
+<section class="page statements-page">
+  <!-- Page Header -->
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Statement Intelligence</p>
+      <h1>Statements & Document Ingestion</h1>
+      <p>
+        Upload bank and credit card statements in PDF, CSV, or Excel formats.
+        Automatically normalize, deduplicate, resolve account settlements, and categorize your transactions.
+      </p>
+    </div>
+  </header>
+
+  <!-- Upload Section -->
+  <div class="card upload-card">
+    <div class="card-header">
+      <h2>Upload Statement Document</h2>
+      <p class="hint">Supports PDF (.pdf), CSV (.csv), and Excel (.xlsx, .xls) files up to 15 MB.</p>
+    </div>
+
+    @if (uploadError) {
+      <div class="notice error" role="alert">
+        <span>{{ uploadError }}</span>
+        <button type="button" class="btn-dismiss" (click)="uploadError = ''" aria-label="Dismiss error">✕</button>
+      </div>
+    }
+
+    <!-- Drag and Drop Zone -->
+    <div
+      class="dropzone"
+      [class.drag-over]="isDragOver"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+      (click)="fileInput.click()"
+      role="button"
+      tabindex="0"
+      (keydown.enter)="fileInput.click()"
+      (keydown.space)="fileInput.click()"
+      aria-label="Upload statement file drag and drop zone"
+    >
+      <input
+        #fileInput
+        type="file"
+        class="hidden-input"
+        accept=".pdf,.csv,.xlsx,.xls"
+        (change)="onFileSelected($event)"
+      />
+      <div class="dropzone-content">
+        <svg class="upload-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+        <p class="dropzone-main-text">
+          <strong>Choose a file</strong> or drag and drop it here
+        </p>
+        <p class="dropzone-sub-text">PDF, CSV, or Excel (.xlsx, .xls) up to 15 MB</p>
+      </div>
+    </div>
+
+    <!-- Selected File Preview -->
+    @if (selectedFile) {
+      <div class="selected-file-banner">
+        <div class="file-info">
+          <span class="file-icon">📄</span>
+          <div>
+            <strong class="file-name">{{ selectedFile.name }}</strong>
+            <small class="file-size">{{ formatFileSize(selectedFile.size) }}</small>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn-remove-file"
+          (click)="clearSelectedFile()"
+          title="Remove file"
+          aria-label="Remove selected file"
+        >
+          ✕
+        </button>
+      </div>
+    }
+
+    <!-- Metadata Form -->
+    <form class="metadata-form" [formGroup]="uploadForm" (ngSubmit)="submitUpload()">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="accountType">Account Type <span class="required">*</span></label>
+          <select id="accountType" formControlName="accountType">
+            <option value="SAVINGS">Savings Account</option>
+            <option value="CURRENT">Current / Checking Account</option>
+            <option value="CREDIT_CARD">Credit Card</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="institutionName">Financial Institution (Optional)</label>
+          <input
+            id="institutionName"
+            type="text"
+            formControlName="institutionName"
+            placeholder="e.g. HDFC Bank, ICICI, Chase"
+            maxlength="120"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="accountNumberLast4">Account Last 4 Digits (Optional)</label>
+          <input
+            id="accountNumberLast4"
+            type="text"
+            formControlName="accountNumberLast4"
+            placeholder="e.g. 4321"
+            maxlength="4"
+          />
+          @if (uploadForm.controls.accountNumberLast4.invalid && uploadForm.controls.accountNumberLast4.touched) {
+            <small class="field-error">Must be 4 alphanumeric characters</small>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="statementStartDate">Statement Start Date (Optional)</label>
+          <input id="statementStartDate" type="date" formControlName="statementStartDate" />
+        </div>
+
+        <div class="form-group">
+          <label for="statementEndDate">Statement End Date (Optional)</label>
+          <input id="statementEndDate" type="date" formControlName="statementEndDate" />
+        </div>
+      </div>
+
+      <!-- Processing state feedback -->
+      @if (uploading) {
+        <div class="processing-state" role="status">
+          <div class="spinner" aria-hidden="true"></div>
+          <div class="processing-text">
+            <strong>Uploading and processing statement…</strong>
+            <p>Normalizing statement rows, resolving account settlements, and deduplicating transactions.</p>
+          </div>
+        </div>
+      }
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="btn-primary btn-upload"
+          [disabled]="uploading || !selectedFile || uploadForm.invalid"
+        >
+          @if (uploading) {
+            <span>Processing…</span>
+          } @else {
+            <span>Upload & Ingest Statement</span>
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Recent Import Summary Banner -->
+  @if (latestImportResult) {
+    <div class="card import-summary-card">
+      <div class="summary-header">
+        <div class="summary-title-group">
+          <span class="status-indicator">✓</span>
+          <div>
+            <h2>Statement Import Summary</h2>
+            <p class="summary-subtitle">
+              Successfully processed <strong>{{ latestImportDocument?.originalFilename }}</strong>
+            </p>
+          </div>
+        </div>
+        <div class="summary-actions">
+          @if (latestImportDocument) {
+            <button
+              type="button"
+              class="btn-secondary"
+              (click)="navigateToTransactions(latestImportDocument.id)"
+            >
+              Review Transactions
+            </button>
+            <button
+              type="button"
+              class="btn-ghost"
+              (click)="openDetails(latestImportDocument)"
+            >
+              View Document Details
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Key Metrics Counters -->
+      <div class="metrics-grid">
+        <div class="metric-box">
+          <span class="metric-value">{{ latestImportResult.totalRows }}</span>
+          <span class="metric-label">Detected Rows</span>
+        </div>
+        <div class="metric-box highlight-success">
+          <span class="metric-value">{{ latestImportResult.importedTransactions }}</span>
+          <span class="metric-label">Transactions Imported</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-value">{{ latestImportResult.exactDuplicates }}</span>
+          <span class="metric-label">Exact Duplicates Skipped</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-value">{{ latestImportResult.probableDuplicates }}</span>
+          <span class="metric-label">Probable Duplicates Flagged</span>
+        </div>
+        <div class="metric-box highlight-settlement">
+          <span class="metric-value">{{ latestImportResult.settlementsResolved }}</span>
+          <span class="metric-label">Internal Settlements Resolved</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-value">{{ latestImportResult.unresolvedCandidates }}</span>
+          <span class="metric-label">Unresolved Entries</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-value">{{ latestImportResult.skippedRows }}</span>
+          <span class="metric-label">Other Skipped Rows</span>
+        </div>
+      </div>
+
+      <!-- Warnings list -->
+      @if (latestImportResult.warnings && latestImportResult.warnings.length > 0) {
+        <div class="warnings-box">
+          <strong>Notices & Warnings:</strong>
+          <ul>
+            @for (w of latestImportResult.warnings; track w) {
+              <li>{{ w }}</li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Statement History Section -->
+  <div class="card history-card">
+    <div class="card-header history-header">
+      <div>
+        <h2>Statement History</h2>
+        <p class="hint">Previously uploaded and processed financial statement documents.</p>
+      </div>
+      <button type="button" class="btn-refresh" (click)="loadStatements()" [disabled]="loading" title="Refresh list">
+        ↻ Refresh
+      </button>
+    </div>
+
+    @if (errorMessage) {
+      <div class="notice error" role="alert">
+        <span>{{ errorMessage }}</span>
+        <button type="button" class="btn-dismiss" (click)="errorMessage = ''">✕</button>
+      </div>
+    }
+
+    @if (loading) {
+      <div class="loading-container">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Loading statement history…</p>
+      </div>
+    } @else if (statements.length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon">📁</div>
+        <h3>No statements uploaded yet</h3>
+        <p>Upload your first bank or credit card statement above to begin automatic transaction ingestion and financial tracking.</p>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="statements-table">
+          <thead>
+            <tr>
+              <th>Document</th>
+              <th>Account Type</th>
+              <th>Period</th>
+              <th>Upload Date</th>
+              <th>Status</th>
+              <th>Imported / Detected</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (doc of statements; track doc.id) {
+              <tr>
+                <td class="col-document">
+                  <div class="doc-title">
+                    <strong class="doc-filename">{{ doc.originalFilename }}</strong>
+                    <span class="doc-filetype">{{ doc.fileType }}</span>
+                  </div>
+                  @if (doc.institutionName) {
+                    <small class="doc-institution">{{ doc.institutionName }}</small>
+                  }
+                </td>
+                <td>
+                  <span class="account-badge">{{ getAccountTypeLabel(doc.accountType) }}</span>
+                  @if (doc.accountNumberLast4) {
+                    <small class="account-last4">•••• {{ doc.accountNumberLast4 }}</small>
+                  }
+                </td>
+                <td class="col-period">
+                  @if (doc.statementStartDate && doc.statementEndDate) {
+                    <span>{{ doc.statementStartDate | date:'mediumDate' }} – {{ doc.statementEndDate | date:'mediumDate' }}</span>
+                  } @else {
+                    <span class="text-muted">Not specified</span>
+                  }
+                </td>
+                <td>
+                  <span>{{ doc.createdAt | date:'mediumDate' }}</span>
+                </td>
+                <td>
+                  <span class="badge" [ngClass]="getStatusBadgeClass(doc.status)">
+                    {{ getStatusText(doc.status) }}
+                  </span>
+                </td>
+                <td>
+                  <div class="import-stats">
+                    <strong>{{ doc.importedCount }}</strong> / {{ doc.totalRowsDetected }}
+                    @if (doc.duplicateCount > 0) {
+                      <small class="duplicates-count">({{ doc.duplicateCount }} duplicates)</small>
+                    }
+                  </div>
+                </td>
+                <td class="col-actions text-right">
+                  <button
+                    type="button"
+                    class="btn-action"
+                    (click)="openDetails(doc)"
+                    title="View details and settlements"
+                  >
+                    Details
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-action"
+                    (click)="reingestStatement(doc)"
+                    [disabled]="reingestingId === doc.id"
+                    title="Re-run ingestion pipeline"
+                  >
+                    @if (reingestingId === doc.id) {
+                      <span>Processing…</span>
+                    } @else {
+                      <span>Re-process</span>
+                    }
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-action text-danger"
+                    (click)="deleteStatement(doc)"
+                    [disabled]="deletingId === doc.id"
+                    title="Delete statement document"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <!-- Statement Details Modal / Drawer -->
+  @if (activeDocument) {
+    <div class="modal-backdrop" (click)="closeDetails()" role="presentation"></div>
+    <div class="modal-drawer" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+      <div class="modal-header">
+        <div>
+          <span class="badge" [ngClass]="getStatusBadgeClass(activeDocument.status)">
+            {{ getStatusText(activeDocument.status) }}
+          </span>
+          <h2 id="modal-title" class="modal-title">{{ activeDocument.originalFilename }}</h2>
+        </div>
+        <button type="button" class="btn-close" (click)="closeDetails()" aria-label="Close dialog">✕</button>
+      </div>
+
+      <!-- Modal Navigation Tabs -->
+      <div class="modal-tabs">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeDetailTab === 'summary'"
+          (click)="switchDetailTab('summary')"
+        >
+          Document Overview
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeDetailTab === 'settlements'"
+          (click)="switchDetailTab('settlements')"
+        >
+          Settlements & Transfers
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Overview Tab Content -->
+        @if (activeDetailTab === 'summary') {
+          <div class="overview-section">
+            <div class="metadata-grid">
+              <div class="metadata-item">
+                <span class="label">Institution</span>
+                <strong>{{ activeDocument.institutionName || 'Not specified' }}</strong>
+              </div>
+              <div class="metadata-item">
+                <span class="label">Account Type</span>
+                <strong>{{ getAccountTypeLabel(activeDocument.accountType) }}</strong>
+              </div>
+              <div class="metadata-item">
+                <span class="label">Account Number (Masked)</span>
+                <strong>{{ activeDocument.accountNumberLast4 ? '•••• ' + activeDocument.accountNumberLast4 : 'Not specified' }}</strong>
+              </div>
+              <div class="metadata-item">
+                <span class="label">File Size</span>
+                <strong>{{ formatFileSize(activeDocument.fileSizeBytes) }}</strong>
+              </div>
+              <div class="metadata-item">
+                <span class="label">Uploaded On</span>
+                <strong>{{ activeDocument.createdAt | date:'medium' }}</strong>
+              </div>
+              <div class="metadata-item">
+                <span class="label">Content Hash</span>
+                <code class="hash-code">{{ activeDocument.contentHash }}</code>
+              </div>
+            </div>
+
+            <div class="overview-stats-card">
+              <h3>Ingestion Counters</h3>
+              <div class="metrics-grid">
+                <div class="metric-box">
+                  <span class="metric-value">{{ activeDocument.totalRowsDetected }}</span>
+                  <span class="metric-label">Detected Rows</span>
+                </div>
+                <div class="metric-box highlight-success">
+                  <span class="metric-value">{{ activeDocument.importedCount }}</span>
+                  <span class="metric-label">Imported Transactions</span>
+                </div>
+                <div class="metric-box">
+                  <span class="metric-value">{{ activeDocument.duplicateCount }}</span>
+                  <span class="metric-label">Duplicates Skipped</span>
+                </div>
+              </div>
+            </div>
+
+            @if (activeDocument.errorMessage) {
+              <div class="notice error">
+                <strong>Error Details:</strong>
+                <p>{{ activeDocument.errorMessage }}</p>
+              </div>
+            }
+
+            <div class="modal-actions">
+              <button
+                type="button"
+                class="btn-primary"
+                (click)="navigateToTransactions(activeDocument.id)"
+              >
+                View Imported Transactions
+              </button>
+              <button
+                type="button"
+                class="btn-secondary"
+                (click)="navigateToTransactions(activeDocument.id, true)"
+              >
+                Filter Needs-Review Transactions
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- Settlements Tab Content -->
+        @if (activeDetailTab === 'settlements') {
+          <div class="settlements-section">
+            <div class="settlement-info-callout">
+              <div class="callout-icon">ℹ️</div>
+              <div class="callout-text">
+                <strong>Financial Semantics Guarantee</strong>
+                <p>
+                  Internal settlements (e.g. credit card bill payments) and account-to-account transfers
+                  reflect money moving between your own accounts.
+                  They are neither spending nor income and do NOT alter your net expense totals.
+                </p>
+              </div>
+            </div>
+
+            @if (loadingSettlements) {
+              <div class="loading-container">
+                <div class="spinner" aria-hidden="true"></div>
+                <p>Loading settlements and transfers…</p>
+              </div>
+            } @else if (settlementsError) {
+              <div class="notice error">
+                <span>{{ settlementsError }}</span>
+              </div>
+            } @else if (activeSettlements.length === 0) {
+              <div class="empty-settlements">
+                <p>No internal settlements, bill payments, or transfers were detected in this statement.</p>
+              </div>
+            } @else {
+              <div class="settlements-list">
+                @for (item of activeSettlements; track item.id) {
+                  <div class="settlement-item-card">
+                    <div class="settlement-left">
+                      <div class="settlement-badge-row">
+                        <span class="settlement-classification-badge">
+                          {{ getSettlementClassificationLabel(item.classification) }}
+                        </span>
+                        <span class="settlement-status-badge">
+                          {{ getSettlementStatusLabel(item.status) }}
+                        </span>
+                      </div>
+                      <strong class="settlement-merchant">{{ item.rawMerchant }}</strong>
+                      @if (item.rawDescription) {
+                        <p class="settlement-desc">{{ item.rawDescription }}</p>
+                      }
+                      <small class="settlement-date">{{ item.transactionDate | date:'mediumDate' }}</small>
+                    </div>
+                    <div class="settlement-right">
+                      <!-- STRICT FINANCIAL INTEGRITY: Neutral amount formatting with NO +/- sign -->
+                      <span class="settlement-neutral-amount">
+                        {{ item.amount | currency:'INR':'symbol':'1.2-2' }}
+                      </span>
+                      @if (item.matchedSettlementId) {
+                        <span class="settlement-matched-indicator">Matched with pair</span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</section>

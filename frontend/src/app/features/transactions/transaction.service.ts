@@ -25,6 +25,7 @@ export interface TransactionFilterParams {
   maxAmount?: number | null;
   sort?: string;
   needsReview?: boolean;
+  sourceDocumentId?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -53,6 +54,9 @@ export class TransactionService {
     if (filters.sort) params = params.set('sort', filters.sort);
     if (filters.needsReview !== undefined && filters.needsReview !== null) {
       params = params.set('needsReview', filters.needsReview.toString());
+    }
+    if (filters.sourceDocumentId) {
+      params = params.set('sourceDocumentId', filters.sourceDocumentId);
     }
 
     return this.http.get<ApiResponse<Transaction[], PageMeta>>(this.url, { params });

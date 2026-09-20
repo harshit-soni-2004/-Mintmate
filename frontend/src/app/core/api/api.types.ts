@@ -53,6 +53,82 @@ export interface Transaction {
   requiresUserConfirmation?: boolean;
   predictedCategory?: TransactionCategory | null;
   alternatives?: CategorizationAlternative[];
+  sourceType?: string | null;
+  sourceDocumentId?: string | null;
+  sourceLineNumber?: number | null;
+  sourceReferenceId?: string | null;
+  importBatchId?: string | null;
+  rawDescription?: string | null;
+}
+
+export type DocumentFileType = 'CSV' | 'XLSX' | 'PDF';
+export type DocumentAccountType = 'SAVINGS' | 'CURRENT' | 'CREDIT_CARD';
+export type DocumentStatus = 'UPLOADED' | 'PARSING' | 'COMPLETED' | 'PARTIALLY_PROCESSED' | 'FAILED';
+export type SourceTransactionClassification =
+  | 'PURCHASE'
+  | 'PAYMENT'
+  | 'REFUND'
+  | 'REVERSAL'
+  | 'FEE'
+  | 'INTEREST'
+  | 'TRANSFER'
+  | 'DEPOSIT'
+  | 'WITHDRAWAL'
+  | 'UNKNOWN';
+export type SettlementStatus = 'UNRESOLVED' | 'RESOLVED' | 'DISCARDED';
+
+export interface FinancialDocument {
+  id: string;
+  originalFilename: string;
+  fileType: DocumentFileType;
+  fileSizeBytes: number;
+  contentHash: string;
+  institutionName?: string | null;
+  accountType: DocumentAccountType;
+  accountNumberLast4?: string | null;
+  statementStartDate?: string | null;
+  statementEndDate?: string | null;
+  status: DocumentStatus;
+  totalRowsDetected: number;
+  importedCount: number;
+  duplicateCount: number;
+  errorMessage?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StatementImportResult {
+  documentId: string;
+  totalRows: number;
+  validRows: number;
+  invalidRows: number;
+  importedTransactions: number;
+  exactDuplicates: number;
+  probableDuplicates: number;
+  unresolvedCandidates: number;
+  settlementsResolved: number;
+  skippedRows: number;
+  warnings: string[];
+}
+
+export interface StatementUploadResponse {
+  document: FinancialDocument;
+  importResult: StatementImportResult;
+}
+
+export interface StatementSettlement {
+  id: string;
+  documentId: string;
+  rowIndex: number;
+  transactionDate: string;
+  amount: number;
+  rawMerchant: string;
+  rawDescription?: string | null;
+  classification: SourceTransactionClassification;
+  accountType: DocumentAccountType;
+  externalReference?: string | null;
+  status: SettlementStatus;
+  matchedSettlementId?: string | null;
 }
 
 export interface TransactionRequest {

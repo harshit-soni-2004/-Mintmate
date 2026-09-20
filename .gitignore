@@ -9,6 +9,8 @@ hs_err_pid*
 
 # Scratch / temporary scripts
 scratch/
+data/
+uploads/
 
 # Node / Angular
 frontend/node_modules/
@@ -35,3 +37,11 @@ frontend/src/environments/environment.local.ts
 
 # Logs
 *.log
+
+# Statement files
+*.pdf
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class

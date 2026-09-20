@@ -53,5 +53,7 @@ spendsense:
     policy:
       high-threshold: ${CATEGORIZATION_HIGH_THRESHOLD:0.85}
       medium-threshold: ${CATEGORIZATION_MEDIUM_THRESHOLD:0.60}
+  storage:
+    local-dir: ${SPENDSENSE_STORAGE_LOCAL_DIR:./data/documents}
 
 
