@@ -41,6 +41,10 @@ public class PdfStatementExtractor implements DocumentExtractor {
         "^\\s*(\\d{1,2}[/\\-.]\\d{1,2}[/\\-.]\\d{2,4}|\\d{4}[/\\-.]\\d{1,2}[/\\-.]\\d{1,2}|\\d{1,2}[/\\-.][a-zA-Z]{3}[/\\-.]\\d{2,4}|\\d{1,2}\\s+[a-zA-Z]{3}\\s+\\d{2,4})\\b"
     );
 
+    private static final Pattern TRANSACTION_LINE_START_PATTERN = Pattern.compile(
+        "^\\s*(?:#?\\s*\\d{1,6}\\s+)?(\\d{1,2}[/\\-.]\\d{1,2}[/\\-.]\\d{2,4}|\\d{4}[/\\-.]\\d{1,2}[/\\-.]\\d{1,2}|\\d{1,2}[/\\-.][a-zA-Z]{3}[/\\-.]\\d{2,4}|\\d{1,2}\\s+[a-zA-Z]{3}\\s+\\d{2,4})\\b"
+    );
+
     public PdfStatementExtractor(StatementNormalizer statementNormalizer, CandidateValidator candidateValidator) {
         this.statementNormalizer = statementNormalizer;
         this.candidateValidator = candidateValidator;
@@ -152,7 +156,14 @@ public class PdfStatementExtractor implements DocumentExtractor {
             }
 
             if (headerInfo != null) {
-                return extractWithHeader(lines, headerLineIndex, headerInfo, documentId, accountType);
+                try {
+                    List<TransactionCandidate> headerCandidates = extractWithHeader(lines, headerLineIndex, headerInfo, documentId, accountType);
+                    if (!headerCandidates.isEmpty()) {
+                        return headerCandidates;
+                    }
+                } catch (DocumentExtractionException ignored) {
+                    // Header-driven extraction produced no rows; fall back to coordinate layout inference
+                }
             }
 
             return extractWithoutHeader(lines, documentId, accountType);
@@ -173,6 +184,7 @@ public class PdfStatementExtractor implements DocumentExtractor {
     ) throws DocumentExtractionException {
         List<TransactionCandidate> candidates = new ArrayList<>();
         int rowIndex = 1;
+        boolean canContinueNarration = false;
 
         for (int i = headerLineIndex + 1; i < lines.size(); i++) {
             TextLine line = lines.get(i);
@@ -184,20 +196,25 @@ public class PdfStatementExtractor implements DocumentExtractor {
 
             // Check repeated header on subsequent pages
             if (detectHeader(line) != null) {
+                canContinueNarration = false;
                 continue;
             }
 
             // Check footer / summary rows
             if (isSummaryOrFooterRow(lineText) || isHeaderLikeLine(lineText)) {
+                canContinueNarration = false;
+                if (lineText.toLowerCase(Locale.ROOT).contains("end of statement")) {
+                    break;
+                }
                 continue;
             }
 
             // Check if line starts with a date
-            Matcher dateMatcher = DATE_START_PATTERN.matcher(lineText);
+            Matcher dateMatcher = TRANSACTION_LINE_START_PATTERN.matcher(lineText);
             if (dateMatcher.find()) {
                 // New transaction line
                 ExtractedRowValues values = parseLineWithHeader(line, headerInfo);
-                if (values != null) {
+                if (values != null && (values.debitStr != null || values.creditStr != null || values.amountStr != null)) {
                     Map<String, String> cellValues = new LinkedHashMap<>();
                     cellValues.put("date", values.dateStr);
                     cellValues.put("description", values.descStr);
@@ -213,13 +230,45 @@ public class PdfStatementExtractor implements DocumentExtractor {
                     if (candidate != null) {
                         TransactionCandidate validated = candidate.withValidationResult(candidateValidator.validate(candidate));
                         candidates.add(validated);
+                        canContinueNarration = true;
                     }
                 }
-            } else if (!candidates.isEmpty()) {
-                // Possible wrapped narration continuation
+            } else if (!candidates.isEmpty() && canContinueNarration) {
+                // Possible wrapped narration / reference continuation
                 if (isNarrationContinuation(line, headerInfo)) {
                     TransactionCandidate prev = candidates.get(candidates.size() - 1);
-                    String updatedDesc = (prev.rawDescription() + " " + lineText).trim();
+                    float firstColAfterDesc = headerInfo.refX != null ? headerInfo.refX : (headerInfo.debitX != null ? headerInfo.debitX : (headerInfo.amountX != null ? headerInfo.amountX : 350.0f));
+                    float descEnd = firstColAfterDesc - 15.0f;
+
+                    List<String> contDescWords = new ArrayList<>();
+                    List<String> contRefWords = new ArrayList<>();
+                    for (Word w : line.words()) {
+                        if (w.x() < descEnd) {
+                            contDescWords.add(w.text().trim());
+                        } else {
+                            contRefWords.add(w.text().trim());
+                        }
+                    }
+
+                    String updatedDesc = prev.rawDescription();
+                    if (!contDescWords.isEmpty()) {
+                        String addDesc = String.join(" ", contDescWords);
+                        updatedDesc = (updatedDesc + " " + addDesc).trim();
+                    }
+
+                    String updatedRef = prev.externalReference();
+                    if (!contRefWords.isEmpty()) {
+                        String addRef = String.join(" ", contRefWords);
+                        if (updatedRef == null || updatedRef.isBlank()) {
+                            updatedRef = addRef;
+                        } else if (updatedRef.endsWith("-")) {
+                            updatedRef = updatedRef + addRef;
+                        } else {
+                            updatedRef = updatedRef + " " + addRef;
+                        }
+                    }
+                    updatedRef = statementNormalizer.extractReference(updatedRef, updatedDesc);
+
                     TransactionCandidate updatedCandidate = TransactionCandidate.builder()
                         .documentId(prev.documentId())
                         .rowIndex(prev.rowIndex())
@@ -230,7 +279,7 @@ public class PdfStatementExtractor implements DocumentExtractor {
                         .direction(prev.direction())
                         .classification(prev.classification())
                         .inferredPaymentMethod(statementNormalizer.inferPaymentMethod(accountType, updatedDesc, prev.rawMerchant()))
-                        .externalReference(statementNormalizer.extractReference(prev.externalReference(), updatedDesc))
+                        .externalReference(updatedRef)
                         .balanceAfter(prev.balanceAfter())
                         .accountType(prev.accountType())
                         .currency(prev.currency())
@@ -238,7 +287,7 @@ public class PdfStatementExtractor implements DocumentExtractor {
                         .validationResult(prev.validationResult())
                         .build();
 
-                    candidates.set(candidates.size() - 1, updatedCandidate);
+                    candidates.set(candidates.size() - 1, updatedCandidate.withValidationResult(candidateValidator.validate(updatedCandidate)));
                 }
             }
         }
@@ -332,7 +381,12 @@ public class PdfStatementExtractor implements DocumentExtractor {
             return null;
         }
 
-        String dateStr = words.get(0).text();
+        Matcher dateMatcher = TRANSACTION_LINE_START_PATTERN.matcher(line.lineText().trim());
+        if (!dateMatcher.find()) {
+            return null;
+        }
+        String dateStr = dateMatcher.group(1);
+
         String descStr = null;
         String refStr = null;
         String debitStr = null;
@@ -341,52 +395,82 @@ public class PdfStatementExtractor implements DocumentExtractor {
         String typeStr = null;
         String balanceStr = null;
 
+        float descStart = header.descX != null
+            ? (header.dateX != null ? (header.dateX + header.descX) / 2.0f : header.descX - 10.0f)
+            : 0f;
+
         if (header.hasSeparateDebitCredit()) {
-            float debitThreshold = (header.descEndX + header.debitX) / 2.0f;
-            float creditThreshold = (header.debitX + header.creditX) / 2.0f;
-            float balanceThreshold = header.balanceX != null ? (header.creditX + header.balanceX) / 2.0f : Float.MAX_VALUE;
+            float firstColAfterDesc = header.refX != null ? header.refX : header.debitX;
+            float descEnd = firstColAfterDesc - 15.0f;
+            float refEnd = header.refEndX != null ? header.refEndX : (header.refX != null ? header.refX + 30.0f : descEnd);
+            float debitThreshold = header.refX != null ? (refEnd + header.debitX) / 2.0f : descEnd;
+            float debitEnd = header.debitEndX != null ? header.debitEndX : header.debitX;
+            float creditThreshold = (debitEnd + header.creditX) / 2.0f;
+            float creditEnd = header.creditEndX != null ? header.creditEndX : header.creditX;
+            float balanceThreshold = header.balanceX != null ? (creditEnd + header.balanceX) / 2.0f : Float.MAX_VALUE;
 
             List<String> descTokens = new ArrayList<>();
-            for (int i = 1; i < words.size(); i++) {
-                Word w = words.get(i);
+            for (Word w : words) {
                 float x = w.x();
+                String t = w.text().trim();
 
-                if (header.refX != null && Math.abs(x - header.refX) < 30.0f && isAlphanumericRef(w.text())) {
-                    refStr = w.text();
-                } else if (x < debitThreshold) {
-                    descTokens.add(w.text());
+                if (x < descStart) {
+                    continue;
+                }
+
+                if (x < descEnd) {
+                    if (descTokens.isEmpty() && t.matches("^\\d{1,2}[/\\-.]\\d{1,2}[/\\-.]\\d{2,4}$")) {
+                        continue;
+                    }
+                    descTokens.add(t);
+                } else if (header.refX != null && x < debitThreshold) {
+                    if (!t.equals("-")) refStr = (refStr == null ? "" : refStr + " ") + t;
                 } else if (x < creditThreshold) {
-                    debitStr = (debitStr == null ? "" : debitStr + " ") + w.text();
+                    if (!t.equals("-")) debitStr = (debitStr == null ? "" : debitStr + " ") + t;
                 } else if (x < balanceThreshold) {
-                    creditStr = (creditStr == null ? "" : creditStr + " ") + w.text();
+                    if (!t.equals("-")) creditStr = (creditStr == null ? "" : creditStr + " ") + t;
                 } else {
-                    balanceStr = (balanceStr == null ? "" : balanceStr + " ") + w.text();
+                    if (!t.equals("-")) balanceStr = (balanceStr == null ? "" : balanceStr + " ") + t;
                 }
             }
             descStr = String.join(" ", descTokens);
         } else {
             // Single amount column or amount + type
-            float amountThreshold = header.amountX != null ? (header.descEndX + header.amountX) / 2.0f : 300.0f;
-            float typeThreshold = (header.amountX != null && header.typeX != null)
+            float firstColAfterDesc = header.refX != null ? header.refX : (header.amountX != null ? header.amountX : 300.0f);
+            float descEnd = firstColAfterDesc - 15.0f;
+            float amountThreshold = (header.amountX != null && header.typeX != null)
                 ? (header.amountX + header.typeX) / 2.0f
+                : (header.balanceX != null ? (header.amountX + header.balanceX) / 2.0f : Float.MAX_VALUE);
+            float typeThreshold = (header.typeX != null && header.balanceX != null)
+                ? (header.typeX + header.balanceX) / 2.0f
                 : Float.MAX_VALUE;
+            Float amountEnd = header.amountEndX != null ? header.amountEndX : header.amountX;
             float balanceThreshold = header.balanceX != null
-                ? (header.amountX != null ? (header.amountX + header.balanceX) / 2.0f : 450.0f)
+                ? (amountEnd != null ? (amountEnd + header.balanceX) / 2.0f : header.balanceX - 10.0f)
                 : Float.MAX_VALUE;
 
             List<String> descTokens = new ArrayList<>();
-            for (int i = 1; i < words.size(); i++) {
-                Word w = words.get(i);
+            for (Word w : words) {
                 float x = w.x();
+                String t = w.text().trim();
 
-                if (x < amountThreshold) {
-                    descTokens.add(w.text());
-                } else if (x < typeThreshold && x < balanceThreshold) {
-                    amountStr = (amountStr == null ? "" : amountStr + " ") + w.text();
-                } else if (header.typeX != null && Math.abs(x - header.typeX) < 40.0f) {
-                    typeStr = (typeStr == null ? "" : typeStr + " ") + w.text();
+                if (x < descStart) {
+                    continue;
+                }
+
+                if (x < descEnd) {
+                    if (descTokens.isEmpty() && t.matches("^\\d{1,2}[/\\-.]\\d{1,2}[/\\-.]\\d{2,4}$")) {
+                        continue;
+                    }
+                    descTokens.add(t);
+                } else if (header.refX != null && Math.abs(x - header.refX) < 30.0f && isAlphanumericRef(t)) {
+                    refStr = t;
+                } else if (x < amountThreshold) {
+                    amountStr = (amountStr == null ? "" : amountStr + " ") + t;
+                } else if (header.typeX != null && x < typeThreshold) {
+                    typeStr = (typeStr == null ? "" : typeStr + " ") + t;
                 } else {
-                    balanceStr = (balanceStr == null ? "" : balanceStr + " ") + w.text();
+                    balanceStr = (balanceStr == null ? "" : balanceStr + " ") + t;
                 }
             }
             descStr = String.join(" ", descTokens);
@@ -397,18 +481,18 @@ public class PdfStatementExtractor implements DocumentExtractor {
 
     private boolean isNarrationContinuation(TextLine line, HeaderInfo header) {
         String text = line.lineText().trim();
-        if (text.isBlank() || isSummaryOrFooterRow(text)) {
+        if (text.isBlank() || isSummaryOrFooterRow(text) || isHeaderLikeLine(text)) {
             return false;
         }
 
         // Must not start with date
-        if (DATE_START_PATTERN.matcher(text).find()) {
+        if (TRANSACTION_LINE_START_PATTERN.matcher(text).find()) {
             return false;
         }
 
         // Words should fall within the description column boundaries
         float cutoff = header.debitX != null ? header.debitX : (header.amountX != null ? header.amountX : 350.0f);
-        boolean anyWordPastCutoff = line.words().stream().anyMatch(w -> w.x() >= cutoff - 20.0f);
+        boolean anyWordPastCutoff = line.words().stream().anyMatch(w -> w.x() >= cutoff - 15.0f);
         return !anyWordPastCutoff;
     }
 
@@ -421,10 +505,11 @@ public class PdfStatementExtractor implements DocumentExtractor {
         return lower.startsWith("total") || lower.contains("grand total")
             || lower.contains("opening balance") || lower.contains("closing balance")
             || lower.contains("brought forward") || lower.contains("carried forward")
-            || lower.contains("*** end of statement") || lower.startsWith("page ")
+            || lower.contains("end of statement") || lower.startsWith("page ")
             || lower.contains("statement summary") || lower.contains("generated on")
             || lower.contains("please do not share") || lower.contains("computer generated")
-            || lower.contains("power of attorney");
+            || lower.contains("power of attorney") || lower.contains("account summary")
+            || lower.contains("system generated") || lower.contains("does not require signature");
     }
 
     private static boolean isHeaderLikeLine(String text) {
@@ -759,9 +844,13 @@ public class PdfStatementExtractor implements DocumentExtractor {
         Float descX = null;
         Float descEndX = null;
         Float refX = null;
+        Float refEndX = null;
         Float debitX = null;
+        Float debitEndX = null;
         Float creditX = null;
+        Float creditEndX = null;
         Float amountX = null;
+        Float amountEndX = null;
         Float typeX = null;
         Float balanceX = null;
 
@@ -773,14 +862,18 @@ public class PdfStatementExtractor implements DocumentExtractor {
             } else if (matchesDescHeader(norm) && descX == null) {
                 descX = w.x();
                 descEndX = w.x() + w.width();
-            } else if (matchesRefHeader(norm) && refX == null) {
-                refX = w.x();
-            } else if (matchesDebitHeader(norm) && debitX == null) {
-                debitX = w.x();
-            } else if (matchesCreditHeader(norm) && creditX == null) {
-                creditX = w.x();
-            } else if (matchesAmountHeader(norm) && amountX == null) {
-                amountX = w.x();
+            } else if (matchesRefHeader(norm) || (refX != null && (norm.equals("no") || norm.equals("num")))) {
+                if (refX == null) refX = w.x();
+                refEndX = w.x() + w.width();
+            } else if (matchesDebitHeader(norm)) {
+                if (debitX == null) debitX = w.x();
+                debitEndX = w.x() + w.width();
+            } else if (matchesCreditHeader(norm)) {
+                if (creditX == null) creditX = w.x();
+                creditEndX = w.x() + w.width();
+            } else if (matchesAmountHeader(norm)) {
+                if (amountX == null) amountX = w.x();
+                amountEndX = w.x() + w.width();
             } else if (matchesTypeHeader(norm) && typeX == null) {
                 typeX = w.x();
             } else if (matchesBalanceHeader(norm) && balanceX == null) {
@@ -796,7 +889,7 @@ public class PdfStatementExtractor implements DocumentExtractor {
             if (descEndX == null) {
                 descEndX = (debitX != null ? debitX : amountX) - 20.0f;
             }
-            return new HeaderInfo(dateX, descX, descEndX, refX, debitX, creditX, amountX, typeX, balanceX);
+            return new HeaderInfo(dateX, descX, descEndX, refX, refEndX, debitX, debitEndX, creditX, creditEndX, amountX, amountEndX, typeX, balanceX);
         }
 
         return null;
@@ -846,9 +939,13 @@ public class PdfStatementExtractor implements DocumentExtractor {
         Float descX,
         Float descEndX,
         Float refX,
+        Float refEndX,
         Float debitX,
+        Float debitEndX,
         Float creditX,
+        Float creditEndX,
         Float amountX,
+        Float amountEndX,
         Float typeX,
         Float balanceX
     ) {

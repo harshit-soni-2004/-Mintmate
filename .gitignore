@@ -45,3 +45,11 @@ frontend/src/environments/environment.local.ts
 __pycache__/
 *.py[cod]
 *$py.class
+
+# ML training data (raw and processed datasets, embeddings)
+ml/data/raw/
+ml/data/processed/
+ml/data/manifests/
+
+# ML training workspace model artifacts (canonical models are in backend/src/main/resources/model/)
+ml/models/

@@ -338,7 +338,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       if (t.transactionType === 'EXPENSE') {
         expense += t.amount;
         catMap.set(t.category, (catMap.get(t.category) || 0) + t.amount);
-      } else {
+      } else if (t.transactionType === 'INCOME') {
         income += t.amount;
       }
     }
@@ -393,7 +393,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const wIdx = Math.min(Math.floor((day - 1) / 7), 4);
         if (t.transactionType === 'EXPENSE') {
           weeks[wIdx].expense += t.amount;
-        } else {
+        } else if (t.transactionType === 'INCOME') {
           weeks[wIdx].income += t.amount;
         }
       }

@@ -9,12 +9,17 @@ import com.spendsense.categorization.CategorizationSource;
 import com.spendsense.categorization.ConfidenceLevel;
 import com.spendsense.categorization.model.CategorizationCandidate;
 import com.spendsense.common.exception.ApiException;
+import com.spendsense.account.FinancialAccount;
+import com.spendsense.account.FinancialAccountRepository;
+import com.spendsense.account.FinancialAccountService;
+import com.spendsense.document.DocumentAccountType;
 import com.spendsense.document.FinancialDocument;
 import com.spendsense.document.FinancialDocumentRepository;
 import com.spendsense.document.storage.DocumentStorage;
 import com.spendsense.document.storage.StorageReference;
 import com.spendsense.ingestion.CandidateValidationResult;
 import com.spendsense.ingestion.CandidateValidator;
+import com.spendsense.ingestion.SourceTransactionClassification;
 import com.spendsense.ingestion.TransactionCandidate;
 import com.spendsense.ingestion.dedup.DeduplicationService;
 import com.spendsense.ingestion.dedup.DuplicateCheckResult;
@@ -22,6 +27,7 @@ import com.spendsense.ingestion.extractor.DocumentExtractionException;
 import com.spendsense.ingestion.extractor.DocumentExtractor;
 import com.spendsense.ingestion.settlement.SettlementResolutionService;
 import com.spendsense.ingestion.settlement.SettlementResolutionService.SettlementResolutionOutcome;
+import com.spendsense.ingestion.transfer.TransferMatchingService;
 import com.spendsense.security.CurrentUser;
 import com.spendsense.transaction.PaymentMethod;
 import com.spendsense.transaction.Transaction;
@@ -29,6 +35,8 @@ import com.spendsense.transaction.TransactionCategory;
 import com.spendsense.transaction.TransactionRepository;
 import com.spendsense.transaction.TransactionSourceType;
 import com.spendsense.transaction.TransactionType;
+import com.spendsense.transaction.TransferDirection;
+import com.spendsense.transaction.TransferMatchStatus;
 import com.spendsense.transaction.dto.CategorizationCandidateDto;
 import com.spendsense.user.User;
 import com.spendsense.user.UserRepository;
@@ -44,11 +52,11 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -73,6 +81,26 @@ public class StatementIngestionService {
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private final CurrentUser currentUser;
+    private final FinancialAccountService accountService;
+    private final FinancialAccountRepository accountRepository;
+    private final TransferMatchingService transferMatchingService;
+
+    public StatementIngestionService(
+            FinancialDocumentRepository documentRepository,
+            DocumentStorage documentStorage,
+            List<DocumentExtractor> extractors,
+            CandidateValidator candidateValidator,
+            DeduplicationService deduplicationService,
+            SettlementResolutionService settlementResolutionService,
+            CategorizationService categorizationService,
+            TransactionRepository transactionRepository,
+            UserRepository userRepository,
+            CurrentUser currentUser
+    ) {
+        this(documentRepository, documentStorage, extractors, candidateValidator, deduplicationService,
+                settlementResolutionService, categorizationService, transactionRepository, userRepository, currentUser,
+                null, null, null);
+    }
 
     @Autowired
     public StatementIngestionService(
@@ -85,7 +113,10 @@ public class StatementIngestionService {
             @Autowired(required = false) CategorizationService categorizationService,
             TransactionRepository transactionRepository,
             UserRepository userRepository,
-            CurrentUser currentUser
+            CurrentUser currentUser,
+            @Autowired(required = false) FinancialAccountService accountService,
+            @Autowired(required = false) FinancialAccountRepository accountRepository,
+            @Autowired(required = false) TransferMatchingService transferMatchingService
     ) {
         this.documentRepository = documentRepository;
         this.documentStorage = documentStorage;
@@ -97,6 +128,9 @@ public class StatementIngestionService {
         this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
         this.currentUser = currentUser;
+        this.accountService = accountService;
+        this.accountRepository = accountRepository;
+        this.transferMatchingService = transferMatchingService;
     }
 
     /**
@@ -169,6 +203,22 @@ public class StatementIngestionService {
             document.updateStatementDates(minDate, maxDate);
         }
 
+        // Ensure account is linked to document
+        if (document.getAccount() == null && accountService != null) {
+            FinancialAccount account = accountService.getOrCreateForStatement(
+                    user,
+                    document.getInstitutionName(),
+                    document.getAccountType(),
+                    document.getAccountNumberLast4()
+            );
+            document.setAccount(account);
+            documentRepository.save(document);
+        }
+
+        List<FinancialAccount> allUserAccounts = (accountRepository != null)
+                ? accountRepository.findByUserIdAndActiveTrueOrderByCreatedAtDesc(user.getId())
+                : (document.getAccount() != null ? List.of(document.getAccount()) : List.of());
+
         // Bounded pre-fetch of existing user transactions
         List<Transaction> existingTransactions = new ArrayList<>();
         if (minDate != null && maxDate != null) {
@@ -177,6 +227,10 @@ public class StatementIngestionService {
             existingTransactions.addAll(transactionRepository.findByUser_IdAndTransactionDateBetweenOrderByTransactionDateDescCreatedAtDesc(
                     user.getId(), queryFrom, queryTo));
         }
+
+        List<Transaction> accountExistingTransactions = existingTransactions.stream()
+                .filter(t -> t.getAccount() == null || (document.getAccount() != null && t.getAccount().getId().equals(document.getAccount().getId())))
+                .toList();
 
         int validRows = 0;
         int invalidRows = 0;
@@ -200,9 +254,9 @@ public class StatementIngestionService {
             }
             validRows++;
 
-            // 2. Batch & Database Deduplication
+            // 2. Batch & Database Deduplication (scoped to this account)
             DuplicateCheckResult dupResult = deduplicationService.checkDuplicate(
-                    candidate, existingTransactions, seenDocumentSignatures);
+                    candidate, accountExistingTransactions, seenDocumentSignatures);
 
             if (dupResult.isExactDuplicate()) {
                 Transaction existingTx = dupResult.existingTransaction();
@@ -218,7 +272,7 @@ public class StatementIngestionService {
                 continue;
             }
 
-            // 3. Settlement / Transfer / Refund Resolution
+            // 3. Settlement / Refund Resolution
             SettlementResolutionOutcome settlementOutcome = settlementResolutionService.processCandidate(
                     user, document, candidate);
 
@@ -232,16 +286,65 @@ public class StatementIngestionService {
                 continue;
             }
 
-            // 4. Genuine Transaction Creation & Categorization
-            TransactionType finalDirection = candidate.direction() != null
-                    ? candidate.direction()
-                    : TransactionType.EXPENSE;
+            // 4. Transaction Classification, Transfer Matching, and Categorization
+            boolean isCredit = candidate.direction() == TransactionType.INCOME
+                    || "CR".equalsIgnoreCase(candidate.rawTypeIndicator())
+                    || (candidate.classification() == SourceTransactionClassification.DEPOSIT)
+                    || (candidate.classification() == SourceTransactionClassification.INTEREST && candidate.accountType() != DocumentAccountType.CREDIT_CARD);
+            boolean isDebit = !isCredit;
+
+            Optional<Transaction> bilateralCounterpart = (transferMatchingService != null)
+                    ? transferMatchingService.findCounterpartForCandidate(candidate, isCredit, document.getAccount(), existingTransactions, user)
+                    : Optional.empty();
+
+            boolean isCashWithdrawal = candidate.direction() == TransactionType.CASH_WITHDRAWAL
+                    || (candidate.rawDescription() != null && CASH_WITHDRAWAL_PATTERN.matcher(candidate.rawDescription()).find());
+
+            boolean isInvestment = candidate.direction() == TransactionType.INVESTMENT
+                    || (isDebit && isInvestmentCandidate(candidate));
+
+            boolean isTransfer = candidate.direction() == TransactionType.TRANSFER
+                    || candidate.classification() == SourceTransactionClassification.TRANSFER
+                    || bilateralCounterpart.isPresent()
+                    || isTransferCandidate(candidate, user, document.getAccount(), allUserAccounts, existingTransactions, isCredit);
+
+            TransactionType finalType;
+            TransferDirection transferDirection = null;
+            TransferMatchStatus transferMatchStatus = TransferMatchStatus.NONE;
+
+            if (isCashWithdrawal) {
+                finalType = TransactionType.CASH_WITHDRAWAL;
+            } else if (isInvestment) {
+                finalType = TransactionType.INVESTMENT;
+            } else if (isTransfer) {
+                finalType = TransactionType.TRANSFER;
+                transferDirection = isCredit ? TransferDirection.IN : TransferDirection.OUT;
+                transferMatchStatus = bilateralCounterpart.isPresent() ? TransferMatchStatus.AUTO_MATCHED : TransferMatchStatus.UNMATCHED;
+            } else if (isCredit) {
+                finalType = TransactionType.INCOME;
+            } else {
+                finalType = TransactionType.EXPENSE;
+            }
 
             String merchant = cleanMerchant(candidate.rawMerchant(), candidate.rawDescription());
             String description = cleanDescription(candidate.rawDescription());
 
-            CategorizationResult catResult = null;
-            if (categorizationService != null) {
+            TransactionCategory assignedCategory = TransactionCategory.OTHER;
+            BigDecimal confidence = BigDecimal.ZERO;
+            ConfidenceLevel confidenceLevel = ConfidenceLevel.NONE;
+            CategorizationSource source = CategorizationSource.FALLBACK;
+            boolean requiresReview = dupResult.isProbableDuplicate();
+            TransactionCategory predictedCategory = TransactionCategory.OTHER;
+            String alternatives = null;
+
+            if (finalType == TransactionType.TRANSFER || finalType == TransactionType.CASH_WITHDRAWAL || finalType == TransactionType.INVESTMENT) {
+                assignedCategory = TransactionCategory.OTHER;
+                confidence = BigDecimal.ONE;
+                confidenceLevel = ConfidenceLevel.HIGH;
+                source = CategorizationSource.RULE;
+                requiresReview = false;
+                predictedCategory = TransactionCategory.OTHER;
+            } else if (categorizationService != null) {
                 try {
                     CategorizationRequest catReq = new CategorizationRequest(
                             user.getId(),
@@ -251,29 +354,25 @@ public class StatementIngestionService {
                             candidate.inferredPaymentMethod() != null ? candidate.inferredPaymentMethod().name() : null,
                             candidate.transactionDate()
                     );
-                    catResult = categorizationService.categorize(catReq);
+                    CategorizationResult catResult = categorizationService.categorize(catReq);
+                    if (catResult != null) {
+                        assignedCategory = catResult.category();
+                        confidence = BigDecimal.valueOf(catResult.confidence());
+                        confidenceLevel = catResult.confidenceLevel();
+                        source = catResult.source();
+                        requiresReview = requiresReview || catResult.requiresUserConfirmation();
+                        predictedCategory = catResult.category();
+                        if (catResult.alternatives() != null && !catResult.alternatives().isEmpty()) {
+                            alternatives = serializeAlternatives(catResult.alternatives());
+                        }
+                    } else {
+                        assignedCategory = TransactionCategory.OTHER;
+                        requiresReview = true;
+                    }
                 } catch (Exception e) {
                     log.warn("Categorization failed safely for row {}: {}", candidate.rowIndex(), e.getMessage());
-                }
-            }
-
-            TransactionCategory assignedCategory;
-            BigDecimal confidence = BigDecimal.ZERO;
-            ConfidenceLevel confidenceLevel = ConfidenceLevel.NONE;
-            CategorizationSource source = CategorizationSource.FALLBACK;
-            boolean requiresReview = dupResult.isProbableDuplicate();
-            TransactionCategory predictedCategory = TransactionCategory.OTHER;
-            String alternatives = null;
-
-            if (catResult != null) {
-                assignedCategory = catResult.category();
-                confidence = BigDecimal.valueOf(catResult.confidence());
-                confidenceLevel = catResult.confidenceLevel();
-                source = catResult.source();
-                requiresReview = requiresReview || catResult.requiresUserConfirmation();
-                predictedCategory = catResult.category();
-                if (catResult.alternatives() != null && !catResult.alternatives().isEmpty()) {
-                    alternatives = serializeAlternatives(catResult.alternatives());
+                    assignedCategory = TransactionCategory.OTHER;
+                    requiresReview = true;
                 }
             } else {
                 assignedCategory = TransactionCategory.OTHER;
@@ -299,7 +398,7 @@ public class StatementIngestionService {
                     merchant,
                     description,
                     assignedCategory,
-                    finalDirection,
+                    finalType,
                     candidate.inferredPaymentMethod() != null ? candidate.inferredPaymentMethod() : PaymentMethod.OTHER,
                     candidate.transactionDate(),
                     notes,
@@ -311,10 +410,20 @@ public class StatementIngestionService {
                     alternatives,
                     TransactionSourceType.STATEMENT_IMPORT,
                     document,
-                    sourceReference
+                    sourceReference,
+                    document.getAccount(),
+                    transferDirection,
+                    null,
+                    null,
+                    transferMatchStatus
             );
 
             Transaction saved = transactionRepository.save(transaction);
+            if (bilateralCounterpart.isPresent() && transferMatchingService != null) {
+                transferMatchingService.retroactivelyUpgradeAndMatch(saved, bilateralCounterpart.get());
+            } else if (finalType == TransactionType.TRANSFER && transferMatchingService != null) {
+                transferMatchingService.attemptMatch(saved);
+            }
             existingTransactions.add(saved);
             importedTransactions++;
         }
@@ -401,5 +510,74 @@ public class StatementIngestionService {
             log.warn("Failed to serialize categorization alternatives: {}", e.getMessage());
             return null;
         }
+    }
+
+    // NOTE: Use the canonical pattern from TransferMatchingService — see isTransferCandidate()
+
+    private static final java.util.regex.Pattern INVESTMENT_KEYWORDS = java.util.regex.Pattern.compile(
+            "\\b(ZERODHA|GROWW|UPSTOX|ANGEL ONE|ANGEL BROKING|INDMONEY|KUVERA|PAYTM MONEY|COIN|MUTUAL FUND|NIPPON INDIA|HDFC MF|ICICI PRUDENTIAL|SBI MF|UTI MF|AXIS MF|PPF|NPS|SGB|NSE|BSE)\\b",
+            java.util.regex.Pattern.CASE_INSENSITIVE);
+
+    private static final java.util.regex.Pattern CASH_WITHDRAWAL_PATTERN = java.util.regex.Pattern.compile(
+            "\\b(ATM WDL|ATM CASH|CASH WDL|CASH DEP|ATM[/\\-]CASH|ATW[/\\-]|ATW\\b)",
+            java.util.regex.Pattern.CASE_INSENSITIVE);
+
+    private boolean isTransferCandidate(
+            TransactionCandidate candidate,
+            User user,
+            FinancialAccount currentAccount,
+            List<FinancialAccount> allUserAccounts,
+            List<Transaction> existingTransactions,
+            boolean isCredit
+    ) {
+        String combined = ((candidate.rawMerchant() != null ? candidate.rawMerchant() : "") + " "
+                + (candidate.rawDescription() != null ? candidate.rawDescription() : "")).toLowerCase();
+
+        // 1. Direct transfer keywords (canonical pattern from TransferMatchingService)
+        if (TransferMatchingService.INTERNAL_TRANSFER_KEYWORDS.matcher(combined).find()) {
+            return true;
+        }
+
+        // 2. Mentions another account of the user + supporting user name signal
+        if (allUserAccounts != null && transferMatchingService != null && transferMatchingService.matchesUserNameSignal(user, combined)) {
+            for (FinancialAccount acc : allUserAccounts) {
+                if (currentAccount != null && acc.getId().equals(currentAccount.getId())) {
+                    continue;
+                }
+                if (acc.getInstitutionName() != null && !acc.getInstitutionName().isBlank()) {
+                    if (TransferMatchingService.containsInstitutionReference(combined, acc.getInstitutionName())) {
+                        return true;
+                    }
+                }
+                if (acc.getAccountNumberLast4() != null && !acc.getAccountNumberLast4().isBlank()) {
+                    if (combined.contains(acc.getAccountNumberLast4().trim())) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // 3. Opposing unmatched counterpart transfer exists in other account
+        if (existingTransactions != null && candidate.amount() != null) {
+            TransferDirection opposingDirection = isCredit ? TransferDirection.OUT : TransferDirection.IN;
+            boolean hasCounterpart = existingTransactions.stream()
+                    .filter(t -> t.getTransactionType() == TransactionType.TRANSFER)
+                    .filter(t -> t.getTransferDirection() == opposingDirection)
+                    .filter(t -> t.getTransferMatchStatus() == TransferMatchStatus.UNMATCHED)
+                    .filter(t -> t.getAmount().compareTo(candidate.amount()) == 0)
+                    .filter(t -> currentAccount == null || t.getAccount() == null || !t.getAccount().getId().equals(currentAccount.getId()))
+                    .anyMatch(t -> Math.abs(java.time.temporal.ChronoUnit.DAYS.between(t.getTransactionDate(), candidate.transactionDate())) <= 3);
+            if (hasCounterpart) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isInvestmentCandidate(TransactionCandidate candidate) {
+        String combined = ((candidate.rawMerchant() != null ? candidate.rawMerchant() : "") + " "
+                + (candidate.rawDescription() != null ? candidate.rawDescription() : "")).toLowerCase();
+        return INVESTMENT_KEYWORDS.matcher(combined).find();
     }
 }

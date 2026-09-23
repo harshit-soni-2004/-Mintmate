@@ -35,7 +35,14 @@ public record TransactionResponse(
         List<CategorizationCandidateDto> alternatives,
         com.spendsense.transaction.TransactionSourceType sourceType,
         UUID sourceDocumentId,
-        String sourceReference
+        String sourceReference,
+        UUID accountId,
+        String accountName,
+        com.spendsense.transaction.TransferDirection transferDirection,
+        UUID counterpartyAccountId,
+        String counterpartyAccountName,
+        UUID linkedTransactionId,
+        com.spendsense.transaction.TransferMatchStatus transferMatchStatus
 ) {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -54,7 +61,36 @@ public record TransactionResponse(
     ) {
         this(id, amount, merchant, description, category, transactionType, paymentMethod, transactionDate, notes,
                 createdAt, updatedAt, null, null, null, false, null, List.of(),
-                com.spendsense.transaction.TransactionSourceType.MANUAL, null, null);
+                com.spendsense.transaction.TransactionSourceType.MANUAL, null, null,
+                null, null, null, null, null, null, com.spendsense.transaction.TransferMatchStatus.NONE);
+    }
+
+    public TransactionResponse(
+            UUID id,
+            BigDecimal amount,
+            String merchant,
+            String description,
+            TransactionCategory category,
+            TransactionType transactionType,
+            PaymentMethod paymentMethod,
+            LocalDate transactionDate,
+            String notes,
+            Instant createdAt,
+            Instant updatedAt,
+            Double confidence,
+            ConfidenceLevel confidenceLevel,
+            CategorizationSource categorizationSource,
+            Boolean requiresUserConfirmation,
+            TransactionCategory predictedCategory,
+            List<CategorizationCandidateDto> alternatives,
+            com.spendsense.transaction.TransactionSourceType sourceType,
+            UUID sourceDocumentId,
+            String sourceReference
+    ) {
+        this(id, amount, merchant, description, category, transactionType, paymentMethod, transactionDate, notes,
+                createdAt, updatedAt, confidence, confidenceLevel, categorizationSource, requiresUserConfirmation,
+                predictedCategory, alternatives, sourceType, sourceDocumentId, sourceReference,
+                null, null, null, null, null, null, com.spendsense.transaction.TransferMatchStatus.NONE);
     }
 
     public static TransactionResponse from(Transaction transaction) {
@@ -85,6 +121,12 @@ public record TransactionResponse(
                 ? transaction.getSourceDocument().getId()
                 : null;
 
+        UUID accId = transaction.getAccount() != null ? transaction.getAccount().getId() : null;
+        String accName = transaction.getAccount() != null ? transaction.getAccount().getName() : null;
+        UUID cpAccId = transaction.getCounterpartyAccount() != null ? transaction.getCounterpartyAccount().getId() : null;
+        String cpAccName = transaction.getCounterpartyAccount() != null ? transaction.getCounterpartyAccount().getName() : null;
+        UUID linkedTxId = transaction.getLinkedTransaction() != null ? transaction.getLinkedTransaction().getId() : null;
+
         return new TransactionResponse(
                 transaction.getId(),
                 transaction.getAmount(),
@@ -105,7 +147,14 @@ public record TransactionResponse(
                 alts,
                 srcType,
                 docId,
-                transaction.getSourceReference()
+                transaction.getSourceReference(),
+                accId,
+                accName,
+                transaction.getTransferDirection(),
+                cpAccId,
+                cpAccName,
+                linkedTxId,
+                transaction.getTransferMatchStatus() != null ? transaction.getTransferMatchStatus() : com.spendsense.transaction.TransferMatchStatus.NONE
         );
     }
 }

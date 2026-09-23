@@ -505,6 +505,117 @@ class PdfStatementExtractorTest {
         assertTrue(c3.validationResult().isValid());
     }
 
+    @Test
+    void extract_statementWithSerialNumbers_multiWordDates_andFollowUpSummaryPages_extractsOnlyTransactions() throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (PDDocument doc = new PDDocument()) {
+            PDType1Font font = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
+
+            // Page 1: Transaction Table
+            PDPage page1 = new PDPage(PDRectangle.A4);
+            doc.addPage(page1);
+            try (PDPageContentStream cs = new PDPageContentStream(doc, page1)) {
+                writeText(cs, font, 40, 750, "Statement of Account");
+                writeText(cs, font, 40, 735, "01 Aug 2026 - 31 Aug 2026");
+
+                // Header with serial #, multi-word columns
+                writeText(cs, font, 40, 700, "#");
+                writeText(cs, font, 60, 700, "Date");
+                writeText(cs, font, 130, 700, "Description");
+                writeText(cs, font, 270, 700, "Chq/Ref. No.");
+                writeText(cs, font, 360, 700, "Withdrawal (Dr.)");
+                writeText(cs, font, 440, 700, "Deposit (Cr.)");
+                writeText(cs, font, 510, 700, "Balance");
+
+                // Opening balance line (should be ignored)
+                writeText(cs, font, 40, 680, "-");
+                writeText(cs, font, 60, 680, "-");
+                writeText(cs, font, 130, 680, "Opening Balance");
+                writeText(cs, font, 270, 680, "-");
+                writeText(cs, font, 360, 680, "-");
+                writeText(cs, font, 440, 680, "-");
+                writeText(cs, font, 510, 680, "0.00");
+
+                // Row 1: Serial 1, multi-word date, credit
+                writeText(cs, font, 40, 660, "1");
+                writeText(cs, font, 60, 660, "10 Aug 2026");
+                writeText(cs, font, 130, 660, "Salary Deposit");
+                writeText(cs, font, 270, 660, "SAL-998822");
+                writeText(cs, font, 360, 660, "-");
+                writeText(cs, font, 440, 660, "50,000.00");
+                writeText(cs, font, 510, 660, "50,000.00");
+
+                // Row 2: Serial 2, debit, wrapped description
+                writeText(cs, font, 40, 640, "2");
+                writeText(cs, font, 60, 640, "11 Aug 2026");
+                writeText(cs, font, 130, 640, "Utility Payment");
+                writeText(cs, font, 270, 640, "ELEC-44112");
+                writeText(cs, font, 360, 640, "2,500.00");
+                writeText(cs, font, 440, 640, "-");
+                writeText(cs, font, 510, 640, "47,500.00");
+                writeText(cs, font, 130, 630, "Electricity Board August Bill");
+
+                // Row 3: Serial 3, credit, wrapped reference across lines
+                writeText(cs, font, 40, 610, "3");
+                writeText(cs, font, 60, 610, "12 Aug 2026");
+                writeText(cs, font, 130, 610, "Reward Cashback");
+                writeText(cs, font, 270, 610, "ONBF-");
+                writeText(cs, font, 360, 610, "-");
+                writeText(cs, font, 440, 610, "50.00");
+                writeText(cs, font, 510, 610, "47,550.00");
+                writeText(cs, font, 270, 600, "ref99118822");
+
+                // End of statement marker
+                writeText(cs, font, 44, 570, "End of Statement");
+            }
+
+            // Page 2: Summary / Terms page (must produce 0 transactions)
+            PDPage page2 = new PDPage(PDRectangle.A4);
+            doc.addPage(page2);
+            try (PDPageContentStream cs = new PDPageContentStream(doc, page2)) {
+                writeText(cs, font, 40, 750, "Account Summary");
+                writeText(cs, font, 40, 730, "Total Withdrawals: 2,500.00");
+                writeText(cs, font, 40, 715, "Total Deposits: 50,050.00");
+                writeText(cs, font, 40, 700, "Closing Balance: 47,550.00");
+                writeText(cs, font, 40, 650, "Terms and Conditions of Savings Account");
+            }
+
+            doc.save(bos);
+        }
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+        List<TransactionCandidate> candidates = extractor.extract(documentId, DocumentAccountType.SAVINGS, bis);
+
+        assertEquals(3, candidates.size(), "Should extract exactly 3 transactions, ignoring summary page");
+        assertTrue(candidates.stream().allMatch(c -> c.validationResult().isValid()), "All candidates should be valid");
+
+        // Transaction 1
+        TransactionCandidate c1 = candidates.get(0);
+        assertEquals(LocalDate.of(2026, 8, 10), c1.transactionDate());
+        assertEquals(new BigDecimal("50000.00"), c1.amount());
+        assertEquals(TransactionType.INCOME, c1.direction());
+        assertEquals(new BigDecimal("50000.00"), c1.balanceAfter());
+        assertEquals("SAL-998822", c1.externalReference());
+        assertTrue(c1.rawDescription().contains("Salary Deposit"));
+
+        // Transaction 2
+        TransactionCandidate c2 = candidates.get(1);
+        assertEquals(LocalDate.of(2026, 8, 11), c2.transactionDate());
+        assertEquals(new BigDecimal("2500.00"), c2.amount());
+        assertEquals(TransactionType.EXPENSE, c2.direction());
+        assertEquals(new BigDecimal("47500.00"), c2.balanceAfter());
+        assertEquals("ELEC-44112", c2.externalReference());
+        assertTrue(c2.rawDescription().contains("Electricity Board August Bill"));
+
+        // Transaction 3
+        TransactionCandidate c3 = candidates.get(2);
+        assertEquals(LocalDate.of(2026, 8, 12), c3.transactionDate());
+        assertEquals(new BigDecimal("50.00"), c3.amount());
+        assertEquals(new BigDecimal("47550.00"), c3.balanceAfter());
+        assertEquals("ONBF-ref99118822", c3.externalReference());
+        assertEquals("Reward Cashback", c3.rawDescription());
+    }
+
     private static void writeText(PDPageContentStream cs, PDType1Font font, float x, float y, String text) throws IOException {
         cs.beginText();
         cs.setFont(font, 10);

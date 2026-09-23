@@ -25,10 +25,22 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
 
     @Query("SELECT new com.spendsense.dashboard.dto.DailySpend(t.transactionDate, t.transactionType, SUM(t.amount), COUNT(t.id)) " +
            "FROM Transaction t WHERE t.user.id = :userId " +
+           "AND t.transactionType IN (com.spendsense.transaction.TransactionType.EXPENSE, com.spendsense.transaction.TransactionType.INCOME) " +
            "AND t.transactionDate >= :fromDate AND t.transactionDate <= :toDate " +
            "GROUP BY t.transactionDate, t.transactionType ORDER BY t.transactionDate ASC")
     List<DailySpend> findDailySpending(
             @Param("userId") UUID userId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT t FROM Transaction t WHERE t.user.id = :userId " +
+           "AND t.amount = :amount " +
+           "AND t.transactionDate >= :fromDate AND t.transactionDate <= :toDate " +
+           "AND t.linkedTransaction IS NULL " +
+           "ORDER BY t.transactionDate ASC")
+    List<Transaction> findPotentialTransferCounterparts(
+            @Param("userId") UUID userId,
+            @Param("amount") BigDecimal amount,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate);
 
@@ -86,4 +98,42 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
 
     List<Transaction> findByUser_IdAndTransactionTypeAndTransactionDateBetweenOrderByAmountDesc(
             UUID userId, TransactionType transactionType, LocalDate fromDate, LocalDate toDate);
+
+    @Query("SELECT t FROM Transaction t WHERE t.sourceDocument.id = :sourceDocumentId AND t.user.id = :userId")
+    List<Transaction> findBySourceDocumentIdAndUserId(
+            @Param("sourceDocumentId") UUID sourceDocumentId,
+            @Param("userId") UUID userId);
+
+    @Query("SELECT t FROM Transaction t WHERE t.user.id = :userId " +
+           "AND t.transactionType = :type " +
+           "AND t.transferDirection = :direction " +
+           "AND t.transferMatchStatus = :status " +
+           "AND t.amount = :amount " +
+           "ORDER BY t.transactionDate ASC")
+    List<Transaction> findUnmatchedTransfers(
+            @Param("userId") UUID userId,
+            @Param("type") TransactionType type,
+            @Param("direction") TransferDirection direction,
+            @Param("status") TransferMatchStatus status,
+            @Param("amount") BigDecimal amount);
+
+    @Query("SELECT t FROM Transaction t WHERE t.user.id = :userId " +
+           "AND (:accountId IS NULL OR t.account.id = :accountId) " +
+           "AND t.transactionDate >= :fromDate AND t.transactionDate <= :toDate " +
+           "ORDER BY t.transactionDate DESC, t.createdAt DESC")
+    List<Transaction> findByUserIdAndAccountIdAndDateBetween(
+            @Param("userId") UUID userId,
+            @Param("accountId") UUID accountId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t " +
+           "WHERE t.user.id = :userId AND t.transactionType = :type AND t.transferDirection = :direction " +
+           "AND t.transactionDate >= :fromDate AND t.transactionDate <= :toDate")
+    BigDecimal sumAmountByUserIdAndTypeAndDirectionAndDateBetween(
+            @Param("userId") UUID userId,
+            @Param("type") TransactionType type,
+            @Param("direction") TransferDirection direction,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
 }

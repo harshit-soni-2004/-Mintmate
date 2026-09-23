@@ -25,10 +25,24 @@ export interface AuthResponse {
 }
 
 export type TransactionCategory = 'FOOD' | 'TRAVEL' | 'SHOPPING' | 'ENTERTAINMENT' | 'BILLS' | 'HEALTH' | 'EDUCATION' | 'PERSONAL' | 'OTHER';
-export type TransactionType = 'EXPENSE' | 'INCOME';
+export type TransactionType = 'EXPENSE' | 'INCOME' | 'TRANSFER' | 'INVESTMENT' | 'CASH_WITHDRAWAL';
+export type TransferDirection = 'IN' | 'OUT';
+export type TransferMatchStatus = 'NONE' | 'UNMATCHED' | 'AUTO_MATCHED' | 'MANUALLY_CONFIRMED';
 export type PaymentMethod = 'UPI' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CASH' | 'BANK_TRANSFER' | 'OTHER';
 export type CategorizationConfidenceLevel = 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
 export type CategorizationSource = 'RULE' | 'USER_MEMORY' | 'ML' | 'FALLBACK' | 'MANUAL';
+
+export interface FinancialAccount {
+  id: string;
+  name: string;
+  institutionName: string;
+  accountType: DocumentAccountType;
+  accountNumberLast4?: string | null;
+  currency: string;
+  primary: boolean;
+  active: boolean;
+  createdAt: string;
+}
 
 export interface CategorizationAlternative {
   category: TransactionCategory;
@@ -59,6 +73,13 @@ export interface Transaction {
   sourceReferenceId?: string | null;
   importBatchId?: string | null;
   rawDescription?: string | null;
+  accountId?: string | null;
+  accountName?: string | null;
+  transferDirection?: TransferDirection | null;
+  counterpartyAccountId?: string | null;
+  counterpartyAccountName?: string | null;
+  linkedTransactionId?: string | null;
+  transferMatchStatus?: TransferMatchStatus;
 }
 
 export type DocumentFileType = 'CSV' | 'XLSX' | 'PDF';
@@ -93,6 +114,8 @@ export interface FinancialDocument {
   importedCount: number;
   duplicateCount: number;
   errorMessage?: string | null;
+  accountId?: string | null;
+  accountName?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -160,6 +183,8 @@ export interface DashboardSummary {
   previousPeriodExpenses: number;
   incomeChangePercentage: number | null;
   expenseChangePercentage: number | null;
+  totalTransfers?: number;
+  investmentContributions?: number;
 }
 
 export interface CategorySpending {
@@ -274,6 +299,8 @@ export interface SpendingSummary {
   largestExpense: number;
   fromDate: string;
   toDate: string;
+  totalTransfers?: number;
+  investmentContributions?: number;
 }
 
 export interface TrendMetric {

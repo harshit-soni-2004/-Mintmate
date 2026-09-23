@@ -62,7 +62,6 @@ public class SettlementResolutionService {
     ) {
         SourceTransactionClassification classification = candidate.classification();
         if (classification != SourceTransactionClassification.PAYMENT
-                && classification != SourceTransactionClassification.TRANSFER
                 && classification != SourceTransactionClassification.REFUND
                 && classification != SourceTransactionClassification.REVERSAL) {
             return SettlementResolutionOutcome.notSettlement();
@@ -203,11 +202,6 @@ public class SettlementResolutionService {
             boolean newIsCard = newAccountType == DocumentAccountType.CREDIT_CARD;
             boolean existingIsCard = existing.getAccountType() == DocumentAccountType.CREDIT_CARD;
             return (newIsCard && !existingIsCard) || (!newIsCard && existingIsCard);
-        }
-
-        if (newClassification == SourceTransactionClassification.TRANSFER) {
-            // Internal transfers between different accounts or same user accounts
-            return existing.getClassification() == SourceTransactionClassification.TRANSFER;
         }
 
         return false;

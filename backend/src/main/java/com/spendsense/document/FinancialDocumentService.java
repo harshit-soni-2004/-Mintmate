@@ -35,6 +35,8 @@ public class FinancialDocumentService {
     private final UserRepository userRepository;
     private final CurrentUser currentUser;
     private final com.spendsense.ingestion.settlement.StatementSettlementRepository settlementRepository;
+    private final com.spendsense.transaction.TransactionRepository transactionRepository;
+    private final com.spendsense.ingestion.transfer.TransferMatchingService transferMatchingService;
 
     public FinancialDocumentService(
             FinancialDocumentRepository documentRepository,
@@ -42,7 +44,28 @@ public class FinancialDocumentService {
             UserRepository userRepository,
             CurrentUser currentUser
     ) {
-        this(documentRepository, documentStorage, userRepository, currentUser, null);
+        this(documentRepository, documentStorage, userRepository, currentUser, null, null, null);
+    }
+
+    public FinancialDocumentService(
+            FinancialDocumentRepository documentRepository,
+            DocumentStorage documentStorage,
+            UserRepository userRepository,
+            CurrentUser currentUser,
+            com.spendsense.ingestion.settlement.StatementSettlementRepository settlementRepository
+    ) {
+        this(documentRepository, documentStorage, userRepository, currentUser, settlementRepository, null, null);
+    }
+
+    public FinancialDocumentService(
+            FinancialDocumentRepository documentRepository,
+            DocumentStorage documentStorage,
+            UserRepository userRepository,
+            CurrentUser currentUser,
+            com.spendsense.ingestion.settlement.StatementSettlementRepository settlementRepository,
+            com.spendsense.transaction.TransactionRepository transactionRepository
+    ) {
+        this(documentRepository, documentStorage, userRepository, currentUser, settlementRepository, transactionRepository, null);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -51,13 +74,17 @@ public class FinancialDocumentService {
             DocumentStorage documentStorage,
             UserRepository userRepository,
             CurrentUser currentUser,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) com.spendsense.ingestion.settlement.StatementSettlementRepository settlementRepository
+            @org.springframework.beans.factory.annotation.Autowired(required = false) com.spendsense.ingestion.settlement.StatementSettlementRepository settlementRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) com.spendsense.transaction.TransactionRepository transactionRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) com.spendsense.ingestion.transfer.TransferMatchingService transferMatchingService
     ) {
         this.documentRepository = documentRepository;
         this.documentStorage = documentStorage;
         this.userRepository = userRepository;
         this.currentUser = currentUser;
         this.settlementRepository = settlementRepository;
+        this.transactionRepository = transactionRepository;
+        this.transferMatchingService = transferMatchingService;
     }
 
     /**
@@ -160,19 +187,43 @@ public class FinancialDocumentService {
         User user = requireUser();
         FinancialDocument doc = findOwned(documentId, user.getId());
 
-        // Unmatch any counterpart settlements in other documents before cascade deletion
+        // 1. Find and delete all statement-owned transactions created/imported from this document
+        if (transactionRepository != null) {
+            List<com.spendsense.transaction.Transaction> statementTransactions = transactionRepository.findBySourceDocumentIdAndUserId(doc.getId(), user.getId())
+                    .stream()
+                    .filter(t -> t.getSourceType() != com.spendsense.transaction.TransactionSourceType.MANUAL)
+                    .toList();
+            if (!statementTransactions.isEmpty()) {
+                log.info("Deleting {} statement-imported transactions for document {}", statementTransactions.size(), doc.getId());
+                if (transferMatchingService != null) {
+                    transferMatchingService.unlinkBeforeDeletion(statementTransactions);
+                }
+                transactionRepository.deleteAll(statementTransactions);
+                transactionRepository.flush();
+            }
+        }
+
+        // 2. Unmatch any counterpart settlements in other documents before deleting this document's settlements
         if (settlementRepository != null) {
             List<com.spendsense.ingestion.settlement.StatementSettlement> settlements = settlementRepository.findByDocumentId(doc.getId());
             for (com.spendsense.ingestion.settlement.StatementSettlement settlement : settlements) {
                 if (settlement.getMatchedSettlementId() != null) {
                     settlementRepository.findById(settlement.getMatchedSettlementId()).ifPresent(counterpart -> {
-                        counterpart.markUnresolved();
-                        settlementRepository.save(counterpart);
+                        if (!doc.getId().equals(counterpart.getDocument().getId())) {
+                            counterpart.markUnresolved();
+                            settlementRepository.save(counterpart);
+                        }
                     });
                 }
             }
+            if (!settlements.isEmpty()) {
+                log.info("Deleting {} settlements for document {}", settlements.size(), doc.getId());
+                settlementRepository.deleteAll(settlements);
+                settlementRepository.flush();
+            }
         }
 
+        // 3. Delete physical storage file
         try {
             StorageReference ref = new StorageReference(doc.getStorageKey(), doc.getOriginalFilename(), doc.getFileSizeBytes());
             documentStorage.delete(user.getId(), ref);
@@ -180,8 +231,10 @@ public class FinancialDocumentService {
             log.warn("Failed to delete physical file for document {}: {}", documentId, e.getMessage());
         }
 
+        // 4. Delete document metadata
         documentRepository.delete(doc);
-        log.info("Deleted financial document {} for user {}", documentId, user.getId());
+        documentRepository.flush();
+        log.info("Deleted financial document {} and associated statement records for user {}", documentId, user.getId());
     }
 
     @Transactional

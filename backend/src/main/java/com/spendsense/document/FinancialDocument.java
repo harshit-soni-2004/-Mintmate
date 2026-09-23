@@ -33,6 +33,10 @@ public class FinancialDocument {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "account_id")
+    private com.spendsense.account.FinancialAccount account;
+
     @Column(name = "original_filename", nullable = false, length = 255)
     private String originalFilename;
 
@@ -198,4 +202,6 @@ public class FinancialDocument {
     public String getErrorMessage() { return errorMessage; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+    public com.spendsense.account.FinancialAccount getAccount() { return account; }
+    public void setAccount(com.spendsense.account.FinancialAccount account) { this.account = account; }
 }

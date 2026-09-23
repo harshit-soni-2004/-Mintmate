@@ -9,6 +9,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -91,6 +92,26 @@ public class Transaction {
     @Column(name = "source_reference", length = 120)
     private String sourceReference;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "account_id")
+    private com.spendsense.account.FinancialAccount account;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transfer_direction", length = 16)
+    private TransferDirection transferDirection;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "counterparty_account_id")
+    private com.spendsense.account.FinancialAccount counterpartyAccount;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "linked_transaction_id")
+    private Transaction linkedTransaction;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transfer_match_status", nullable = false, length = 32)
+    private TransferMatchStatus transferMatchStatus = TransferMatchStatus.NONE;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -128,9 +149,25 @@ public class Transaction {
                        PaymentMethod paymentMethod, LocalDate transactionDate, String notes,
                        BigDecimal categorizationConfidence, com.spendsense.categorization.ConfidenceLevel categorizationConfidenceLevel,
                        com.spendsense.categorization.CategorizationSource categorizationSource, boolean requiresReview,
+                        TransactionCategory predictedCategory, String categorizationAlternatives,
+                        TransactionSourceType sourceType, com.spendsense.document.FinancialDocument sourceDocument,
+                        String sourceReference) {
+        this(user, amount, merchant, description, category, transactionType, paymentMethod, transactionDate, notes,
+                categorizationConfidence, categorizationConfidenceLevel, categorizationSource, requiresReview,
+                predictedCategory, categorizationAlternatives, sourceType, sourceDocument, sourceReference,
+                null, null, null, null, TransferMatchStatus.NONE);
+    }
+
+    public Transaction(User user, BigDecimal amount, String merchant, String description,
+                       TransactionCategory category, TransactionType transactionType,
+                       PaymentMethod paymentMethod, LocalDate transactionDate, String notes,
+                       BigDecimal categorizationConfidence, com.spendsense.categorization.ConfidenceLevel categorizationConfidenceLevel,
+                       com.spendsense.categorization.CategorizationSource categorizationSource, boolean requiresReview,
                        TransactionCategory predictedCategory, String categorizationAlternatives,
                        TransactionSourceType sourceType, com.spendsense.document.FinancialDocument sourceDocument,
-                       String sourceReference) {
+                       String sourceReference, com.spendsense.account.FinancialAccount account,
+                       TransferDirection transferDirection, com.spendsense.account.FinancialAccount counterpartyAccount,
+                       Transaction linkedTransaction, TransferMatchStatus transferMatchStatus) {
         this.id = UUID.randomUUID();
         this.user = user;
         update(amount, merchant, description, category, transactionType, paymentMethod, transactionDate, notes);
@@ -143,6 +180,11 @@ public class Transaction {
         this.sourceType = sourceType != null ? sourceType : TransactionSourceType.MANUAL;
         this.sourceDocument = sourceDocument;
         this.sourceReference = sourceReference;
+        this.account = account;
+        this.transferDirection = transferDirection;
+        this.counterpartyAccount = counterpartyAccount;
+        this.linkedTransaction = linkedTransaction;
+        this.transferMatchStatus = transferMatchStatus != null ? transferMatchStatus : TransferMatchStatus.NONE;
     }
 
     public void update(BigDecimal amount, String merchant, TransactionCategory category,
@@ -211,6 +253,7 @@ public class Transaction {
     public String getDescription() { return description; }
     public TransactionCategory getCategory() { return category; }
     public TransactionType getTransactionType() { return transactionType; }
+    public void setTransactionType(TransactionType transactionType) { this.transactionType = transactionType; }
     public PaymentMethod getPaymentMethod() { return paymentMethod; }
     public LocalDate getTransactionDate() { return transactionDate; }
     public String getNotes() { return notes; }
@@ -228,4 +271,37 @@ public class Transaction {
     public void setSourceReference(String sourceReference) { this.sourceReference = sourceReference; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+
+    public com.spendsense.account.FinancialAccount getAccount() { return account; }
+    public void setAccount(com.spendsense.account.FinancialAccount account) { this.account = account; }
+
+    public TransferDirection getTransferDirection() { return transferDirection; }
+    public void setTransferDirection(TransferDirection transferDirection) { this.transferDirection = transferDirection; }
+
+    public com.spendsense.account.FinancialAccount getCounterpartyAccount() { return counterpartyAccount; }
+    public void setCounterpartyAccount(com.spendsense.account.FinancialAccount counterpartyAccount) { this.counterpartyAccount = counterpartyAccount; }
+
+    public Transaction getLinkedTransaction() { return linkedTransaction; }
+    public void setLinkedTransaction(Transaction linkedTransaction) { this.linkedTransaction = linkedTransaction; }
+
+    public TransferMatchStatus getTransferMatchStatus() { return transferMatchStatus; }
+    public void setTransferMatchStatus(TransferMatchStatus transferMatchStatus) {
+        this.transferMatchStatus = transferMatchStatus != null ? transferMatchStatus : TransferMatchStatus.NONE;
+    }
+
+    public void linkTransfer(Transaction counterpart, com.spendsense.account.FinancialAccount counterpartyAccount, TransferMatchStatus status) {
+        this.linkedTransaction = counterpart;
+        this.counterpartyAccount = counterpartyAccount;
+        this.transferMatchStatus = status != null ? status : TransferMatchStatus.AUTO_MATCHED;
+    }
+
+    public void unlinkTransfer() {
+        this.linkedTransaction = null;
+        this.counterpartyAccount = null;
+        if (this.transactionType == TransactionType.TRANSFER) {
+            this.transferMatchStatus = TransferMatchStatus.UNMATCHED;
+        } else {
+            this.transferMatchStatus = TransferMatchStatus.NONE;
+        }
+    }
 }

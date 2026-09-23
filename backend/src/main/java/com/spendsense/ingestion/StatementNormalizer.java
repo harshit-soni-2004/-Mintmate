@@ -52,7 +52,7 @@ public class StatementNormalizer {
     private static final Pattern UPI_VPA_PATTERN = Pattern.compile("[a-zA-Z0-9.\\-_]+@(okhdfcbank|oksbi|okicici|okaxis|paytm|ybl|upi|axl|ibl|apl|idfcbank|kotak|[a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern UPI_MARKER_PATTERN = Pattern.compile("\\b(UPI[/\\-_:]|UPI |UPI_REF|VPA\\b)", Pattern.CASE_INSENSITIVE);
     private static final Pattern BANK_TRANSFER_PATTERN = Pattern.compile("\\b(NEFT|RTGS|IMPS|ACH[/\\-]|NACH|INFT|FUND TRANSFER|FT[/\\-]|TRANSFER TO|TRANSFER FROM|CHQ TRANSFER)\\b", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CASH_PATTERN = Pattern.compile("\\b(ATM WDL|ATM CASH|CASH WDL|CASH DEP|ATM[/\\-]CASH)\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern CASH_PATTERN = Pattern.compile("\\b(ATM WDL|ATM CASH|CASH WDL|CASH DEP|ATM[/\\-]CASH|ATW[/\\-]|ATW\\b)", Pattern.CASE_INSENSITIVE);
     private static final Pattern DEBIT_CARD_PATTERN = Pattern.compile("\\b(POS[/ ]|ECOM[/ ]|E-COM|DEBIT CARD|CARD PURCHASE|ATM/DEBIT|VISA|MASTERCARD|RUPAY)\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern UTR_RRN_PATTERN = Pattern.compile("\\b([0-9]{12})\\b");
 
@@ -266,7 +266,7 @@ public class StatementNormalizer {
 
             // Check internal account transfer
             if (INTERNAL_TRANSFER_PATTERN.matcher(combined).find()) {
-                return new ClassificationResult(SourceTransactionClassification.TRANSFER, null);
+                return new ClassificationResult(SourceTransactionClassification.TRANSFER, TransactionType.TRANSFER);
             }
 
             // Check fee
@@ -276,7 +276,7 @@ public class StatementNormalizer {
 
             // Check cash withdrawal
             if (CASH_PATTERN.matcher(combined).find()) {
-                return new ClassificationResult(SourceTransactionClassification.WITHDRAWAL, TransactionType.EXPENSE);
+                return new ClassificationResult(SourceTransactionClassification.WITHDRAWAL, TransactionType.CASH_WITHDRAWAL);
             }
 
             // Check purchase or general withdrawal
@@ -297,7 +297,7 @@ public class StatementNormalizer {
 
             // Check internal account transfer
             if (INTERNAL_TRANSFER_PATTERN.matcher(combined).find()) {
-                return new ClassificationResult(SourceTransactionClassification.TRANSFER, null);
+                return new ClassificationResult(SourceTransactionClassification.TRANSFER, TransactionType.TRANSFER);
             }
 
             // Check interest credited

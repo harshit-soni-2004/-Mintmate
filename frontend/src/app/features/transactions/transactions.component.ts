@@ -36,7 +36,7 @@ export class TransactionsComponent implements OnInit {
     'OTHER',
   ];
 
-  readonly types: TransactionType[] = ['EXPENSE', 'INCOME'];
+  readonly types: TransactionType[] = ['EXPENSE', 'INCOME', 'TRANSFER', 'INVESTMENT', 'CASH_WITHDRAWAL'];
 
   readonly paymentMethods: PaymentMethod[] = [
     'UPI',
@@ -336,6 +336,18 @@ export class TransactionsComponent implements OnInit {
       case 'BANK_TRANSFER': return 'Bank Transfer';
       case 'OTHER': return 'Other';
       default: return method;
+    }
+  }
+
+  typeLabel(type?: TransactionType | null): string {
+    if (!type) return '—';
+    switch (type) {
+      case 'EXPENSE': return 'Expense';
+      case 'INCOME': return 'Income';
+      case 'TRANSFER': return 'Transfer';
+      case 'INVESTMENT': return 'Investment';
+      case 'CASH_WITHDRAWAL': return 'Cash Withdrawal';
+      default: return type;
     }
   }
 }

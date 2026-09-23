@@ -26,9 +26,37 @@ public record FinancialDocumentResponse(
         int duplicateCount,
         String errorMessage,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        UUID accountId,
+        String accountName
 ) {
+    public FinancialDocumentResponse(
+            UUID id,
+            String originalFilename,
+            DocumentFileType fileType,
+            long fileSizeBytes,
+            String contentHash,
+            String institutionName,
+            DocumentAccountType accountType,
+            String accountNumberLast4,
+            LocalDate statementStartDate,
+            LocalDate statementEndDate,
+            DocumentStatus status,
+            int totalRowsDetected,
+            int importedCount,
+            int duplicateCount,
+            String errorMessage,
+            Instant createdAt,
+            Instant updatedAt
+    ) {
+        this(id, originalFilename, fileType, fileSizeBytes, contentHash, institutionName, accountType, accountNumberLast4,
+                statementStartDate, statementEndDate, status, totalRowsDetected, importedCount, duplicateCount,
+                errorMessage, createdAt, updatedAt, null, null);
+    }
+
     public static FinancialDocumentResponse from(FinancialDocument doc) {
+        UUID accId = doc.getAccount() != null ? doc.getAccount().getId() : null;
+        String accName = doc.getAccount() != null ? doc.getAccount().getName() : null;
         return new FinancialDocumentResponse(
                 doc.getId(),
                 doc.getOriginalFilename(),
@@ -46,7 +74,9 @@ public record FinancialDocumentResponse(
                 doc.getDuplicateCount(),
                 doc.getErrorMessage(),
                 doc.getCreatedAt(),
-                doc.getUpdatedAt()
+                doc.getUpdatedAt(),
+                accId,
+                accName
         );
     }
 }

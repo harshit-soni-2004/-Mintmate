@@ -15,5 +15,10 @@ public interface StatementSettlementRepository extends JpaRepository<StatementSe
 
     List<StatementSettlement> findByDocumentId(UUID documentId);
 
+    @org.springframework.data.jpa.repository.Query("SELECT s FROM StatementSettlement s WHERE s.document.id = :documentId AND s.user.id = :userId")
+    List<StatementSettlement> findByDocumentIdAndUserId(
+            @org.springframework.data.repository.query.Param("documentId") UUID documentId,
+            @org.springframework.data.repository.query.Param("userId") UUID userId);
+
     Optional<StatementSettlement> findByDocumentIdAndRowIndex(UUID documentId, int rowIndex);
 }

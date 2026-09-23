@@ -80,6 +80,14 @@ public class AnalyticsService {
             largestExpense = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
         }
 
+        BigDecimal totalTransfers = transactionRepository.sumAmountByUserIdAndTypeAndDirectionAndDateBetween(
+                userId, TransactionType.TRANSFER, com.spendsense.transaction.TransferDirection.OUT, from, to);
+        if (totalTransfers == null) totalTransfers = BigDecimal.ZERO;
+
+        BigDecimal investmentContributions = transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(
+                userId, TransactionType.INVESTMENT, from, to);
+        if (investmentContributions == null) investmentContributions = BigDecimal.ZERO;
+
         return new SpendingSummaryResponse(
                 totalIncome,
                 totalExpenses,
@@ -89,7 +97,9 @@ public class AnalyticsService {
                 averageExpense,
                 largestExpense,
                 from,
-                to
+                to,
+                totalTransfers,
+                investmentContributions
         );
     }
 
@@ -256,10 +266,11 @@ public class AnalyticsService {
             DailyBucket bucket = map.computeIfAbsent(ds.date(), DailyBucket::new);
             if (ds.type() == TransactionType.EXPENSE) {
                 bucket.expense = bucket.expense.add(ds.totalAmount());
+                bucket.count += ds.count();
             } else if (ds.type() == TransactionType.INCOME) {
                 bucket.income = bucket.income.add(ds.totalAmount());
+                bucket.count += ds.count();
             }
-            bucket.count += ds.count();
         }
 
         List<SpendingTrendPoint> points = new ArrayList<>();

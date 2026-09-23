@@ -221,7 +221,7 @@ export class StatementsComponent implements OnInit {
 
   deleteStatement(doc: FinancialDocument): void {
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete "${doc.originalFilename}"? Associated transactions will remain in your history.`,
+      `Are you sure you want to delete "${doc.originalFilename}"? All imported transactions and statement records will also be deleted.`,
     );
     if (!confirmDelete) return;
 

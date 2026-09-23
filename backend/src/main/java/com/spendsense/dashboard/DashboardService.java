@@ -87,6 +87,14 @@ public class DashboardService {
         BigDecimal incomeChangePct = calculateChange(totalIncome, prevIncome);
         BigDecimal expenseChangePct = calculateChange(totalExpenses, prevExpenses);
 
+        BigDecimal totalTransfers = transactionRepository.sumAmountByUserIdAndTypeAndDirectionAndDateBetween(
+                userId, TransactionType.TRANSFER, com.spendsense.transaction.TransferDirection.OUT, fromDate, toDate);
+        if (totalTransfers == null) totalTransfers = BigDecimal.ZERO;
+
+        BigDecimal investmentContributions = transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(
+                userId, TransactionType.INVESTMENT, fromDate, toDate);
+        if (investmentContributions == null) investmentContributions = BigDecimal.ZERO;
+
         DashboardSummaryResponse summary = new DashboardSummaryResponse(
                 totalIncome,
                 totalExpenses,
@@ -95,7 +103,9 @@ public class DashboardService {
                 prevIncome,
                 prevExpenses,
                 incomeChangePct,
-                expenseChangePct
+                expenseChangePct,
+                totalTransfers,
+                investmentContributions
         );
 
         List<CategorySpend> categorySpends = transactionRepository.findCategorySpending(
@@ -117,10 +127,11 @@ public class DashboardService {
             DailyAccumulator acc = dailyMap.computeIfAbsent(ds.date(), k -> new DailyAccumulator(ds.date()));
             if (ds.type() == TransactionType.EXPENSE) {
                 acc.totalExpense = acc.totalExpense.add(ds.totalAmount());
+                acc.transactionCount += ds.count();
             } else if (ds.type() == TransactionType.INCOME) {
                 acc.totalIncome = acc.totalIncome.add(ds.totalAmount());
+                acc.transactionCount += ds.count();
             }
-            acc.transactionCount += ds.count();
         }
 
         List<DailySpendingResponse> dailyResponses = dailyMap.values().stream()

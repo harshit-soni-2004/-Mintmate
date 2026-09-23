@@ -244,6 +244,31 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.account-badge {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--surface-subtle, #f1f3f5);
+  border: 1px solid var(--border);
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.transfer-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #2b6cb0;
+  background: #ebf8ff;
+  border: 1px solid #bee3f8;
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
 }
 
 .merchant-desc {

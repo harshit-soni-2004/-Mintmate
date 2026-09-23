@@ -12,5 +12,21 @@ public record SpendingSummaryResponse(
         BigDecimal averageExpense,
         BigDecimal largestExpense,
         LocalDate fromDate,
-        LocalDate toDate
-) {}
+        LocalDate toDate,
+        BigDecimal totalTransfers,
+        BigDecimal investmentContributions
+) {
+    public SpendingSummaryResponse(
+            BigDecimal totalIncome,
+            BigDecimal totalExpenses,
+            BigDecimal netSavings,
+            BigDecimal savingsRate,
+            long transactionCount,
+            BigDecimal averageExpense,
+            BigDecimal largestExpense,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+        this(totalIncome, totalExpenses, netSavings, savingsRate, transactionCount, averageExpense, largestExpense, fromDate, toDate, BigDecimal.ZERO, BigDecimal.ZERO);
+    }
+}

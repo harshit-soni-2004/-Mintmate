@@ -86,7 +86,7 @@ class CsvStatementExtractorTest {
         assertTrue(c3.isValid());
         assertEquals(LocalDate.of(2026, 8, 12), c3.transactionDate());
         assertEquals(new BigDecimal("5000.00"), c3.amount());
-        assertEquals(TransactionType.EXPENSE, c3.direction());
+        assertEquals(TransactionType.CASH_WITHDRAWAL, c3.direction());
         assertEquals(PaymentMethod.CASH, c3.inferredPaymentMethod());
         assertEquals("TXN998877", c3.externalReference());
         assertEquals(new BigDecimal("132300.50"), c3.balanceAfter());

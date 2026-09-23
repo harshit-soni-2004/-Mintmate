@@ -31,8 +31,9 @@
 
     <select formControlName="type" aria-label="Filter type">
       <option value="">All Types</option>
-      <option value="EXPENSE">Expense</option>
-      <option value="INCOME">Income</option>
+      @for (t of types; track t) {
+        <option [value]="t">{{ typeLabel(t) }}</option>
+      }
     </select>
 
     <select formControlName="paymentMethod" aria-label="Filter payment method">
@@ -104,7 +105,17 @@
               {{ transaction.merchant.charAt(0).toUpperCase() }}
             </span>
             <div class="merchant-meta">
-              <strong class="merchant-title">{{ transaction.merchant }}</strong>
+              <strong class="merchant-title">
+                {{ transaction.merchant }}
+                @if (transaction.accountName) {
+                  <span class="account-badge" [title]="transaction.accountName">{{ transaction.accountName }}</span>
+                }
+                @if (transaction.transactionType === 'TRANSFER') {
+                  <span class="transfer-pill">
+                    {{ transaction.transferDirection === 'IN' ? '↓ Transfer In' : '↑ Transfer Out' }}
+                  </span>
+                }
+              </strong>
               @if (transaction.description) {
                 <span class="merchant-desc">{{ transaction.description }}</span>
               }
@@ -185,8 +196,8 @@
 
           <time class="date-cell">{{ transaction.transactionDate | date:'d MMM yyyy' }}</time>
 
-          <div class="amount-cell text-right" [class.income]="transaction.transactionType === 'INCOME'">
-            <strong>{{ transaction.transactionType === 'INCOME' ? '+' : '−' }}{{ transaction.amount | currency:'INR':'symbol-narrow':'1.2-2' }}</strong>
+          <div class="amount-cell text-right" [class.income]="transaction.transactionType === 'INCOME' || (transaction.transactionType === 'TRANSFER' && transaction.transferDirection === 'IN')">
+            <strong>{{ transaction.transactionType === 'INCOME' || (transaction.transactionType === 'TRANSFER' && transaction.transferDirection === 'IN') ? '+' : '−' }}{{ transaction.amount | currency:'INR':'symbol-narrow':'1.2-2' }}</strong>
           </div>
 
           <div class="actions-cell text-right">

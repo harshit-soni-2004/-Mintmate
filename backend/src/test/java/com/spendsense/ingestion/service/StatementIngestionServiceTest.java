@@ -30,6 +30,7 @@ import com.spendsense.transaction.TransactionCategory;
 import com.spendsense.transaction.TransactionRepository;
 import com.spendsense.transaction.TransactionSourceType;
 import com.spendsense.transaction.TransactionType;
+import com.spendsense.transaction.TransferDirection;
 import com.spendsense.user.User;
 import com.spendsense.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -490,7 +491,7 @@ class StatementIngestionServiceTest {
 
     // N. Transfer
     @Test
-    @DisplayName("Scenario N: Internal transfer is stored as settlement and does NOT become ordinary EXPENSE")
+    @DisplayName("Scenario N: Internal transfer is stored as TRANSFER transaction and does NOT become ordinary EXPENSE")
     void scenarioN_TransferNotExpense() throws Exception {
         FinancialDocument bankDoc = createDocument(UUID.randomUUID(), DocumentAccountType.SAVINGS);
         TransactionCandidate transfer = createCandidate(
@@ -499,14 +500,16 @@ class StatementIngestionServiceTest {
                 PaymentMethod.BANK_TRANSFER, null);
 
         setupDocumentExtraction(bankDoc, List.of(transfer));
-        when(settlementRepository.findByUserIdAndStatusAndAmount(any(), any(), any()))
-                .thenReturn(List.of());
 
         StatementImportResult result = ingestionService.ingestDocument(bankDoc.getId());
 
-        assertEquals(0, result.importedTransactions());
-        assertEquals(1, result.unresolvedCandidates());
-        verify(transactionRepository, never()).save(any());
+        assertEquals(1, result.importedTransactions());
+        ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionRepository).save(captor.capture());
+        Transaction saved = captor.getValue();
+        assertEquals(TransactionType.TRANSFER, saved.getTransactionType());
+        assertNotEquals(TransactionType.EXPENSE, saved.getTransactionType());
+        assertEquals(TransferDirection.OUT, saved.getTransferDirection());
     }
 
     // O. Re-import same document
