@@ -57,6 +57,11 @@ export const routes: Routes = [
           import('./features/insights/insights.component').then((m) => m.InsightsComponent),
       },
       {
+        path: 'assistant',
+        loadComponent: () =>
+          import('./features/assistant/assistant.component').then((m) => m.AssistantComponent),
+      },
+      {
         path: 'settings',
         component: PlaceholderPageComponent,
         data: { title: 'Settings', description: 'Manage your personal SpendSense workspace.' },

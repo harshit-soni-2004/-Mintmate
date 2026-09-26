@@ -391,3 +391,43 @@ export interface InsightsOverview {
   anomalies: SpendingAnomaly[];
 }
 
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ToolCallSummary {
+  toolName: string;
+  summary: string;
+}
+
+export interface AssistantPendingAction {
+  actionId: string;
+  actionType: string;
+  summary: string;
+  parameters?: Record<string, unknown>;
+  expiresAt: string;
+}
+
+export interface AssistantChatRequest {
+  message: string;
+  conversationHistory?: ChatMessage[];
+}
+
+export interface AssistantChatResponse {
+  answer: string;
+  executedTools: ToolCallSummary[];
+  requiresConfirmation: boolean;
+  pendingAction?: AssistantPendingAction | null;
+}
+
+export interface PendingActionResult {
+  actionId: string;
+  toolName: string;
+  status: string;
+  summaryText: string;
+  result: unknown;
+  executedAt: string;
+}
+
+

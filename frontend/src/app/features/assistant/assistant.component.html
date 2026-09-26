@@ -1,0 +1,158 @@
+<div class="assistant-container">
+  <!-- Assistant Header -->
+  <header class="assistant-header">
+    <div class="header-left">
+      <div class="assistant-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+          <path d="M12 12L2.5 7.5"></path>
+          <path d="M12 12v10"></path>
+        </svg>
+      </div>
+      <div>
+        <h2>AI Financial Assistant</h2>
+        <p class="subtitle">Grounded in verified SpendSense database calculations &middot; Asia/Kolkata (IST)</p>
+      </div>
+    </div>
+    <div class="header-badge">
+      <span class="pulse-dot"></span>
+      Deterministic Truth
+    </div>
+  </header>
+
+  <!-- Suggested Starter Prompts -->
+  <section class="starter-prompts-bar">
+    <span class="prompt-hint">Suggestions:</span>
+    <div class="prompts-scroll">
+      <button
+        *ngFor="let prompt of starterPrompts"
+        type="button"
+        class="prompt-chip"
+        (click)="sendMessage(prompt)"
+        [disabled]="loading"
+      >
+        {{ prompt }}
+      </button>
+    </div>
+  </section>
+
+  <!-- Chat Messages Stream -->
+  <main class="chat-viewport" #chatScroll>
+    <div *ngFor="let msg of messages" class="message-row" [ngClass]="msg.role">
+      <div class="message-bubble" [ngClass]="msg.role">
+        <!-- Message Author Header -->
+        <div class="bubble-meta">
+          <span class="author-name">{{ msg.role === 'user' ? 'You' : 'SpendSense Assistant' }}</span>
+          <span class="timestamp">{{ msg.timestamp | date:'shortTime' }}</span>
+        </div>
+
+        <!-- Executed Tools Badges -->
+        <div *ngIf="msg.executedTools && msg.executedTools.length > 0" class="tool-badges">
+          <div *ngFor="let tool of msg.executedTools" class="tool-badge">
+            <span class="tool-icon">&#9881;</span>
+            <span class="tool-name">{{ tool.toolName }}</span>
+          </div>
+        </div>
+
+        <!-- Message Body -->
+        <div class="bubble-text">{{ msg.content }}</div>
+
+        <!-- Phase 8C Mutation Confirmation Card -->
+        <div *ngIf="msg.pendingAction" class="confirmation-card" [ngClass]="msg.actionStatus?.toLowerCase()">
+          <div class="card-header">
+            <span class="card-badge">&#9888; Action Requires Confirmation</span>
+            <span *ngIf="msg.actionStatus === 'PENDING'" class="expiry-text">Expires in 15m</span>
+          </div>
+
+          <p class="card-summary">{{ msg.pendingAction.summary }}</p>
+
+          <!-- Action Pending Buttons -->
+          <div *ngIf="msg.actionStatus === 'PENDING'" class="card-actions">
+            <button
+              type="button"
+              class="btn-confirm"
+              (click)="confirmAction(msg)"
+              id="btn-confirm-action-{{ msg.pendingAction.actionId }}"
+            >
+              Confirm &amp; Apply
+            </button>
+            <button
+              type="button"
+              class="btn-cancel"
+              (click)="cancelAction(msg)"
+              id="btn-cancel-action-{{ msg.pendingAction.actionId }}"
+            >
+              Cancel
+            </button>
+          </div>
+
+          <!-- Action Executing / Loading State -->
+          <div *ngIf="msg.actionStatus === 'CONFIRMING'" class="status-indicator confirming">
+            <span class="spinner-small"></span> Applying changes to verified records...
+          </div>
+
+          <div *ngIf="msg.actionStatus === 'CANCELLING'" class="status-indicator cancelling">
+            <span class="spinner-small"></span> Cancelling action...
+          </div>
+
+          <!-- Action Completed State -->
+          <div *ngIf="msg.actionStatus === 'EXECUTED'" class="status-indicator executed">
+            &#10003; {{ msg.actionResult || 'Changes applied successfully to your SpendSense records.' }}
+          </div>
+
+          <!-- Action Cancelled State -->
+          <div *ngIf="msg.actionStatus === 'CANCELLED'" class="status-indicator cancelled">
+            &#10005; Action was cancelled. No changes were made.
+          </div>
+
+          <!-- Action Error State -->
+          <div *ngIf="msg.actionStatus === 'FAILED'" class="status-indicator failed">
+            &#9888; {{ msg.actionError || 'Action failed to execute.' }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Bubble -->
+    <div *ngIf="loading" class="message-row assistant">
+      <div class="message-bubble assistant loading">
+        <div class="typing-indicator">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <span class="loading-label">Consulting verified backend tools...</span>
+      </div>
+    </div>
+
+    <!-- Error Alert Banner -->
+    <div *ngIf="errorMessage" class="error-banner">
+      <span class="error-icon">&#9888;</span>
+      <span class="error-text">{{ errorMessage }}</span>
+    </div>
+  </main>
+
+  <!-- Input Bar -->
+  <footer class="assistant-input-bar">
+    <form (ngSubmit)="sendMessage()" class="input-form">
+      <input
+        type="text"
+        [(ngModel)]="userInput"
+        name="assistantQuery"
+        id="assistant-query-input"
+        placeholder="Ask about spending, categories, budgets, or accounts (e.g., 'How much did I spend on food?')..."
+        [disabled]="loading"
+        autocomplete="off"
+      />
+      <button
+        type="submit"
+        id="btn-send-assistant-query"
+        class="send-button"
+        [disabled]="!userInput.trim() || loading"
+      >
+        <span *ngIf="!loading">Send</span>
+        <span *ngIf="loading" class="spinner-small"></span>
+      </button>
+    </form>
+  </footer>
+</div>
