@@ -168,35 +168,61 @@ h1 {
 .form-input {
   width: 100%;
   padding: 0.72rem 0.85rem 0.72rem 2.5rem;
-  font-size: 0.92rem;
+  font-size: 0.94rem;
   line-height: 1.4;
   color: var(--ink);
+  caret-color: var(--brand);
   background: var(--input-bg);
   border: 1.5px solid var(--input-border);
   border-radius: var(--radius-sm);
   box-shadow: 0 1px 2px rgba(18, 38, 29, 0.04);
   transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
-}
 
-.form-input.has-toggle {
-  padding-right: 2.5rem;
-}
+  &[type="password"] {
+    letter-spacing: 0.12em;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
 
-.form-input::placeholder {
-  color: var(--muted-light);
-  font-size: 0.9rem;
-}
+  &.has-toggle {
+    padding-right: 2.5rem;
+  }
 
-.form-input:hover {
-  border-color: var(--input-border-hover);
-}
+  &::placeholder {
+    color: var(--muted);
+    font-size: 0.9rem;
+    letter-spacing: normal;
+    opacity: 0.85;
+  }
 
-.form-input:focus {
-  border-color: var(--brand);
-  background: #ffffff;
-  outline: none;
-  box-shadow: var(--shadow-focus);
+  &:hover:not(:disabled) {
+    border-color: var(--input-border-hover);
+  }
+
+  &:focus {
+    border-color: var(--brand);
+    background: var(--input-bg);
+    color: var(--ink);
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+
+  &:disabled {
+    background: var(--surface-muted);
+    color: var(--muted);
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--ink);
+    -webkit-box-shadow: 0 0 0px 1000px var(--input-bg) inset;
+    box-shadow: 0 0 0px 1000px var(--input-bg) inset;
+    transition: background-color 5000s ease-in-out 0s;
+    caret-color: var(--brand);
+  }
 }
 
 .form-input:focus + .input-icon,

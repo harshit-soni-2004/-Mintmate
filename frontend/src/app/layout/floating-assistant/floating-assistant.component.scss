@@ -303,11 +303,26 @@
       &:hover:not(:disabled) {
         border-color: var(--accent, #127457);
         background: var(--accent-soft, #e2f4ec);
+        color: #073b35;
         transform: translateX(2px);
+
+        .chip-accent {
+          color: #073b35;
+        }
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--accent, #127457);
+        outline-offset: 2px;
+      }
+
+      &:active:not(:disabled) {
+        transform: translateX(1px);
+        background: #c8edd9;
       }
 
       &:disabled {
-        opacity: 0.6;
+        opacity: 0.5;
         cursor: not-allowed;
       }
     }
@@ -522,15 +537,34 @@
   .welcome-box {
     background: linear-gradient(135deg, rgba(139, 227, 90, 0.08) 0%, rgba(45, 140, 125, 0.05) 100%);
     border-color: rgba(139, 227, 90, 0.2);
+
+    .welcome-badge {
+      color: #34d399;
+    }
   }
 
   .suggestion-chips-grid .suggestion-chip {
     background: #182824;
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #f2f5f3;
+
+    .chip-accent {
+      color: #34d399;
+    }
 
     &:hover:not(:disabled) {
-      background: rgba(139, 227, 90, 0.14);
+      background: rgba(139, 227, 90, 0.16);
       border-color: #8be35a;
+      color: #a3eb7a;
+
+      .chip-accent {
+        color: #8be35a;
+      }
+    }
+
+    &:focus-visible {
+      outline: 2px solid #8be35a;
+      outline-offset: 2px;
     }
   }
 
