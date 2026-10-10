@@ -55,10 +55,11 @@ public class SearchTransactionsTool implements FinancialTool<SearchTransactionsT
                         "startDate", Map.of("type", "string", "format", "date", "description", "Optional start date YYYY-MM-DD"),
                         "endDate", Map.of("type", "string", "format", "date", "description", "Optional end date YYYY-MM-DD"),
                         "category", Map.of("type", "string", "enum", List.of("FOOD", "TRAVEL", "SHOPPING", "ENTERTAINMENT", "BILLS", "HEALTH", "EDUCATION", "PERSONAL", "OTHER")),
-                        "transactionType", Map.of("type", "string", "enum", List.of("EXPENSE", "INCOME", "TRANSFER", "INVESTMENT", "CASH_WITHDRAWAL")),
+                        "transactionType", Map.of("type", "string", "enum", List.of("EXPENSE", "INCOME", "TRANSFER", "INVESTMENT", "CASH_WITHDRAWAL"), "description", "Filter by transaction type. Use EXPENSE for spending queries, omit or specify for all transactions"),
                         "search", Map.of("type", "string", "description", "Optional keyword search for merchant or description"),
                         "minAmount", Map.of("type", "number", "minimum", 0),
                         "maxAmount", Map.of("type", "number", "minimum", 0),
+                        "minAmountExclusive", Map.of("type", "boolean", "description", "If true, filter strictly greater than minAmount (e.g. over 5000). Defaults to false."),
                         "page", Map.of("type", "integer", "minimum", 0, "default", 0),
                         "size", Map.of("type", "integer", "minimum", 1, "maximum", 50, "default", 10)
                 )
@@ -75,45 +76,83 @@ public class SearchTransactionsTool implements FinancialTool<SearchTransactionsT
         int page = input.page() != null && input.page() >= 0 ? input.page() : 0;
         int size = input.size() != null && input.size() > 0 ? Math.min(input.size(), 50) : 10;
 
-        TransactionService.TransactionPage pageResult = transactionService.list(
-                page,
-                size,
-                input.category(),
-                input.transactionType(),
-                null,
-                input.startDate(),
-                input.endDate(),
-                input.minAmount(),
-                input.maxAmount(),
-                input.search(),
-                "newest",
-                null,
-                null
-        );
+        TransactionService.TransactionPage pageResult;
+        if (Boolean.TRUE.equals(input.minAmountExclusive())) {
+            pageResult = transactionService.list(
+                    page,
+                    size,
+                    input.category(),
+                    input.transactionType(),
+                    null,
+                    input.startDate(),
+                    input.endDate(),
+                    input.minAmount(),
+                    input.maxAmount(),
+                    input.search(),
+                    "newest",
+                    null,
+                    null,
+                    true
+            );
+        } else {
+            pageResult = transactionService.list(
+                    page,
+                    size,
+                    input.category(),
+                    input.transactionType(),
+                    null,
+                    input.startDate(),
+                    input.endDate(),
+                    input.minAmount(),
+                    input.maxAmount(),
+                    input.search(),
+                    "newest",
+                    null,
+                    null
+            );
+        }
 
-        // Sanitize financial text by encapsulating in literal tags (DATA != INSTRUCTIONS)
-        List<SanitizedTransactionItem> sanitizedItems = pageResult.content().stream()
+        // Deduplicate mirrored internal transfers to avoid double-counting
+        List<TransactionResponse> deduplicated = pageResult.content().stream()
+                .filter(tx -> !(tx.transactionType() == TransactionType.TRANSFER
+                        && tx.transferDirection() == TransferDirection.IN
+                        && (tx.transferMatchStatus() == TransferMatchStatus.AUTO_MATCHED
+                        || tx.transferMatchStatus() == TransferMatchStatus.MANUALLY_CONFIRMED)))
+                .toList();
+
+        List<SanitizedTransactionItem> sanitizedItems = deduplicated.stream()
                 .map(this::toSanitizedItem)
                 .toList();
 
+        long adjustedTotal = pageResult.meta().totalElements() - (pageResult.content().size() - deduplicated.size());
         SearchResult result = new SearchResult(
                 sanitizedItems,
                 pageResult.meta().page(),
                 pageResult.meta().size(),
-                pageResult.meta().totalElements(),
+                Math.max(0, adjustedTotal),
                 pageResult.meta().totalPages()
         );
 
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("Found %d matching transactions (showing page %d of %d).",
-                pageResult.meta().totalElements(),
+        sb.append(String.format("Found %d matching transactions (showing %d on page %d of %d).",
+                result.totalElements(),
+                sanitizedItems.size(),
                 pageResult.meta().page() + 1,
                 Math.max(1, pageResult.meta().totalPages())));
         if (!sanitizedItems.isEmpty()) {
             sb.append(" Transactions:");
-            for (int i = 0; i < Math.min(5, sanitizedItems.size()); i++) {
+            for (int i = 0; i < Math.min(10, sanitizedItems.size()); i++) {
                 SanitizedTransactionItem item = sanitizedItems.get(i);
-                sb.append(String.format(" %s: amount ₹%s (%s);", item.merchant(), item.amount(), item.category()));
+                String catName = item.category() != null ? item.category().getDisplayName() : "Uncategorized";
+                String cleanMerchant = item.merchant() != null
+                        ? item.merchant().replaceAll("(?i)</?untrusted_merchant_text>", "").trim()
+                        : "Unknown";
+                sb.append(String.format(" %s: %s - amount ₹%s (%s, %s);",
+                        item.date(),
+                        cleanMerchant,
+                        item.amount(),
+                        catName,
+                        item.type()));
             }
         }
         String summaryText = sb.toString();
@@ -171,9 +210,16 @@ public class SearchTransactionsTool implements FinancialTool<SearchTransactionsT
 
             BigDecimal minAmount,
             BigDecimal maxAmount,
+            Boolean minAmountExclusive,
             Integer page,
             Integer size
-    ) {}
+    ) {
+        public Input(LocalDate startDate, LocalDate endDate, TransactionCategory category,
+                     TransactionType transactionType, String search, BigDecimal minAmount,
+                     BigDecimal maxAmount, Integer page, Integer size) {
+            this(startDate, endDate, category, transactionType, search, minAmount, maxAmount, false, page, size);
+        }
+    }
 
     public record SearchResult(
             List<SanitizedTransactionItem> transactions,

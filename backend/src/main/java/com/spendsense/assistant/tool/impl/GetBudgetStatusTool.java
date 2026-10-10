@@ -62,9 +62,12 @@ public class GetBudgetStatusTool implements FinancialTool<GetBudgetStatusTool.In
 
     @Override
     public ToolExecutionResult<BudgetStatusResult> execute(Input input, SpendSenseUserPrincipal user) {
-        String targetYm = (input.yearMonth() != null && !input.yearMonth().isBlank())
-                ? input.yearMonth().trim()
-                : YearMonth.from(NaturalLanguageDateResolver.today()).toString();
+        String targetYm;
+        if (input.yearMonth() != null && !input.yearMonth().isBlank()) {
+            targetYm = NaturalLanguageDateResolver.resolveYearMonth(input.yearMonth().trim(), NaturalLanguageDateResolver.today()).toString();
+        } else {
+            targetYm = YearMonth.from(NaturalLanguageDateResolver.today()).toString();
+        }
 
         BudgetSummaryResponse summary = budgetService.getSummary(targetYm, null, null);
         List<BudgetResponse> budgets = budgetService.list(targetYm, null, null);
@@ -84,9 +87,9 @@ public class GetBudgetStatusTool implements FinancialTool<GetBudgetStatusTool.In
         String summaryText;
         if (budgets.isEmpty()) {
             if (input.category() != null) {
-                summaryText = String.format("For %s, there is no active budget configured for %s.", targetYm, input.category().getDisplayName());
+                summaryText = String.format("You don't have an active %s budget configured for %s yet, so I cannot determine whether you're within budget. You can set a monthly limit to start tracking it.", input.category().getDisplayName(), targetYm);
             } else {
-                summaryText = String.format("For %s, there are no active budgets configured.", targetYm);
+                summaryText = String.format("You don't have any active budgets configured for %s yet, so I cannot determine budget compliance. You can create a budget to start tracking your spending limits.", targetYm);
             }
         } else if (input.category() != null && !budgets.isEmpty()) {
             BudgetResponse b = budgets.getFirst();

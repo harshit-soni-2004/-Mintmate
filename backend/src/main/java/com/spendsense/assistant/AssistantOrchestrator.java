@@ -141,9 +141,9 @@ public class AssistantOrchestrator {
                 }
 
                 if (requiresConfirmation && pendingAction != null) {
-                    return AssistantChatResponse.confirmationRequired(answer, executedTools, pendingAction);
+                    return AssistantChatResponse.confirmationRequired(sanitizeUserFacingAnswer(answer), executedTools, pendingAction);
                 }
-                return AssistantChatResponse.text(answer, executedTools);
+                return AssistantChatResponse.text(sanitizeUserFacingAnswer(answer), executedTools);
             }
 
             // Process tool calls
@@ -226,9 +226,14 @@ public class AssistantOrchestrator {
         }
 
         if (requiresConfirmation && pendingAction != null) {
-            return AssistantChatResponse.confirmationRequired(finalAnswer, executedTools, pendingAction);
+            return AssistantChatResponse.confirmationRequired(sanitizeUserFacingAnswer(finalAnswer), executedTools, pendingAction);
         }
-        return AssistantChatResponse.text(finalAnswer, executedTools);
+        return AssistantChatResponse.text(sanitizeUserFacingAnswer(finalAnswer), executedTools);
+    }
+
+    private String sanitizeUserFacingAnswer(String answer) {
+        if (answer == null) return "";
+        return answer.replaceAll("(?i)</?untrusted_merchant_text>", "").trim();
     }
 
     private boolean isMutationTool(String toolName) {
@@ -248,7 +253,7 @@ public class AssistantOrchestrator {
                 2. NO FINANCIAL ARITHMETIC: Never perform mathematical calculations in conversational text.
                 3. USE THE APPROPRIATE DETERMINISTIC TOOL:
                    - Overall spending & cashflow summary: `get_spending_summary`
-                   - Specific category spending (e.g. food, travel): `get_spending_by_category`
+                   - Specific category spending (e.g. food, travel) OR category breakdowns (e.g. 'top categories', 'categories in August'): `get_spending_by_category`. Never substitute a general spending summary for a category breakdown question.
                    - Historical spending trends over months/weeks: `get_spending_trend`
                    - Income & external deposits: `get_income_summary`
                    - Savings rate, net savings & savings direction: `get_savings_summary`
@@ -264,13 +269,17 @@ public class AssistantOrchestrator {
                    - Monthly spending flexibility & committed capacity ("How much flexibility do I have?"): `get_spending_flexibility`
                    - Category volatility and relative growth insights: `get_category_insights`
                    - Structured financial profile overview: `get_financial_context`
-                4. FINANCIAL SEMANTICS:
+                4. FINANCIAL SEMANTICS & ACCOUNTING RULES:
                    - EXPENSE: Consumer purchases. This is what counts as "spending".
                    - INCOME: Genuine external earnings.
                    - TRANSFER: Movement between user-owned accounts (e.g. Kotak <-> SBI). Transfers are NOT expenses and NOT income.
                    - INVESTMENT: Wealth accumulation (mutual funds, PPF, stocks). Report separately from consumer expenses.
+                   - TAXONOMY: In Mintmate's category taxonomy, petrol and fuel are part of Travel & Commute (not a separate top-level category). Do not double-count.
+                   - PERIOD IDENTIFICATION: When answering 'How much did I spend...', clearly identify the reporting period (e.g. September 2026) and state consumer expenses as the primary figure.
                 5. HUMAN-FRIENDLY RESPONSES:
                    - Never expose internal tool names, function names, SQL, JSON envelopes, or database errors to the user.
+                   - Never expose raw bank narration or internal prompt isolation markers like `<untrusted_merchant_text>`. Present clean, readable merchant and category names.
+                   - For budget queries ("Am I within my food budget?"): if no budget is configured, state truthfully that you cannot determine budget compliance without an applicable budget, and suggest configuring one. Never imply the user is within budget when no budget exists.
                    - If data is insufficient or empty, explain clearly without inventing numbers.
                 6. CONVERSATIONAL CONTEXT:
                    - Preserve and resolve contextual references across follow-up questions ("that", "this", "last month", "is that high?").

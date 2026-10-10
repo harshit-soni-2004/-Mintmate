@@ -85,15 +85,32 @@ public class GetSpendingByCategoryTool implements FinancialTool<GetSpendingByCat
 
             if (matched.isPresent()) {
                 CategoryAnalysis c = matched.get();
-                summaryText = String.format("From %s to %s, spending on %s was ₹%.2f across %d transactions (%.1f%% of total expenses).",
-                        start, end, c.category().getDisplayName(), c.amount(), c.transactionCount(), c.percentage());
+                if (input.category() == TransactionCategory.TRAVEL) {
+                    summaryText = String.format("From %s to %s, spending on %s (which includes flights, transit, cabs, and fuel/petrol) was ₹%.2f across %d transactions (%.1f%% of total expenses). Note: In Mintmate's taxonomy, petrol and fuel are tracked under Travel & Commute rather than as a separate top-level category.",
+                            start, end, c.category().getDisplayName(), c.amount(), c.transactionCount(), c.percentage());
+                } else {
+                    summaryText = String.format("From %s to %s, spending on %s was ₹%.2f across %d transactions (%.1f%% of total expenses).",
+                            start, end, c.category().getDisplayName(), c.amount(), c.transactionCount(), c.percentage());
+                }
             } else {
                 summaryText = String.format("From %s to %s, there was no recorded spending for category %s.",
                         start, end, input.category().getDisplayName());
             }
         } else {
-            summaryText = String.format("From %s to %s, total consumer expenses were ₹%.2f across %d categories.",
-                    start, end, breakdown.totalExpenses(), breakdown.categories().size());
+            if (breakdown.categories().isEmpty() || breakdown.totalExpenses().compareTo(BigDecimal.ZERO) == 0) {
+                summaryText = String.format("From %s to %s, there was no recorded consumer spending across any category.", start, end);
+            } else {
+                StringBuilder sb = new StringBuilder();
+                sb.append(String.format("Your top spending categories from %s to %s (total consumer expenses: ₹%.2f) were:",
+                        start, end, breakdown.totalExpenses()));
+                List<CategoryAnalysis> top = breakdown.categories();
+                for (int i = 0; i < Math.min(5, top.size()); i++) {
+                    CategoryAnalysis c = top.get(i);
+                    sb.append(String.format(" %s: ₹%.2f (%.1f%%, %d transactions);",
+                            c.category().getDisplayName(), c.amount(), c.percentage(), c.transactionCount()));
+                }
+                summaryText = sb.toString();
+            }
         }
 
         ToolResponseEnvelope<CategoryBreakdownResponse> envelope = ToolResponseEnvelope.of(

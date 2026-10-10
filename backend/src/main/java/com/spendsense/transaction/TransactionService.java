@@ -178,6 +178,14 @@ public class TransactionService {
                                 PaymentMethod paymentMethod, LocalDate fromDate, LocalDate toDate,
                                 BigDecimal minAmount, BigDecimal maxAmount, String search, String sort,
                                 Boolean needsReview, UUID sourceDocumentId) {
+        return list(page, size, category, type, paymentMethod, fromDate, toDate, minAmount, maxAmount, search, sort, needsReview, sourceDocumentId, false);
+    }
+
+    @Transactional(readOnly = true)
+    public TransactionPage list(int page, int size, TransactionCategory category, TransactionType type,
+                                PaymentMethod paymentMethod, LocalDate fromDate, LocalDate toDate,
+                                BigDecimal minAmount, BigDecimal maxAmount, String search, String sort,
+                                Boolean needsReview, UUID sourceDocumentId, Boolean minAmountExclusive) {
         Pageable pageable = PageRequest.of(page, size, resolveSort(sort));
         Specification<Transaction> specification = Specification.where(ownedBy(currentUser.require().getUserId()))
                 .and(category == null ? null : (root, query, cb) -> cb.equal(root.get("category"), category))
@@ -185,7 +193,9 @@ public class TransactionService {
                 .and(paymentMethod == null ? null : (root, query, cb) -> cb.equal(root.get("paymentMethod"), paymentMethod))
                 .and(fromDate == null ? null : (root, query, cb) -> cb.greaterThanOrEqualTo(root.get("transactionDate"), fromDate))
                 .and(toDate == null ? null : (root, query, cb) -> cb.lessThanOrEqualTo(root.get("transactionDate"), toDate))
-                .and(minAmount == null ? null : (root, query, cb) -> cb.greaterThanOrEqualTo(root.get("amount"), minAmount))
+                .and(minAmount == null ? null : (root, query, cb) -> Boolean.TRUE.equals(minAmountExclusive)
+                        ? cb.greaterThan(root.get("amount"), minAmount)
+                        : cb.greaterThanOrEqualTo(root.get("amount"), minAmount))
                 .and(maxAmount == null ? null : (root, query, cb) -> cb.lessThanOrEqualTo(root.get("amount"), maxAmount))
                 .and(search == null || search.isBlank() ? null : searchFilter(search.trim()))
                 .and(needsReview == null ? null : (root, query, cb) -> cb.equal(root.get("requiresReview"), needsReview))

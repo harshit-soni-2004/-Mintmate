@@ -121,4 +121,25 @@ class NaturalLanguageDateResolverTest {
         assertThat(lastYear.startDate()).isEqualTo(LocalDate.of(2026, 1, 1));
         assertThat(lastYear.endDate()).isEqualTo(LocalDate.of(2026, 12, 31));
     }
+
+    @Test
+    @DisplayName("Should resolve standalone 'August' in October 2026 to August 2026")
+    void shouldResolveStandaloneAugustInOctober2026() {
+        LocalDate octRef = LocalDate.of(2026, 10, 10);
+
+        NaturalLanguageDateResolver.DateRange augustRange = NaturalLanguageDateResolver.resolveRange("August", octRef);
+        assertThat(augustRange.startDate()).isEqualTo(LocalDate.of(2026, 8, 1));
+        assertThat(augustRange.endDate()).isEqualTo(LocalDate.of(2026, 8, 31));
+
+        NaturalLanguageDateResolver.DateRange inAugust = NaturalLanguageDateResolver.resolveRange("in August", octRef);
+        assertThat(inAugust.startDate()).isEqualTo(LocalDate.of(2026, 8, 1));
+        assertThat(inAugust.endDate()).isEqualTo(LocalDate.of(2026, 8, 31));
+
+        NaturalLanguageDateResolver.DateRange lastMonth = NaturalLanguageDateResolver.resolveRange("last month", octRef);
+        assertThat(lastMonth.startDate()).isEqualTo(LocalDate.of(2026, 9, 1));
+        assertThat(lastMonth.endDate()).isEqualTo(LocalDate.of(2026, 9, 30));
+
+        YearMonth ym = NaturalLanguageDateResolver.resolveYearMonth("August", octRef);
+        assertThat(ym).isEqualTo(YearMonth.of(2026, 8));
+    }
 }
