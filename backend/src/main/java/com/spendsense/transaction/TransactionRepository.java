@@ -163,6 +163,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate);
 
+    @Query("SELECT COUNT(t.id) FROM Transaction t " +
+           "WHERE t.user.id = :userId AND t.transactionType = :type AND t.requiresReview = true " +
+           "AND t.transactionDate >= :fromDate AND t.transactionDate <= :toDate")
+    long countRequiresReviewByUserIdAndTypeAndDateBetween(
+            @Param("userId") UUID userId,
+            @Param("type") TransactionType type,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
     @Query("SELECT t.category, COUNT(t.id), COALESCE(SUM(t.amount), 0) FROM Transaction t " +
            "WHERE t.user.id = :userId AND t.transactionType = :type AND t.requiresReview = true " +
            "AND t.transactionDate >= :fromDate AND t.transactionDate <= :toDate " +

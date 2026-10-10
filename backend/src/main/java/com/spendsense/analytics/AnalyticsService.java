@@ -193,10 +193,10 @@ public class AnalyticsService {
             }
         }
 
-        long totalTx = transactionRepository.countTotalByUserIdAndDateBetween(
-                userId, curRange[0], curRange[1]);
-        long reviewTx = transactionRepository.countRequiresReviewByUserIdAndDateBetween(
-                userId, curRange[0], curRange[1]);
+        long totalTx = transactionRepository.countByUserIdAndTypeAndDateBetween(
+                userId, TransactionType.EXPENSE, curRange[0], curRange[1]);
+        long reviewTx = transactionRepository.countRequiresReviewByUserIdAndTypeAndDateBetween(
+                userId, TransactionType.EXPENSE, curRange[0], curRange[1]);
         long autoTx = Math.max(0, totalTx - reviewTx);
 
         BigDecimal autoPct = BigDecimal.ZERO.setScale(1, RoundingMode.HALF_UP);
