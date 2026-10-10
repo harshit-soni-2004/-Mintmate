@@ -858,62 +858,149 @@
   }
 }
 
-@media (max-width: 650px) {
+@media (max-width: 1199px) and (min-width: 768px) {
+  .list-head,
+  .transaction-row {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 0.8fr);
+    gap: 0.5rem;
+    padding: 0.75rem 0.85rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .transactions-page {
+    padding: 0 0 2rem;
+  }
+
   .page-header {
     flex-direction: column;
     align-items: stretch;
+    gap: 1rem;
   }
+
   .add-btn {
     width: 100%;
     justify-content: center;
   }
+
   .filters-bar {
     flex-direction: column;
     align-items: stretch;
+    gap: 0.65rem;
+
+    .search-field {
+      width: 100%;
+      min-width: 0;
+      flex: none;
+    }
+
+    select {
+      width: 100%;
+      min-width: 0;
+      flex: none;
+    }
+
+    .filter-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      width: 100%;
+      gap: 0.5rem;
+
+      .btn-filter,
+      .btn-reset {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+      }
+    }
   }
-  .search-field {
-    width: 100%;
-  }
-  .filter-actions {
-    width: 100%;
-  }
-  .btn-filter, .btn-reset {
-    flex: 1;
-    text-align: center;
-  }
+
   .list-head {
     display: none;
   }
+
   .transaction-row {
-    grid-template-columns: 1fr auto;
-    padding: 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "merchant amount"
+      "actions actions";
+    gap: 0.4rem 0.75rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--line);
+
+    .merchant-cell {
+      grid-area: merchant;
+      min-width: 0;
+
+      .merchant-title {
+        font-size: 0.92rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+      }
+    }
+
+    .mobile-sub {
+      display: block;
+      margin-top: 0.25rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .category-cell,
+    .method-cell,
+    .date-cell {
+      display: none;
+    }
+
+    .amount-cell {
+      grid-area: amount;
+      text-align: right;
+      align-self: flex-start;
+      white-space: nowrap;
+      font-size: 0.95rem;
+      padding-top: 0.15rem;
+    }
+
+    .actions-cell {
+      grid-area: actions;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      padding-top: 0.35rem;
+      border-top: 1px dashed var(--line);
+      margin-top: 0.25rem;
+
+      .action-btn {
+        padding: 0.3rem 0.65rem;
+        font-size: 0.76rem;
+      }
+    }
   }
-  .date-cell {
-    display: none;
-  }
-  .actions-cell {
-    grid-column: 1 / -1;
-    justify-content: flex-end;
-    padding-top: 0.4rem;
-    border-top: 1px dashed var(--line);
-    margin-top: 0.4rem;
-  }
+
   .form-row.two-col {
     grid-template-columns: 1fr;
   }
+
   .modal-backdrop {
     align-items: flex-end;
     padding: 0;
   }
+
   .form-sheet,
   .picker-sheet {
     max-height: 92vh;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     padding: 1.25rem;
   }
+
   .pagination {
     flex-direction: column;
     align-items: center;
     gap: 0.75rem;
+    text-align: center;
   }
 }

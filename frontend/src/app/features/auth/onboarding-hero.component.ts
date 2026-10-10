@@ -20,7 +20,7 @@ export interface OnboardingSlide {
       (mouseenter)="pause()"
       (mouseleave)="resume()"
       role="region"
-      aria-label="SpendSense product highlights"
+      aria-label="Mintmate product highlights"
     >
       <!-- Background Ambient Glows -->
       <div class="glow glow-1" aria-hidden="true"></div>
@@ -29,7 +29,7 @@ export interface OnboardingSlide {
       <!-- Brand Header -->
       <div class="brand-badge">
         <span class="brand-dot" aria-hidden="true"></span>
-        <span class="brand-name">SpendSense</span>
+        <span class="brand-name">Mintmate</span>
         <span class="brand-tag">Intelligent Finance</span>
       </div>
 

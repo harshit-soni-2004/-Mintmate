@@ -45,6 +45,6 @@ describe('AuthService', () => {
 
     expect(service.isAuthenticated()).toBeTrue();
     expect(service.currentUser()?.displayName).toBe('Ada');
-    expect(localStorage.getItem('spendsense.token')).toBe('token-1');
+    expect(localStorage.getItem('mintmate.token')).toBe('token-1');
   });
 });

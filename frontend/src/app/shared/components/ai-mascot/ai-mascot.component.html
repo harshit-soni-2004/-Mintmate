@@ -1,0 +1,240 @@
+<div
+  class="mascot-stage"
+  [ngClass]="[
+    'size-' + size,
+    'state-' + state.toLowerCase(),
+    isHovered() ? 'is-hovered' : '',
+    isActivating() ? 'is-activating' : '',
+    disabled ? 'is-disabled' : ''
+  ]"
+  (mouseenter)="onMouseEnter()"
+  (mouseleave)="onMouseLeave()"
+  (mousemove)="onMouseMove($event)">
+
+  <!-- Interactive Trigger Element (Accessible button) -->
+  <button
+    type="button"
+    class="mascot-button bot-trigger"
+    (click)="onTriggerClick($event)"
+    (keydown.enter)="onTriggerClick($event)"
+    (keydown.space)="onTriggerClick($event)"
+    [disabled]="disabled"
+    [attr.aria-label]="ariaLabel"
+    [style.--rx.deg]="rotateX()"
+    [style.--ry.deg]="rotateY()">
+
+    <!-- Hover Speech Tooltip -->
+    <div
+      *ngIf="showTooltipOnHover && !disabled"
+      class="mascot-tooltip"
+      role="tooltip"
+      aria-hidden="true">
+      <span class="tooltip-text">{{ tooltipText }}</span>
+    </div>
+
+    <!-- Activation Ripple Effect -->
+    <div class="activation-ripple" *ngIf="isActivating()" aria-hidden="true"></div>
+
+    <!-- 3D Transform Layer Container -->
+    <div class="mascot-3d-scene">
+
+      <!-- Orbiting Fintech ₹ Coin Element -->
+      <div
+        *ngIf="showCoin"
+        class="coin-orbit-track"
+        [class.paused]="state === 'THINKING'"
+        aria-hidden="true">
+        <div class="floating-coin-wrap">
+          <div class="fintech-coin">
+            <span class="coin-glyph">₹</span>
+            <div class="coin-glint"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success Celebration Particles -->
+      <div *ngIf="state === 'SUCCESS'" class="celebration-particles" aria-hidden="true">
+        <span class="particle p-1">✦</span>
+        <span class="particle p-2">₹</span>
+        <span class="particle p-3">✦</span>
+        <span class="particle p-4">▲</span>
+        <span class="particle p-5">✦</span>
+      </div>
+
+      <!-- Main Mascot Robot Figure -->
+      <div class="robot-figure" [class.is-blinking]="isBlinking()">
+        <svg
+          class="bot-svg"
+          viewBox="0 0 100 100"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true">
+          <defs>
+            <!-- White Glossy Ceramic Body Gradient -->
+            <linearGradient id="bodyCeramicGrad" x1="18" y1="18" x2="82" y2="88" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="35%" stop-color="#f8faf9"/>
+              <stop offset="70%" stop-color="#edf4f0"/>
+              <stop offset="100%" stop-color="#cbdad2"/>
+            </linearGradient>
+
+            <!-- Emerald / Mint Accent Gradient -->
+            <linearGradient id="fintechEmeraldGrad" x1="20" y1="10" x2="80" y2="90" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#8be35a"/>
+              <stop offset="50%" stop-color="#2d8c7d"/>
+              <stop offset="100%" stop-color="#073b35"/>
+            </linearGradient>
+
+            <!-- Teal Secondary Accent Gradient -->
+            <linearGradient id="fintechTealGrad" x1="15" y1="20" x2="85" y2="80" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#a3eb7a"/>
+              <stop offset="55%" stop-color="#2d8c7d"/>
+              <stop offset="100%" stop-color="#042723"/>
+            </linearGradient>
+
+            <!-- Deep OLED Glass Visor Gradient -->
+            <linearGradient id="visorGlassGrad" x1="26" y1="30" x2="74" y2="60" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#0b1712"/>
+              <stop offset="50%" stop-color="#07110c"/>
+              <stop offset="100%" stop-color="#020604"/>
+            </linearGradient>
+
+            <!-- Gold/Emerald Core Medallion Gradient -->
+            <linearGradient id="chestCoreGrad" x1="38" y1="62" x2="62" y2="80" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#fef08a"/>
+              <stop offset="45%" stop-color="#34d399"/>
+              <stop offset="100%" stop-color="#059669"/>
+            </linearGradient>
+
+            <!-- Specular Gloss Sheen -->
+            <linearGradient id="specularSheen" x1="30" y1="22" x2="70" y2="34" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+              <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+            </linearGradient>
+
+            <!-- Visor Reflection Sheen -->
+            <linearGradient id="visorCurveSheen" x1="30" y1="33" x2="70" y2="40" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32"/>
+              <stop offset="100%" stop-color="#ffffff" stop-opacity="0.04"/>
+            </linearGradient>
+
+            <!-- 3D Soft Lighting & Bloom Filters -->
+            <filter id="emeraldBloom" x="-25%" y="-25%" width="150%" height="150%">
+              <feGaussianBlur stdDeviation="2.5" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+
+            <filter id="chassisShadow" x="-15%" y="-15%" width="130%" height="130%">
+              <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#042f2e" flood-opacity="0.22"/>
+            </filter>
+          </defs>
+
+          <!-- Halo Energy Ring (Orbital Analytics) -->
+          <ellipse
+            cx="50"
+            cy="27"
+            rx="37"
+            ry="10.5"
+            stroke="url(#fintechEmeraldGrad)"
+            stroke-width="2.2"
+            stroke-dasharray="14 6 22 8"
+            stroke-linecap="round"
+            class="orbital-halo"
+            opacity="0.8"/>
+
+          <!-- Robot Chassis Group -->
+          <g filter="url(#chassisShadow)">
+            <!-- Antenna Post & Beacon -->
+            <rect x="48" y="13" width="4" height="10" rx="2" fill="url(#fintechTealGrad)"/>
+            <circle cx="50" cy="12" r="3.2" fill="#34d399" filter="url(#emeraldBloom)" class="beacon-bulb"/>
+
+            <!-- Main Rounded Body Chassis (Glossy White Ceramic) -->
+            <rect x="22" y="21" width="56" height="59" rx="26" fill="url(#bodyCeramicGrad)" stroke="#e4efe9" stroke-width="0.75"/>
+
+            <!-- Ceramic Top Specular Highlight -->
+            <ellipse cx="50" cy="26" rx="20" ry="3.8" fill="url(#specularSheen)"/>
+
+            <!-- Left Ear Pod / Audio Sensor -->
+            <rect x="16.5" y="38" width="6.5" height="18" rx="3.25" fill="url(#fintechEmeraldGrad)"/>
+            <rect x="17.5" y="42" width="2" height="10" rx="1" fill="#a7f3d0" opacity="0.6"/>
+
+            <!-- Right Ear Pod / Audio Sensor -->
+            <rect x="77" y="38" width="6.5" height="18" rx="3.25" fill="url(#fintechEmeraldGrad)"/>
+            <rect x="80.5" y="42" width="2" height="10" rx="1" fill="#a7f3d0" opacity="0.6"/>
+
+            <!-- Deep Rounded Visor Display -->
+            <rect x="28" y="32" width="44" height="26" rx="13" fill="url(#visorGlassGrad)" stroke="rgba(52, 211, 153, 0.28)" stroke-width="0.8"/>
+
+            <!-- Visor Curvature Reflection -->
+            <path
+              d="M 33 36 Q 50 42 67 36"
+              stroke="url(#visorCurveSheen)"
+              stroke-width="1.8"
+              fill="none"
+              stroke-linecap="round"/>
+
+            <!-- Visor Expressions depending on State -->
+            <!-- 1. Normal / Idle / Hover / Chat Open Eyes -->
+            <g class="eyes-container" *ngIf="state !== 'THINKING' && state !== 'SUCCESS'">
+              <!-- Left Eye -->
+              <g class="eye-group eye-left">
+                <rect x="36" y="40.5" width="9" height="7.5" rx="3.75" fill="#34d399" filter="url(#emeraldBloom)"/>
+                <circle cx="38.5" cy="42.5" r="1.3" fill="#ffffff"/>
+              </g>
+              <!-- Right Eye -->
+              <g class="eye-group eye-right">
+                <rect x="55" y="40.5" width="9" height="7.5" rx="3.75" fill="#34d399" filter="url(#emeraldBloom)"/>
+                <circle cx="57.5" cy="42.5" r="1.3" fill="#ffffff"/>
+              </g>
+            </g>
+
+            <!-- 2. Thinking State: 3 Processing Pulse Dots / Wave -->
+            <g class="thinking-indicators" *ngIf="state === 'THINKING'">
+              <circle cx="39" cy="44" r="2.8" fill="#34d399" filter="url(#emeraldBloom)" class="think-dot dot-1"/>
+              <circle cx="50" cy="44" r="2.8" fill="#2dd4bf" filter="url(#emeraldBloom)" class="think-dot dot-2"/>
+              <circle cx="61" cy="44" r="2.8" fill="#34d399" filter="url(#emeraldBloom)" class="think-dot dot-3"/>
+            </g>
+
+            <!-- 3. Success State: Happy smiling crescent arcs (^ ^) -->
+            <g class="success-expression" *ngIf="state === 'SUCCESS'">
+              <path
+                d="M 36 45 Q 40.5 40 45 45"
+                stroke="#34d399"
+                stroke-width="3"
+                stroke-linecap="round"
+                fill="none"
+                filter="url(#emeraldBloom)"/>
+              <path
+                d="M 55 45 Q 59.5 40 64 45"
+                stroke="#34d399"
+                stroke-width="3"
+                stroke-linecap="round"
+                fill="none"
+                filter="url(#emeraldBloom)"/>
+            </g>
+
+            <!-- Chest Financial Core (Recessed Medallion with integrated ₹) -->
+            <circle cx="50" cy="67.5" r="9.5" fill="#08140e" stroke="url(#fintechEmeraldGrad)" stroke-width="1.6"/>
+            <circle cx="50" cy="67.5" r="7.5" fill="rgba(16, 185, 129, 0.16)"/>
+            
+            <!-- Engraved Rupee ₹ Symbol -->
+            <text
+              x="50"
+              y="72"
+              text-anchor="middle"
+              font-family="Inter, -apple-system, sans-serif"
+              font-weight="800"
+              font-size="11"
+              fill="url(#chestCoreGrad)"
+              class="rupee-symbol">
+              ₹
+            </text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Floating Ground Ambient Shadow -->
+      <div class="mascot-ground-shadow" aria-hidden="true"></div>
+    </div>
+  </button>
+</div>

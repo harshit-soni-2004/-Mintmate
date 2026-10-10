@@ -3,6 +3,7 @@ package com.spendsense.assistant.action;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spendsense.assistant.dto.PendingActionDto;
 import com.spendsense.assistant.dto.PendingActionResultDto;
+import com.spendsense.assistant.telemetry.AssistantTelemetryService;
 import com.spendsense.assistant.tool.FinancialTool;
 import com.spendsense.assistant.tool.ToolRegistry;
 import com.spendsense.common.exception.ApiException;
@@ -38,6 +39,7 @@ public class PendingActionService {
     private final ObjectMapper objectMapper;
     private final TransactionTemplate requiresNewTxTemplate;
     private final TransactionTemplate standardTxTemplate;
+    private final AssistantTelemetryService telemetryService;
 
     public PendingActionService(
             PendingActionRepository pendingActionRepository,
@@ -46,7 +48,18 @@ public class PendingActionService {
             ToolRegistry toolRegistry,
             ObjectMapper objectMapper
     ) {
-        this(pendingActionRepository, userRepository, currentUser, toolRegistry, objectMapper, null);
+        this(pendingActionRepository, userRepository, currentUser, toolRegistry, objectMapper, null, null);
+    }
+
+    public PendingActionService(
+            PendingActionRepository pendingActionRepository,
+            UserRepository userRepository,
+            CurrentUser currentUser,
+            ToolRegistry toolRegistry,
+            ObjectMapper objectMapper,
+            PlatformTransactionManager transactionManager
+    ) {
+        this(pendingActionRepository, userRepository, currentUser, toolRegistry, objectMapper, transactionManager, null);
     }
 
     @Autowired
@@ -56,13 +69,15 @@ public class PendingActionService {
             CurrentUser currentUser,
             ToolRegistry toolRegistry,
             ObjectMapper objectMapper,
-            @Autowired(required = false) PlatformTransactionManager transactionManager
+            @Autowired(required = false) PlatformTransactionManager transactionManager,
+            @Autowired(required = false) AssistantTelemetryService telemetryService
     ) {
         this.pendingActionRepository = pendingActionRepository;
         this.userRepository = userRepository;
         this.currentUser = currentUser;
         this.toolRegistry = toolRegistry;
         this.objectMapper = objectMapper;
+        this.telemetryService = telemetryService;
         if (transactionManager != null) {
             this.requiresNewTxTemplate = new TransactionTemplate(transactionManager);
             this.requiresNewTxTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
@@ -103,6 +118,7 @@ public class PendingActionService {
      * Guaranteed replay protection: exactly one attempt transitions PENDING -> CONFIRMED -> EXECUTED.
      */
     public PendingActionResultDto confirmAndExecute(UUID actionId) {
+        long startTime = System.currentTimeMillis();
         SpendSenseUserPrincipal principal = currentUser.require();
         UUID userId = principal.getUserId();
 
@@ -114,10 +130,16 @@ public class PendingActionService {
         if (action.isExpired()) {
             action.setStatus(PendingActionStatus.EXPIRED);
             pendingActionRepository.transitionStatus(actionId, userId, PendingActionStatus.PENDING, PendingActionStatus.EXPIRED);
+            if (telemetryService != null) {
+                telemetryService.logActionConfirmed(userId, action.getToolName(), System.currentTimeMillis() - startTime, false);
+            }
             throw new ApiException(HttpStatus.GONE, "ACTION_EXPIRED", "This action has expired. Please request the change again.");
         }
 
         if (action.getStatus() != PendingActionStatus.PENDING) {
+            if (telemetryService != null) {
+                telemetryService.logActionConfirmed(userId, action.getToolName(), System.currentTimeMillis() - startTime, false);
+            }
             throw new ApiException(HttpStatus.CONFLICT, "ACTION_NOT_PENDING", "Action is not pending confirmation. Current status: " + action.getStatus());
         }
 
@@ -131,7 +153,13 @@ public class PendingActionService {
 
         // 2. Dispatch execution to the mutation tool within transactional boundary
         FinancialTool<?, ?> tool = toolRegistry.getTool(action.getToolName())
-                .orElseThrow(() -> new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "TOOL_NOT_FOUND", "Mutation tool not found: " + action.getToolName()));
+                .orElseThrow(() -> {
+                    markFailed(actionId, userId, "Mutation tool not found: " + action.getToolName());
+                    if (telemetryService != null) {
+                        telemetryService.logActionConfirmed(userId, action.getToolName(), System.currentTimeMillis() - startTime, false);
+                    }
+                    return new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "TOOL_NOT_FOUND", "Mutation tool not found: " + action.getToolName());
+                });
 
         Object mutationResult;
         Instant executedAt;
@@ -144,13 +172,22 @@ public class PendingActionService {
             });
             executedAt = Instant.now();
             log.info("Successfully executed PendingAction id={} for user={}", actionId, userId);
+            if (telemetryService != null) {
+                telemetryService.logActionConfirmed(userId, action.getToolName(), System.currentTimeMillis() - startTime, true);
+            }
         } catch (ApiException e) {
             log.error("Failed executing confirmed mutation action {}: {}", actionId, e.getMessage());
             markFailed(actionId, userId, e.getMessage());
+            if (telemetryService != null) {
+                telemetryService.logActionConfirmed(userId, action.getToolName(), System.currentTimeMillis() - startTime, false);
+            }
             throw e;
         } catch (Exception e) {
             log.error("Failed executing confirmed mutation action {}: {}", actionId, e.getMessage(), e);
             markFailed(actionId, userId, e.getMessage());
+            if (telemetryService != null) {
+                telemetryService.logActionConfirmed(userId, action.getToolName(), System.currentTimeMillis() - startTime, false);
+            }
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "EXECUTION_FAILED", "Failed executing confirmed action: " + e.getMessage());
         }
 
@@ -213,5 +250,8 @@ public class PendingActionService {
             throw new ApiException(HttpStatus.CONFLICT, "ACTION_ALREADY_PROCESSED", "Action could not be cancelled.");
         }
         log.info("Cancelled PendingAction id={} for user={}", actionId, userId);
+        if (telemetryService != null) {
+            telemetryService.logActionCancelled(userId, action.getToolName());
+        }
     }
 }

@@ -12,6 +12,6 @@ public class HealthController {
 
     @GetMapping
     public ApiResponse<Map<String, String>> health() {
-        return ApiResponse.of(Map.of("status", "UP", "service", "spendsense-api"));
+        return ApiResponse.of(Map.of("status", "UP", "service", "mintmate-api"));
     }
 }

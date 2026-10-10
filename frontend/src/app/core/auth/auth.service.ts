@@ -5,8 +5,10 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse, AuthResponse, User } from '../api/api.types';
 
-const TOKEN_KEY = 'spendsense.token';
-const USER_KEY = 'spendsense.user';
+const TOKEN_KEY = 'mintmate.token';
+const USER_KEY = 'mintmate.user';
+const LEGACY_TOKEN_KEY = 'spendsense.token';
+const LEGACY_USER_KEY = 'spendsense.user';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -41,6 +43,8 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+    localStorage.removeItem(LEGACY_USER_KEY);
     this.tokenState.set(null);
     this.userState.set(null);
     void this.router.navigate(['/login']);
@@ -52,16 +56,18 @@ export class AuthService {
     }
     localStorage.setItem(TOKEN_KEY, data.accessToken);
     localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+    localStorage.removeItem(LEGACY_USER_KEY);
     this.tokenState.set(data.accessToken);
     this.userState.set(data.user);
   }
 
   private readToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+    return localStorage.getItem(TOKEN_KEY) ?? localStorage.getItem(LEGACY_TOKEN_KEY);
   }
 
   private readUser(): User | null {
-    const raw = localStorage.getItem(USER_KEY);
+    const raw = localStorage.getItem(USER_KEY) ?? localStorage.getItem(LEGACY_USER_KEY);
     if (!raw) {
       return null;
     }

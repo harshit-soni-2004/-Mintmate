@@ -8,6 +8,7 @@ import {
   AssistantChatResponse,
   ChatMessage,
   PendingActionResult,
+  ProactiveInsightDto,
 } from '../../core/api/api.types';
 
 @Injectable({ providedIn: 'root' })
@@ -30,5 +31,13 @@ export class AssistantService {
 
   cancelAction(actionId: string): Observable<ApiResponse<{ message: string }>> {
     return this.http.post<ApiResponse<{ message: string }>>(`${this.baseUrl}/actions/${actionId}/cancel`, {});
+  }
+
+  getProactiveInsights(): Observable<ApiResponse<ProactiveInsightDto[]>> {
+    return this.http.get<ApiResponse<ProactiveInsightDto[]>>(`${this.baseUrl}/proactive-insights`);
+  }
+
+  dismissInsight(insightId: string): Observable<ApiResponse<{ message: string }>> {
+    return this.http.post<ApiResponse<{ message: string }>>(`${this.baseUrl}/proactive-insights/${insightId}/dismiss`, {});
   }
 }

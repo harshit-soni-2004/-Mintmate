@@ -83,7 +83,11 @@ public class GetBudgetStatusTool implements FinancialTool<GetBudgetStatusTool.In
 
         String summaryText;
         if (budgets.isEmpty()) {
-            summaryText = String.format("For %s, there are no active budgets configured.", targetYm);
+            if (input.category() != null) {
+                summaryText = String.format("For %s, there is no active budget configured for %s.", targetYm, input.category().getDisplayName());
+            } else {
+                summaryText = String.format("For %s, there are no active budgets configured.", targetYm);
+            }
         } else if (input.category() != null && !budgets.isEmpty()) {
             BudgetResponse b = budgets.getFirst();
             summaryText = String.format("For %s, %s budget is ₹%.2f with ₹%.2f spent (%.1f%% used), ₹%.2f remaining. Status: %s.",

@@ -746,12 +746,58 @@
   cursor: not-allowed;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 1199px) and (min-width: 768px) {
+  .budgets-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .budgets-page {
+    padding: 0 0 2rem;
+  }
+
   .page-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 1rem;
+
+    .header-actions {
+      width: 100%;
+      .add-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
   }
+
+  .summary-cards {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .budgets-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .budget-card {
+    padding: 1.15rem 1rem;
+  }
+
   .form-row-2 {
     grid-template-columns: 1fr;
+  }
+
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal-dialog {
+    max-width: 100%;
+    border-radius: var(--radius-lg, 16px) var(--radius-lg, 16px) 0 0;
+    max-height: 90vh;
+    overflow-y: auto;
   }
 }

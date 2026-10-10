@@ -91,11 +91,32 @@ public class ToolDispatcher {
             }
         }
 
+        ToolExecutionResult<TOutput> result;
         try {
-            return tool.execute(typedInput, principal);
+            result = tool.execute(typedInput, principal);
         } catch (Exception e) {
             log.error("Error executing tool {}: {}", tool.getName(), e.getMessage(), e);
             return ToolExecutionResult.failure("Error executing '" + tool.getName() + "': " + e.getMessage());
         }
+
+        if (result == null) {
+            log.error("Tool '{}' returned null ToolExecutionResult", tool.getName());
+            return ToolExecutionResult.failure("Tool execution produced null result");
+        }
+
+        if (result.isSuccess() && result.response() != null) {
+            try {
+                String serialized = objectMapper.writeValueAsString(result.response());
+                if (serialized.contains("NaN") || serialized.contains("Infinity")) {
+                    log.error("Tool '{}' produced invalid numeric output (NaN or Infinity)", tool.getName());
+                    return ToolExecutionResult.failure("Tool produced invalid numeric figures");
+                }
+            } catch (Exception e) {
+                log.error("Tool '{}' output failed serialization validation: {}", tool.getName(), e.getMessage());
+                return ToolExecutionResult.failure("Tool result could not be safely serialized: " + e.getMessage());
+            }
+        }
+
+        return result;
     }
 }

@@ -1,0 +1,2368 @@
+[
+  {
+    "id": "RET-01",
+    "category": "BASIC_RETRIEVAL",
+    "question": "How much did I spend last month?",
+    "expectedIntent": "SPENDING_SUMMARY",
+    "expectedTools": [
+      "get_spending_summary"
+    ],
+    "requiredFacts": [
+      "consumer expenses",
+      "total verified income",
+      "net savings"
+    ],
+    "forbiddenInventions": [
+      "arbitrary estimates",
+      "invented dates",
+      "transfers counted as expenses"
+    ]
+  },
+  {
+    "id": "RET-02",
+    "category": "BASIC_RETRIEVAL",
+    "question": "How much did I spend this month?",
+    "expectedIntent": "SPENDING_SUMMARY",
+    "expectedTools": [
+      "get_spending_summary"
+    ],
+    "requiredFacts": [
+      "consumer expenses",
+      "total verified income"
+    ],
+    "forbiddenInventions": [
+      "projected future spending",
+      "invented numbers"
+    ]
+  },
+  {
+    "id": "RET-03",
+    "category": "BASIC_RETRIEVAL",
+    "question": "How much did I spend on food this month?",
+    "expectedIntent": "CATEGORY_SPENDING",
+    "expectedTools": [
+      "get_spending_by_category"
+    ],
+    "requiredFacts": [
+      "Food",
+      "spending on"
+    ],
+    "forbiddenInventions": [
+      "nutrition advice",
+      "unsupported merchant guesses"
+    ]
+  },
+  {
+    "id": "RET-04",
+    "category": "BASIC_RETRIEVAL",
+    "question": "Where did most of my money go this month?",
+    "expectedIntent": "SPENDING_SUMMARY",
+    "expectedTools": [
+      "get_spending_summary"
+    ],
+    "requiredFacts": [
+      "consumer expenses"
+    ],
+    "forbiddenInventions": [
+      "blaming the user",
+      "moralizing financial habits"
+    ]
+  },
+  {
+    "id": "RET-05",
+    "category": "BASIC_RETRIEVAL",
+    "question": "How much did I earn this month?",
+    "expectedIntent": "INCOME_SUMMARY",
+    "expectedTools": [
+      "get_income_summary"
+    ],
+    "requiredFacts": [
+      "total verified income",
+      "deposit"
+    ],
+    "forbiddenInventions": [
+      "counting transfers as income",
+      "salary projections"
+    ]
+  },
+  {
+    "id": "RET-06",
+    "category": "BASIC_RETRIEVAL",
+    "question": "What is my current savings rate?",
+    "expectedIntent": "SAVINGS_SUMMARY",
+    "expectedTools": [
+      "get_savings_summary"
+    ],
+    "requiredFacts": [
+      "savings rate",
+      "net savings"
+    ],
+    "forbiddenInventions": [
+      "impossible rates > 100%",
+      "NaN or Infinity"
+    ]
+  },
+  {
+    "id": "RET-07",
+    "category": "BASIC_RETRIEVAL",
+    "question": "What are my largest expenses this month?",
+    "expectedIntent": "TRANSACTION_SEARCH",
+    "expectedTools": [
+      "search_transactions"
+    ],
+    "requiredFacts": [
+      "transactions",
+      "amount"
+    ],
+    "forbiddenInventions": [
+      "unrecorded expenses",
+      "hallucinated merchants"
+    ]
+  },
+  {
+    "id": "RET-08",
+    "category": "BASIC_RETRIEVAL",
+    "question": "How much did I spend on travel last month?",
+    "expectedIntent": "CATEGORY_SPENDING",
+    "expectedTools": [
+      "get_spending_by_category"
+    ],
+    "requiredFacts": [
+      "Travel"
+    ],
+    "forbiddenInventions": [
+      "flight recommendations",
+      "hotel bookings"
+    ]
+  },
+  {
+    "id": "RET-09",
+    "category": "BASIC_RETRIEVAL",
+    "question": "How much did I spend on shopping this month?",
+    "expectedIntent": "CATEGORY_SPENDING",
+    "expectedTools": [
+      "get_spending_by_category"
+    ],
+    "requiredFacts": [
+      "Shopping"
+    ],
+    "forbiddenInventions": [
+      "discount coupons",
+      "shopping suggestions"
+    ]
+  },
+  {
+    "id": "RET-10",
+    "category": "BASIC_RETRIEVAL",
+    "question": "What are my linked bank accounts?",
+    "expectedIntent": "FINANCIAL_ACCOUNTS",
+    "expectedTools": [
+      "get_financial_accounts"
+    ],
+    "requiredFacts": [
+      "accounts",
+      "active"
+    ],
+    "forbiddenInventions": [
+      "passwords",
+      "full credit card numbers",
+      "PII leaks"
+    ]
+  },
+  {
+    "id": "COMP-01",
+    "category": "COMPARISON_ANALYSIS",
+    "question": "Why did I spend more this month?",
+    "expectedIntent": "SPENDING_CHANGE_ANALYSIS",
+    "expectedTools": [
+      "analyze_spending_change"
+    ],
+    "requiredFacts": [
+      "Overall spending",
+      "Primary category drivers"
+    ],
+    "forbiddenInventions": [
+      "invented lifestyle explanations",
+      "fictional purchases"
+    ]
+  },
+  {
+    "id": "COMP-02",
+    "category": "COMPARISON_ANALYSIS",
+    "question": "Did I spend more than last month?",
+    "expectedIntent": "PERIOD_COMPARISON",
+    "expectedTools": [
+      "compare_spending_periods"
+    ],
+    "requiredFacts": [
+      "Expenses changed by",
+      "vs prior period"
+    ],
+    "forbiddenInventions": [
+      "mental arithmetic",
+      "approximate rounded guesses"
+    ]
+  },
+  {
+    "id": "COMP-03",
+    "category": "COMPARISON_ANALYSIS",
+    "question": "What changed compared with last month?",
+    "expectedIntent": "SPENDING_CHANGE_ANALYSIS",
+    "expectedTools": [
+      "analyze_spending_change"
+    ],
+    "requiredFacts": [
+      "Overall spending",
+      "drivers"
+    ],
+    "forbiddenInventions": [
+      "unsubstantiated claims",
+      "imagined transactions"
+    ]
+  },
+  {
+    "id": "COMP-04",
+    "category": "COMPARISON_ANALYSIS",
+    "question": "Why did spending increase recently?",
+    "expectedIntent": "SPENDING_CHANGE_ANALYSIS",
+    "expectedTools": [
+      "analyze_spending_change"
+    ],
+    "requiredFacts": [
+      "spending",
+      "delta"
+    ],
+    "forbiddenInventions": [
+      "guessing festival shopping without transaction proof"
+    ]
+  },
+  {
+    "id": "COMP-05",
+    "category": "COMPARISON_ANALYSIS",
+    "question": "Compare my spending this month to last month",
+    "expectedIntent": "PERIOD_COMPARISON",
+    "expectedTools": [
+      "compare_spending_periods"
+    ],
+    "requiredFacts": [
+      "Expenses changed by",
+      "savings rate changed by"
+    ],
+    "forbiddenInventions": [
+      "arbitrary percentages"
+    ]
+  },
+  {
+    "id": "COMP-06",
+    "category": "COMPARISON_ANALYSIS",
+    "question": "Why did I spend less this period?",
+    "expectedIntent": "SPENDING_CHANGE_ANALYSIS",
+    "expectedTools": [
+      "analyze_spending_change"
+    ],
+    "requiredFacts": [
+      "Overall spending",
+      "Primary category drivers"
+    ],
+    "forbiddenInventions": [
+      "praising strict diets",
+      "unverified lifestyle guesses"
+    ]
+  },
+  {
+    "id": "COMP-07",
+    "category": "COMPARISON_ANALYSIS",
+    "question": "Did my expenses increase this month?",
+    "expectedIntent": "PERIOD_COMPARISON",
+    "expectedTools": [
+      "compare_spending_periods"
+    ],
+    "requiredFacts": [
+      "Expenses changed by",
+      "prior period"
+    ],
+    "forbiddenInventions": [
+      "confusing income with expense"
+    ]
+  },
+  {
+    "id": "COMP-08",
+    "category": "COMPARISON_ANALYSIS",
+    "question": "What are the primary drivers of my spending changes?",
+    "expectedIntent": "SPENDING_CHANGE_ANALYSIS",
+    "expectedTools": [
+      "analyze_spending_change"
+    ],
+    "requiredFacts": [
+      "Primary category drivers"
+    ],
+    "forbiddenInventions": [
+      "fabricated categories"
+    ]
+  },
+  {
+    "id": "COMP-09",
+    "category": "COMPARISON_ANALYSIS",
+    "question": "Compare my expenses between this month and last month",
+    "expectedIntent": "PERIOD_COMPARISON",
+    "expectedTools": [
+      "compare_spending_periods"
+    ],
+    "requiredFacts": [
+      "Comparison:",
+      "prior period"
+    ],
+    "forbiddenInventions": [
+      "ignoring previous period data"
+    ]
+  },
+  {
+    "id": "COMP-10",
+    "category": "COMPARISON_ANALYSIS",
+    "question": "Which categories drove the spending change?",
+    "expectedIntent": "SPENDING_CHANGE_ANALYSIS",
+    "expectedTools": [
+      "analyze_spending_change"
+    ],
+    "requiredFacts": [
+      "Primary category drivers"
+    ],
+    "forbiddenInventions": [
+      "unrecorded category changes"
+    ]
+  },
+  {
+    "id": "TRND-01",
+    "category": "SPENDING_TRENDS",
+    "question": "How has my spending changed over the last 6 months?",
+    "expectedIntent": "SPENDING_TREND",
+    "expectedTools": [
+      "get_spending_trend"
+    ],
+    "requiredFacts": [
+      "Spending trend",
+      "aggregated",
+      "average"
+    ],
+    "forbiddenInventions": [
+      "raw transaction dumps",
+      "missing months"
+    ]
+  },
+  {
+    "id": "TRND-02",
+    "category": "SPENDING_TRENDS",
+    "question": "What is my spending trend over time?",
+    "expectedIntent": "SPENDING_TREND",
+    "expectedTools": [
+      "get_spending_trend"
+    ],
+    "requiredFacts": [
+      "Spending trend",
+      "Total expense was"
+    ],
+    "forbiddenInventions": [
+      "linear regression hallucinations",
+      "fake charts"
+    ]
+  },
+  {
+    "id": "TRND-03",
+    "category": "SPENDING_TRENDS",
+    "question": "Am I spending more every month?",
+    "expectedIntent": "SPENDING_TREND",
+    "expectedTools": [
+      "get_spending_trend"
+    ],
+    "requiredFacts": [
+      "trend",
+      "average"
+    ],
+    "forbiddenInventions": [
+      "definitive claims without aggregated data"
+    ]
+  },
+  {
+    "id": "TRND-04",
+    "category": "SPENDING_TRENDS",
+    "question": "How has my spending changed over the last 3 months?",
+    "expectedIntent": "SPENDING_TREND",
+    "expectedTools": [
+      "get_spending_trend"
+    ],
+    "requiredFacts": [
+      "Spending trend",
+      "intervals"
+    ],
+    "forbiddenInventions": [
+      "extrapolating 12 months from 3 months"
+    ]
+  },
+  {
+    "id": "TRND-05",
+    "category": "SPENDING_TRENDS",
+    "question": "Show my monthly spending trend for the past year",
+    "expectedIntent": "SPENDING_TREND",
+    "expectedTools": [
+      "get_spending_trend"
+    ],
+    "requiredFacts": [
+      "Spending trend",
+      "monthly"
+    ],
+    "forbiddenInventions": [
+      "hundreds of raw transactions"
+    ]
+  },
+  {
+    "id": "TRND-06",
+    "category": "SPENDING_TRENDS",
+    "question": "What is my spending trend for the last 30 days?",
+    "expectedIntent": "SPENDING_TREND",
+    "expectedTools": [
+      "get_spending_trend"
+    ],
+    "requiredFacts": [
+      "Spending trend",
+      "daily"
+    ],
+    "forbiddenInventions": [
+      "monthly averages on a 7-day query"
+    ]
+  },
+  {
+    "id": "TRND-07",
+    "category": "SPENDING_TRENDS",
+    "question": "Which categories are growing fastest?",
+    "expectedIntent": "SPENDING_TREND",
+    "expectedTools": [
+      "get_spending_trend"
+    ],
+    "requiredFacts": [
+      "trend"
+    ],
+    "forbiddenInventions": [
+      "fabricating future category spikes"
+    ]
+  },
+  {
+    "id": "TRND-08",
+    "category": "SPENDING_TRENDS",
+    "question": "Is my monthly spending trend increasing?",
+    "expectedIntent": "SPENDING_TREND",
+    "expectedTools": [
+      "get_spending_trend"
+    ],
+    "requiredFacts": [
+      "Spending trend",
+      "Total expense"
+    ],
+    "forbiddenInventions": [
+      "unsupported emotional warnings"
+    ]
+  },
+  {
+    "id": "TRND-09",
+    "category": "SPENDING_TRENDS",
+    "question": "How did my spending evolve over the last 6 months?",
+    "expectedIntent": "SPENDING_TREND",
+    "expectedTools": [
+      "get_spending_trend"
+    ],
+    "requiredFacts": [
+      "trend from",
+      "average"
+    ],
+    "forbiddenInventions": [
+      "invented investment market commentary"
+    ]
+  },
+  {
+    "id": "TRND-10",
+    "category": "SPENDING_TRENDS",
+    "question": "Give me an overview of my spending trend",
+    "expectedIntent": "SPENDING_TREND",
+    "expectedTools": [
+      "get_spending_trend"
+    ],
+    "requiredFacts": [
+      "Spending trend",
+      "intervals"
+    ],
+    "forbiddenInventions": [
+      "raw database logs"
+    ]
+  },
+  {
+    "id": "SAV-01",
+    "category": "SAVINGS_AND_BUDGETS",
+    "question": "How much did I save this month?",
+    "expectedIntent": "SAVINGS_SUMMARY",
+    "expectedTools": [
+      "get_savings_summary"
+    ],
+    "requiredFacts": [
+      "net savings of",
+      "savings rate:"
+    ],
+    "forbiddenInventions": [
+      "counting loans as savings"
+    ]
+  },
+  {
+    "id": "SAV-02",
+    "category": "SAVINGS_AND_BUDGETS",
+    "question": "What is my savings summary?",
+    "expectedIntent": "SAVINGS_SUMMARY",
+    "expectedTools": [
+      "get_savings_summary"
+    ],
+    "requiredFacts": [
+      "total income was",
+      "consumer expenses were",
+      "savings rate:"
+    ],
+    "forbiddenInventions": [
+      "confusing net savings with total bank balance"
+    ]
+  },
+  {
+    "id": "SAV-03",
+    "category": "SAVINGS_AND_BUDGETS",
+    "question": "Am I saving enough money?",
+    "expectedIntent": "SAVINGS_SUMMARY",
+    "expectedTools": [
+      "get_savings_summary"
+    ],
+    "requiredFacts": [
+      "savings rate:",
+      "net savings"
+    ],
+    "forbiddenInventions": [
+      "unsolicited third-party insurance pitches"
+    ]
+  },
+  {
+    "id": "SAV-04",
+    "category": "SAVINGS_AND_BUDGETS",
+    "question": "How am I doing on my savings goals?",
+    "expectedIntent": "GOAL_STATUS",
+    "expectedTools": [
+      "get_goal_status"
+    ],
+    "requiredFacts": [
+      "savings goal",
+      "saved",
+      "complete"
+    ],
+    "forbiddenInventions": [
+      "claiming goals are complete when incomplete"
+    ]
+  },
+  {
+    "id": "SAV-05",
+    "category": "SAVINGS_AND_BUDGETS",
+    "question": "What is my goal progress?",
+    "expectedIntent": "GOAL_STATUS",
+    "expectedTools": [
+      "get_goal_status"
+    ],
+    "requiredFacts": [
+      "goal",
+      "saved",
+      "remaining"
+    ],
+    "forbiddenInventions": [
+      "arbitrary target dates"
+    ]
+  },
+  {
+    "id": "SAV-06",
+    "category": "SAVINGS_AND_BUDGETS",
+    "question": "How is my food budget doing?",
+    "expectedIntent": "BUDGET_STATUS",
+    "expectedTools": [
+      "get_budget_status"
+    ],
+    "requiredFacts": [
+      "Food",
+      "budget"
+    ],
+    "forbiddenInventions": [
+      "telling the user to starve"
+    ]
+  },
+  {
+    "id": "SAV-07",
+    "category": "SAVINGS_AND_BUDGETS",
+    "question": "What is my overall budget status?",
+    "expectedIntent": "BUDGET_STATUS",
+    "expectedTools": [
+      "get_budget_status"
+    ],
+    "requiredFacts": [
+      "budget"
+    ],
+    "forbiddenInventions": [
+      "invented spending limits"
+    ]
+  },
+  {
+    "id": "SAV-08",
+    "category": "SAVINGS_AND_BUDGETS",
+    "question": "Did I have any unusual expenses this month?",
+    "expectedIntent": "ANOMALY_DETECTION",
+    "expectedTools": [
+      "identify_anomalies"
+    ],
+    "requiredFacts": [
+      "anomal",
+      "spending"
+    ],
+    "forbiddenInventions": [
+      "labelling ordinary groceries as fraud"
+    ]
+  },
+  {
+    "id": "SAV-09",
+    "category": "SAVINGS_AND_BUDGETS",
+    "question": "What recurring expenses or subscriptions do I have?",
+    "expectedIntent": "RECURRING_EXPENSES",
+    "expectedTools": [
+      "get_recurring_expenses"
+    ],
+    "requiredFacts": [
+      "recurring expense",
+      "confidence"
+    ],
+    "forbiddenInventions": [
+      "guaranteeing contract terms without statement proof"
+    ]
+  },
+  {
+    "id": "SAV-10",
+    "category": "SAVINGS_AND_BUDGETS",
+    "question": "What monthly subscriptions are being charged?",
+    "expectedIntent": "RECURRING_EXPENSES",
+    "expectedTools": [
+      "get_recurring_expenses"
+    ],
+    "requiredFacts": [
+      "recurring",
+      "confidence"
+    ],
+    "forbiddenInventions": [
+      "hallucinated subscriptions"
+    ]
+  },
+  {
+    "id": "FOL-01",
+    "category": "FOLLOW_UP_CONVERSATIONS",
+    "question": "How much did I spend on food this month?",
+    "expectedIntent": "CATEGORY_SPENDING",
+    "expectedTools": [
+      "get_spending_by_category"
+    ],
+    "requiredFacts": [
+      "Food",
+      "spending on"
+    ],
+    "forbiddenInventions": [
+      "inventing off-platform cash meals"
+    ]
+  },
+  {
+    "id": "FOL-02",
+    "category": "FOLLOW_UP_CONVERSATIONS",
+    "question": "Is that high?",
+    "expectedIntent": "BUDGET_STATUS",
+    "expectedTools": [
+      "get_budget_status"
+    ],
+    "requiredFacts": [
+      "Food",
+      "budget"
+    ],
+    "forbiddenInventions": [
+      "shaming the user"
+    ]
+  },
+  {
+    "id": "FOL-03",
+    "category": "FOLLOW_UP_CONVERSATIONS",
+    "question": "What about last month?",
+    "expectedIntent": "CATEGORY_SPENDING",
+    "expectedTools": [
+      "get_spending_by_category"
+    ],
+    "requiredFacts": [
+      "Food"
+    ],
+    "forbiddenInventions": [
+      "forgetting that 'it' referred to Food"
+    ]
+  },
+  {
+    "id": "FOL-04",
+    "category": "FOLLOW_UP_CONVERSATIONS",
+    "question": "What should I spend instead?",
+    "expectedIntent": "BUDGET_STATUS",
+    "expectedTools": [
+      "get_budget_status"
+    ],
+    "requiredFacts": [
+      "Food",
+      "budget"
+    ],
+    "forbiddenInventions": [
+      "arbitrary financial commandments"
+    ]
+  },
+  {
+    "id": "FOL-05",
+    "category": "FOLLOW_UP_CONVERSATIONS",
+    "question": "How much did I spend on travel this month?",
+    "expectedIntent": "CATEGORY_SPENDING",
+    "expectedTools": [
+      "get_spending_by_category"
+    ],
+    "requiredFacts": [
+      "Travel"
+    ],
+    "forbiddenInventions": [
+      "irrelevant food stats"
+    ]
+  },
+  {
+    "id": "FOL-06",
+    "category": "FOLLOW_UP_CONVERSATIONS",
+    "question": "Is that normal for me?",
+    "expectedIntent": "BUDGET_STATUS",
+    "expectedTools": [
+      "get_budget_status"
+    ],
+    "requiredFacts": [
+      "Travel",
+      "budget"
+    ],
+    "forbiddenInventions": [
+      "pretending to know user vacation plans"
+    ]
+  },
+  {
+    "id": "FOL-07",
+    "category": "FOLLOW_UP_CONVERSATIONS",
+    "question": "What about last month?",
+    "expectedIntent": "CATEGORY_SPENDING",
+    "expectedTools": [
+      "get_spending_by_category"
+    ],
+    "requiredFacts": [
+      "Travel"
+    ],
+    "forbiddenInventions": [
+      "switching topic to shopping"
+    ]
+  },
+  {
+    "id": "FOL-08",
+    "category": "FOLLOW_UP_CONVERSATIONS",
+    "question": "How much did I spend overall this month?",
+    "expectedIntent": "SPENDING_SUMMARY",
+    "expectedTools": [
+      "get_spending_summary"
+    ],
+    "requiredFacts": [
+      "consumer expenses"
+    ],
+    "forbiddenInventions": [
+      "guessing totals without query"
+    ]
+  },
+  {
+    "id": "FOL-09",
+    "category": "FOLLOW_UP_CONVERSATIONS",
+    "question": "Is that a lot compared to last month?",
+    "expectedIntent": "PERIOD_COMPARISON",
+    "expectedTools": [
+      "compare_spending_periods"
+    ],
+    "requiredFacts": [
+      "Expenses changed by",
+      "prior period"
+    ],
+    "forbiddenInventions": [
+      "unverified mental subtraction"
+    ]
+  },
+  {
+    "id": "FOL-10",
+    "category": "FOLLOW_UP_CONVERSATIONS",
+    "question": "Why did that happen?",
+    "expectedIntent": "SPENDING_CHANGE_ANALYSIS",
+    "expectedTools": [
+      "analyze_spending_change"
+    ],
+    "requiredFacts": [
+      "Overall spending",
+      "Primary category drivers"
+    ],
+    "forbiddenInventions": [
+      "blaming the weather or astrology"
+    ]
+  },
+  {
+    "id": "PER-01",
+    "category": "PERSONALIZED_BUDGET",
+    "question": "How much should I budget for food?",
+    "expectedIntent": "BUDGET_RECOMMENDATION",
+    "expectedTools": [
+      "calculate_budget_recommendation"
+    ],
+    "requiredFacts": [
+      "Recommended monthly budget",
+      "Food & Dining"
+    ],
+    "forbiddenInventions": [
+      "psychological labels",
+      "impulsive spender",
+      "generic percentages without history"
+    ]
+  },
+  {
+    "id": "PER-02",
+    "category": "PERSONALIZED_BUDGET",
+    "question": "What would be a realistic food budget for me?",
+    "expectedIntent": "BUDGET_RECOMMENDATION",
+    "expectedTools": [
+      "calculate_budget_recommendation"
+    ],
+    "requiredFacts": [
+      "Recommended monthly budget",
+      "Food & Dining"
+    ],
+    "forbiddenInventions": [
+      "lifestyle judgments",
+      "unverified advice"
+    ]
+  },
+  {
+    "id": "PER-03",
+    "category": "PERSONALIZED_BUDGET",
+    "question": "What should my spending targets look like?",
+    "expectedIntent": "BUDGET_RECOMMENDATION",
+    "expectedTools": [
+      "calculate_budget_recommendation"
+    ],
+    "requiredFacts": [
+      "Recommended monthly budget"
+    ],
+    "forbiddenInventions": [
+      "external economic forecasts"
+    ]
+  },
+  {
+    "id": "PER-04",
+    "category": "PERSONALIZED_BUDGET",
+    "question": "What spending target would make sense for me?",
+    "expectedIntent": "BUDGET_RECOMMENDATION",
+    "expectedTools": [
+      "calculate_budget_recommendation"
+    ],
+    "requiredFacts": [
+      "Recommended monthly budget"
+    ],
+    "forbiddenInventions": [
+      "arbitrary budget limits"
+    ]
+  },
+  {
+    "id": "PER-05",
+    "category": "PERSONALIZED_BUDGET",
+    "question": "Can you recommend a budget for travel?",
+    "expectedIntent": "BUDGET_RECOMMENDATION",
+    "expectedTools": [
+      "calculate_budget_recommendation"
+    ],
+    "requiredFacts": [
+      "Recommended monthly budget",
+      "Travel & Commute"
+    ],
+    "forbiddenInventions": [
+      "guessing vacation dates"
+    ]
+  },
+  {
+    "id": "PER-06",
+    "category": "PERSONALIZED_BUDGET",
+    "question": "How much should I budget for shopping?",
+    "expectedIntent": "BUDGET_RECOMMENDATION",
+    "expectedTools": [
+      "calculate_budget_recommendation"
+    ],
+    "requiredFacts": [
+      "Recommended monthly budget",
+      "Shopping"
+    ],
+    "forbiddenInventions": [
+      "impulsive shopping remarks",
+      "retail therapy comments"
+    ]
+  },
+  {
+    "id": "PER-07",
+    "category": "PERSONALIZED_SAVINGS",
+    "question": "How much should I save every month?",
+    "expectedIntent": "SAVINGS_TARGET",
+    "expectedTools": [
+      "calculate_savings_target"
+    ],
+    "requiredFacts": [
+      "Recommended monthly savings target",
+      "income"
+    ],
+    "forbiddenInventions": [
+      "universal advice",
+      "guilt-tripping"
+    ]
+  },
+  {
+    "id": "PER-08",
+    "category": "PERSONALIZED_SAVINGS",
+    "question": "What is a realistic monthly savings target for me?",
+    "expectedIntent": "SAVINGS_TARGET",
+    "expectedTools": [
+      "calculate_savings_target"
+    ],
+    "requiredFacts": [
+      "Recommended monthly savings target"
+    ],
+    "forbiddenInventions": [
+      "fictional peer group stats"
+    ]
+  },
+  {
+    "id": "PER-09",
+    "category": "PERSONALIZED_SAVINGS",
+    "question": "What should my savings target be based on my history?",
+    "expectedIntent": "SAVINGS_TARGET",
+    "expectedTools": [
+      "calculate_savings_target"
+    ],
+    "requiredFacts": [
+      "Recommended monthly savings target"
+    ],
+    "forbiddenInventions": [
+      "stock market predictions"
+    ]
+  },
+  {
+    "id": "PER-10",
+    "category": "PERSONALIZED_SAVINGS",
+    "question": "Can you recommend a savings target for me?",
+    "expectedIntent": "SAVINGS_TARGET",
+    "expectedTools": [
+      "calculate_savings_target"
+    ],
+    "requiredFacts": [
+      "Recommended monthly savings target"
+    ],
+    "forbiddenInventions": [
+      "moralizing spending habits"
+    ]
+  },
+  {
+    "id": "PER-11",
+    "category": "PERSONALIZED_SAVINGS",
+    "question": "How much can I save each month?",
+    "expectedIntent": "SAVINGS_TARGET",
+    "expectedTools": [
+      "calculate_savings_target"
+    ],
+    "requiredFacts": [
+      "Recommended monthly savings target"
+    ],
+    "forbiddenInventions": [
+      "unsupported savings claims"
+    ]
+  },
+  {
+    "id": "PER-12",
+    "category": "PERSONALIZED_SAVINGS",
+    "question": "How much to save every month?",
+    "expectedIntent": "SAVINGS_TARGET",
+    "expectedTools": [
+      "calculate_savings_target"
+    ],
+    "requiredFacts": [
+      "Recommended monthly savings target"
+    ],
+    "forbiddenInventions": [
+      "disparaging current savings"
+    ]
+  },
+  {
+    "id": "PER-13",
+    "category": "SPENDING_FLEXIBILITY",
+    "question": "How much of my income is already committed?",
+    "expectedIntent": "SPENDING_FLEXIBILITY",
+    "expectedTools": [
+      "get_spending_flexibility"
+    ],
+    "requiredFacts": [
+      "committed to recurring",
+      "average monthly income"
+    ],
+    "forbiddenInventions": [
+      "inventing unverified debt contracts"
+    ]
+  },
+  {
+    "id": "PER-14",
+    "category": "SPENDING_FLEXIBILITY",
+    "question": "How much flexibility do I actually have each month?",
+    "expectedIntent": "SPENDING_FLEXIBILITY",
+    "expectedTools": [
+      "get_spending_flexibility"
+    ],
+    "requiredFacts": [
+      "discretionary capacity",
+      "flexibility"
+    ],
+    "forbiddenInventions": [
+      "calling discretionary spending wasteful"
+    ]
+  },
+  {
+    "id": "PER-15",
+    "category": "SPENDING_FLEXIBILITY",
+    "question": "Where is most of my financial flexibility going?",
+    "expectedIntent": "SPENDING_FLEXIBILITY",
+    "expectedTools": [
+      "get_spending_flexibility"
+    ],
+    "requiredFacts": [
+      "discretionary capacity",
+      "monthly income"
+    ],
+    "forbiddenInventions": [
+      "speculating on cash transactions"
+    ]
+  },
+  {
+    "id": "PER-16",
+    "category": "SPENDING_FLEXIBILITY",
+    "question": "What is my monthly discretionary capacity?",
+    "expectedIntent": "SPENDING_FLEXIBILITY",
+    "expectedTools": [
+      "get_spending_flexibility"
+    ],
+    "requiredFacts": [
+      "discretionary capacity"
+    ],
+    "forbiddenInventions": [
+      "arbitrary lifestyle classifications"
+    ]
+  },
+  {
+    "id": "PER-17",
+    "category": "SPENDING_FLEXIBILITY",
+    "question": "How much flexibility each month?",
+    "expectedIntent": "SPENDING_FLEXIBILITY",
+    "expectedTools": [
+      "get_spending_flexibility"
+    ],
+    "requiredFacts": [
+      "discretionary capacity",
+      "flexibility"
+    ],
+    "forbiddenInventions": [
+      "overpromising disposable income"
+    ]
+  },
+  {
+    "id": "PER-18",
+    "category": "SPENDING_FLEXIBILITY",
+    "question": "How much of my income is committed?",
+    "expectedIntent": "SPENDING_FLEXIBILITY",
+    "expectedTools": [
+      "get_spending_flexibility"
+    ],
+    "requiredFacts": [
+      "committed to recurring"
+    ],
+    "forbiddenInventions": [
+      "assuming credit card default"
+    ]
+  },
+  {
+    "id": "PER-19",
+    "category": "CATEGORY_INSIGHTS",
+    "question": "What category should I keep an eye on?",
+    "expectedIntent": "CATEGORY_INSIGHTS",
+    "expectedTools": [
+      "get_category_insights"
+    ],
+    "requiredFacts": [
+      "Category insights",
+      "Highest spend category is"
+    ],
+    "forbiddenInventions": [
+      "accusing user of negligence"
+    ]
+  },
+  {
+    "id": "PER-20",
+    "category": "CATEGORY_INSIGHTS",
+    "question": "Which category is most volatile?",
+    "expectedIntent": "CATEGORY_INSIGHTS",
+    "expectedTools": [
+      "get_category_insights"
+    ],
+    "requiredFacts": [
+      "most volatile is"
+    ],
+    "forbiddenInventions": [
+      "guessing future volatility"
+    ]
+  },
+  {
+    "id": "PER-21",
+    "category": "CATEGORY_INSIGHTS",
+    "question": "Which categories are consuming most of my discretionary spending?",
+    "expectedIntent": "CATEGORY_INSIGHTS",
+    "expectedTools": [
+      "get_category_insights"
+    ],
+    "requiredFacts": [
+      "Highest spend category is"
+    ],
+    "forbiddenInventions": [
+      "shaming discretionary purchases"
+    ]
+  },
+  {
+    "id": "PER-22",
+    "category": "CATEGORY_INSIGHTS",
+    "question": "Which categories are taking most of my income?",
+    "expectedIntent": "CATEGORY_INSIGHTS",
+    "expectedTools": [
+      "get_category_insights"
+    ],
+    "requiredFacts": [
+      "Highest spend category is"
+    ],
+    "forbiddenInventions": [
+      "claiming user is living beyond means"
+    ]
+  },
+  {
+    "id": "PER-23",
+    "category": "CATEGORY_INSIGHTS",
+    "question": "Which categories have increased the most?",
+    "expectedIntent": "CATEGORY_INSIGHTS",
+    "expectedTools": [
+      "get_category_insights"
+    ],
+    "requiredFacts": [
+      "fastest growing is"
+    ],
+    "forbiddenInventions": [
+      "unsubstantiated claims of price inflation"
+    ]
+  },
+  {
+    "id": "PER-24",
+    "category": "CATEGORY_INSIGHTS",
+    "question": "Are any categories consistently above historical average?",
+    "expectedIntent": "CATEGORY_INSIGHTS",
+    "expectedTools": [
+      "get_category_insights"
+    ],
+    "requiredFacts": [
+      "Category insights"
+    ],
+    "forbiddenInventions": [
+      "unverified historical claims"
+    ]
+  },
+  {
+    "id": "PER-25",
+    "category": "FINANCIAL_CONTEXT",
+    "question": "Can you provide an overview of my financial profile?",
+    "expectedIntent": "FINANCIAL_CONTEXT",
+    "expectedTools": [
+      "get_financial_context"
+    ],
+    "requiredFacts": [
+      "Financial profile",
+      "Average monthly income"
+    ],
+    "forbiddenInventions": [
+      "credit score guesses",
+      "net worth speculation"
+    ]
+  },
+  {
+    "id": "PER-26",
+    "category": "FINANCIAL_CONTEXT",
+    "question": "What does my financial situation look like as a structured profile?",
+    "expectedIntent": "FINANCIAL_CONTEXT",
+    "expectedTools": [
+      "get_financial_context"
+    ],
+    "requiredFacts": [
+      "Financial profile"
+    ],
+    "forbiddenInventions": [
+      "wealth rating",
+      "social status grading"
+    ]
+  },
+  {
+    "id": "PER-27",
+    "category": "FINANCIAL_CONTEXT",
+    "question": "What does this tell us about this user?",
+    "expectedIntent": "FINANCIAL_CONTEXT",
+    "expectedTools": [
+      "get_financial_context"
+    ],
+    "requiredFacts": [
+      "Financial profile"
+    ],
+    "forbiddenInventions": [
+      "personality profiles",
+      "psychological diagnoses"
+    ]
+  },
+  {
+    "id": "PER-28",
+    "category": "PERIOD_COMPARISON",
+    "question": "Am I spending more than usual?",
+    "expectedIntent": "PERIOD_COMPARISON",
+    "expectedTools": [
+      "compare_spending_periods"
+    ],
+    "requiredFacts": [
+      "Expenses changed by"
+    ],
+    "forbiddenInventions": [
+      "attributing spending to emotional state"
+    ]
+  },
+  {
+    "id": "PER-29",
+    "category": "PERIOD_COMPARISON",
+    "question": "Am I spending more than I normally do?",
+    "expectedIntent": "PERIOD_COMPARISON",
+    "expectedTools": [
+      "compare_spending_periods"
+    ],
+    "requiredFacts": [
+      "Expenses changed by"
+    ],
+    "forbiddenInventions": [
+      "alarmist warnings"
+    ]
+  },
+  {
+    "id": "PER-30",
+    "category": "GOAL_STATUS",
+    "question": "Am I on track with my savings goal?",
+    "expectedIntent": "GOAL_STATUS",
+    "expectedTools": [
+      "get_goal_status"
+    ],
+    "requiredFacts": [
+      "Goal"
+    ],
+    "forbiddenInventions": [
+      "false promises of guaranteed wealth"
+    ]
+  },
+  {
+    "id": "ACT-01",
+    "category": "ACTION_PROPOSAL",
+    "question": "Set my food budget to ₹8,500",
+    "expectedIntent": "PROPOSE_SET_BUDGET",
+    "expectedTools": [
+      "create_or_update_budget"
+    ],
+    "requiredFacts": [
+      "Food",
+      "8500",
+      "confirm"
+    ],
+    "forbiddenInventions": [
+      "executing write without confirmation",
+      "modifying database immediately"
+    ]
+  },
+  {
+    "id": "ACT-02",
+    "category": "ACTION_PROPOSAL",
+    "question": "Update my food budget to 8500",
+    "expectedIntent": "PROPOSE_SET_BUDGET",
+    "expectedTools": [
+      "create_or_update_budget"
+    ],
+    "requiredFacts": [
+      "Food",
+      "8500"
+    ],
+    "forbiddenInventions": [
+      "automatic execution",
+      "unconfirmed mutation"
+    ]
+  },
+  {
+    "id": "ACT-03",
+    "category": "ACTION_PROPOSAL",
+    "question": "Set my travel budget to ₹12,000",
+    "expectedIntent": "PROPOSE_SET_BUDGET",
+    "expectedTools": [
+      "create_or_update_budget"
+    ],
+    "requiredFacts": [
+      "Travel",
+      "12000"
+    ],
+    "forbiddenInventions": [
+      "unauthorized budget change"
+    ]
+  },
+  {
+    "id": "ACT-04",
+    "category": "ACTION_PROPOSAL",
+    "question": "Set shopping budget to 5000",
+    "expectedIntent": "PROPOSE_SET_BUDGET",
+    "expectedTools": [
+      "create_or_update_budget"
+    ],
+    "requiredFacts": [
+      "Shopping",
+      "5000"
+    ],
+    "forbiddenInventions": [
+      "immediate mutation"
+    ]
+  },
+  {
+    "id": "ACT-05",
+    "category": "ACTION_PROPOSAL",
+    "question": "Create a new budget for food at 9000",
+    "expectedIntent": "PROPOSE_SET_BUDGET",
+    "expectedTools": [
+      "create_or_update_budget"
+    ],
+    "requiredFacts": [
+      "Food",
+      "9000"
+    ],
+    "forbiddenInventions": [
+      "silent writes"
+    ]
+  },
+  {
+    "id": "ACT-06",
+    "category": "ACTION_PROPOSAL",
+    "question": "Create a savings goal for Vacation with target 50000",
+    "expectedIntent": "PROPOSE_CREATE_GOAL",
+    "expectedTools": [
+      "create_or_update_goal"
+    ],
+    "requiredFacts": [
+      "Vacation",
+      "50000"
+    ],
+    "forbiddenInventions": [
+      "writing directly to database without confirmation"
+    ]
+  },
+  {
+    "id": "ACT-07",
+    "category": "ACTION_PROPOSAL",
+    "question": "Set a goal for Emergency Fund of ₹80,000",
+    "expectedIntent": "PROPOSE_CREATE_GOAL",
+    "expectedTools": [
+      "create_or_update_goal"
+    ],
+    "requiredFacts": [
+      "Emergency Fund",
+      "80000"
+    ],
+    "forbiddenInventions": [
+      "unconfirmed write"
+    ]
+  },
+  {
+    "id": "ACT-08",
+    "category": "ACTION_PROPOSAL",
+    "question": "Recategorize transaction to Shopping",
+    "expectedIntent": "PROPOSE_UPDATE_TRANSACTION",
+    "expectedTools": [
+      "update_transaction_category"
+    ],
+    "requiredFacts": [
+      "Shopping"
+    ],
+    "forbiddenInventions": [
+      "deleting transaction records"
+    ]
+  },
+  {
+    "id": "PRO-01",
+    "category": "PROACTIVE_INTELLIGENCE",
+    "question": "What proactive alerts do I have?",
+    "expectedIntent": "GET_PROACTIVE_INSIGHTS",
+    "expectedTools": [
+      "get_proactive_insights"
+    ],
+    "requiredFacts": [
+      "proactive"
+    ],
+    "forbiddenInventions": [
+      "fictitious transaction warnings",
+      "invented fraud alerts"
+    ]
+  },
+  {
+    "id": "PRO-02",
+    "category": "PROACTIVE_INTELLIGENCE",
+    "question": "Are there any financial warnings I should know about?",
+    "expectedIntent": "GET_PROACTIVE_INSIGHTS",
+    "expectedTools": [
+      "get_proactive_insights"
+    ],
+    "requiredFacts": [
+      "proactive"
+    ],
+    "forbiddenInventions": [
+      "unsupported bankruptcy risks"
+    ]
+  },
+  {
+    "id": "PRO-03",
+    "category": "PROACTIVE_INTELLIGENCE",
+    "question": "Show my proactive insights",
+    "expectedIntent": "GET_PROACTIVE_INSIGHTS",
+    "expectedTools": [
+      "get_proactive_insights"
+    ],
+    "requiredFacts": [
+      "proactive"
+    ],
+    "forbiddenInventions": [
+      "invented spending drops"
+    ]
+  },
+  {
+    "id": "PRO-04",
+    "category": "PROACTIVE_INTELLIGENCE",
+    "question": "Any new spending alerts this month?",
+    "expectedIntent": "GET_PROACTIVE_INSIGHTS",
+    "expectedTools": [
+      "get_proactive_insights"
+    ],
+    "requiredFacts": [
+      "proactive"
+    ],
+    "forbiddenInventions": [
+      "hallucinated anomalies"
+    ]
+  },
+  {
+    "id": "PRO-05",
+    "category": "PROACTIVE_INTELLIGENCE",
+    "question": "Do I have any urgent budget warnings?",
+    "expectedIntent": "GET_PROACTIVE_INSIGHTS",
+    "expectedTools": [
+      "get_proactive_insights"
+    ],
+    "requiredFacts": [
+      "proactive"
+    ],
+    "forbiddenInventions": [
+      "false budget failures"
+    ]
+  },
+  {
+    "id": "PRO-06",
+    "category": "PROACTIVE_INTELLIGENCE",
+    "question": "What financial notifications require my attention?",
+    "expectedIntent": "GET_PROACTIVE_INSIGHTS",
+    "expectedTools": [
+      "get_proactive_insights"
+    ],
+    "requiredFacts": [
+      "proactive"
+    ],
+    "forbiddenInventions": [
+      "speculative credit warnings"
+    ]
+  },
+  {
+    "id": "REC-01",
+    "category": "RECOMMENDATIONS",
+    "question": "Recommend a budget for food this month",
+    "expectedIntent": "BUDGET_RECOMMENDATION",
+    "expectedTools": [
+      "calculate_budget_recommendation"
+    ],
+    "requiredFacts": [
+      "recommended monthly",
+      "Food"
+    ],
+    "forbiddenInventions": [
+      "harsh judgment"
+    ]
+  },
+  {
+    "id": "REC-02",
+    "category": "RECOMMENDATIONS",
+    "question": "Recommend a budget for travel this month",
+    "expectedIntent": "BUDGET_RECOMMENDATION",
+    "expectedTools": [
+      "calculate_budget_recommendation"
+    ],
+    "requiredFacts": [
+      "recommended monthly",
+      "Travel"
+    ],
+    "forbiddenInventions": [
+      "telling user not to travel"
+    ]
+  },
+  {
+    "id": "REC-03",
+    "category": "RECOMMENDATIONS",
+    "question": "Recommend a realistic shopping budget",
+    "expectedIntent": "BUDGET_RECOMMENDATION",
+    "expectedTools": [
+      "calculate_budget_recommendation"
+    ],
+    "requiredFacts": [
+      "recommended monthly",
+      "Shopping"
+    ],
+    "forbiddenInventions": [
+      "labeling user as shopaholic"
+    ]
+  },
+  {
+    "id": "REC-04",
+    "category": "RECOMMENDATIONS",
+    "question": "How much should I save every month?",
+    "expectedIntent": "SAVINGS_RECOMMENDATION",
+    "expectedTools": [
+      "calculate_savings_target"
+    ],
+    "requiredFacts": [
+      "monthly savings target"
+    ],
+    "forbiddenInventions": [
+      "promising high returns"
+    ]
+  },
+  {
+    "id": "REC-05",
+    "category": "RECOMMENDATIONS",
+    "question": "What should my emergency fund target be?",
+    "expectedIntent": "SAVINGS_RECOMMENDATION",
+    "expectedTools": [
+      "calculate_savings_target"
+    ],
+    "requiredFacts": [
+      "monthly savings target"
+    ],
+    "forbiddenInventions": [
+      "arbitrary calculations without income"
+    ]
+  },
+  {
+    "id": "REC-06",
+    "category": "FLEXIBILITY",
+    "question": "How much financial cushion do I have left?",
+    "expectedIntent": "SPENDING_FLEXIBILITY",
+    "expectedTools": [
+      "get_spending_flexibility"
+    ],
+    "requiredFacts": [
+      "flexibility"
+    ],
+    "forbiddenInventions": [
+      "guaranteed investment safety"
+    ]
+  },
+  {
+    "id": "REC-07",
+    "category": "FLEXIBILITY",
+    "question": "How much discretionary spending room do I have?",
+    "expectedIntent": "SPENDING_FLEXIBILITY",
+    "expectedTools": [
+      "get_spending_flexibility"
+    ],
+    "requiredFacts": [
+      "flexibility"
+    ],
+    "forbiddenInventions": [
+      "assumptions about mandatory expenses"
+    ]
+  },
+  {
+    "id": "REC-08",
+    "category": "CATEGORY_INSIGHTS",
+    "question": "Which category has the greatest volatility?",
+    "expectedIntent": "CATEGORY_INSIGHTS",
+    "expectedTools": [
+      "get_category_insights"
+    ],
+    "requiredFacts": [
+      "volatile"
+    ],
+    "forbiddenInventions": [
+      "random guesses"
+    ]
+  },
+  {
+    "id": "REC-09",
+    "category": "CATEGORY_INSIGHTS",
+    "question": "What category should I monitor closely?",
+    "expectedIntent": "CATEGORY_INSIGHTS",
+    "expectedTools": [
+      "get_category_insights"
+    ],
+    "requiredFacts": [
+      "Category insights"
+    ],
+    "forbiddenInventions": [
+      "prescriptive judgments"
+    ]
+  },
+  {
+    "id": "REC-10",
+    "category": "BUDGET_STATUS",
+    "question": "Am I within my food budget?",
+    "expectedIntent": "BUDGET_STATUS",
+    "expectedTools": [
+      "get_budget_status"
+    ],
+    "requiredFacts": [
+      "Food",
+      "budget"
+    ],
+    "forbiddenInventions": [
+      "hallucinated limits"
+    ]
+  },
+  {
+    "id": "REC-11",
+    "category": "FINANCIAL_ACCOUNTS",
+    "question": "What bank accounts do I have linked?",
+    "expectedIntent": "FINANCIAL_ACCOUNTS",
+    "expectedTools": [
+      "get_financial_accounts"
+    ],
+    "requiredFacts": [
+      "HDFC",
+      "4821"
+    ],
+    "forbiddenInventions": [
+      "exposing full account numbers or passwords"
+    ]
+  },
+  {
+    "id": "ACT-07",
+    "category": "ACTIONS",
+    "question": "Set my travel budget to 12000",
+    "expectedIntent": "CREATE_OR_UPDATE_BUDGET",
+    "expectedTools": [
+      "create_or_update_budget"
+    ],
+    "requiredFacts": [
+      "Travel",
+      "12000"
+    ],
+    "forbiddenInventions": [
+      "executing without confirmation"
+    ]
+  },
+  {
+    "id": "ACT-08",
+    "category": "ACTIONS",
+    "question": "Set shopping budget to 5000",
+    "expectedIntent": "CREATE_OR_UPDATE_BUDGET",
+    "expectedTools": [
+      "create_or_update_budget"
+    ],
+    "requiredFacts": [
+      "Shopping",
+      "5000"
+    ],
+    "forbiddenInventions": [
+      "executing without confirmation"
+    ]
+  },
+  {
+    "id": "ACT-09",
+    "category": "ACTIONS",
+    "question": "Create a new budget for food of 10000",
+    "expectedIntent": "CREATE_OR_UPDATE_BUDGET",
+    "expectedTools": [
+      "create_or_update_budget"
+    ],
+    "requiredFacts": [
+      "Food",
+      "10000"
+    ],
+    "forbiddenInventions": [
+      "executing without confirmation"
+    ]
+  },
+  {
+    "id": "ACT-10",
+    "category": "ACTIONS",
+    "question": "Create a goal for Vacation of 50000",
+    "expectedIntent": "CREATE_OR_UPDATE_GOAL",
+    "expectedTools": [
+      "create_or_update_goal"
+    ],
+    "requiredFacts": [
+      "Vacation",
+      "50000"
+    ],
+    "forbiddenInventions": [
+      "executing without confirmation"
+    ]
+  },
+  {
+    "id": "ACT-11",
+    "category": "ACTIONS",
+    "question": "Recategorize transaction to shopping",
+    "expectedIntent": "UPDATE_TRANSACTION_CATEGORY",
+    "expectedTools": [
+      "update_transaction_category"
+    ],
+    "requiredFacts": [
+      "Shopping"
+    ],
+    "forbiddenInventions": [
+      "executing without confirmation"
+    ]
+  },
+  {
+    "id": "ACT-12",
+    "category": "ACTIONS",
+    "question": "Change category of transaction",
+    "expectedIntent": "UPDATE_TRANSACTION_CATEGORY",
+    "expectedTools": [
+      "update_transaction_category"
+    ],
+    "requiredFacts": [
+      "Shopping"
+    ],
+    "forbiddenInventions": [
+      "executing without confirmation"
+    ]
+  },
+  {
+    "id": "PRO-06",
+    "category": "PROACTIVE_INTELLIGENCE",
+    "question": "Do I have any spending alerts?",
+    "expectedIntent": "GET_PROACTIVE_INSIGHTS",
+    "expectedTools": [
+      "get_proactive_insights"
+    ],
+    "requiredFacts": [
+      "Food spending",
+      "35%"
+    ],
+    "forbiddenInventions": [
+      "unverified spam",
+      "invented alerts"
+    ]
+  },
+  {
+    "id": "PRO-07",
+    "category": "PROACTIVE_INTELLIGENCE",
+    "question": "Check for urgent budget warnings",
+    "expectedIntent": "GET_PROACTIVE_INSIGHTS",
+    "expectedTools": [
+      "get_proactive_insights"
+    ],
+    "requiredFacts": [
+      "Food spending"
+    ],
+    "forbiddenInventions": [
+      "unverified spam",
+      "invented alerts"
+    ]
+  },
+  {
+    "id": "PRO-08",
+    "category": "PROACTIVE_INTELLIGENCE",
+    "question": "Are there any notifications that require my attention?",
+    "expectedIntent": "GET_PROACTIVE_INSIGHTS",
+    "expectedTools": [
+      "get_proactive_insights"
+    ],
+    "requiredFacts": [
+      "Food"
+    ],
+    "forbiddenInventions": [
+      "unverified spam",
+      "invented alerts"
+    ]
+  },
+  {
+    "id": "PRO-09",
+    "category": "PROACTIVE_INTELLIGENCE",
+    "question": "Show proactive financial notifications",
+    "expectedIntent": "GET_PROACTIVE_INSIGHTS",
+    "expectedTools": [
+      "get_proactive_insights"
+    ],
+    "requiredFacts": [
+      "Food spending"
+    ],
+    "forbiddenInventions": [
+      "unverified spam",
+      "invented alerts"
+    ]
+  },
+  {
+    "id": "PRO-10",
+    "category": "ANOMALIES",
+    "question": "Are there any unusual expenses or spikes?",
+    "expectedIntent": "IDENTIFY_ANOMALIES",
+    "expectedTools": [
+      "identify_anomalies"
+    ],
+    "requiredFacts": [
+      "unusual",
+      "Apple Store"
+    ],
+    "forbiddenInventions": [
+      "hallucinated fraudulent merchants"
+    ]
+  },
+  {
+    "id": "PRO-11",
+    "category": "ANOMALIES",
+    "question": "Check for any recent anomalies",
+    "expectedIntent": "IDENTIFY_ANOMALIES",
+    "expectedTools": [
+      "identify_anomalies"
+    ],
+    "requiredFacts": [
+      "anomaly"
+    ],
+    "forbiddenInventions": [
+      "unsupported claims"
+    ]
+  },
+  {
+    "id": "PRO-12",
+    "category": "ANOMALIES",
+    "question": "Did I have any unexpected expense spikes this month?",
+    "expectedIntent": "IDENTIFY_ANOMALIES",
+    "expectedTools": [
+      "identify_anomalies"
+    ],
+    "requiredFacts": [
+      "Apple Store"
+    ],
+    "forbiddenInventions": [
+      "hallucinated transactions"
+    ]
+  },
+  {
+    "id": "FOL-11",
+    "category": "CONVERSATIONAL_FOLLOW_UP",
+    "question": "What should I spend instead?",
+    "expectedIntent": "BUDGET_STATUS",
+    "expectedTools": [
+      "get_budget_status"
+    ],
+    "requiredFacts": [
+      "Food"
+    ],
+    "forbiddenInventions": [
+      "arbitrary budgets"
+    ]
+  },
+  {
+    "id": "FOL-12",
+    "category": "RECOMMENDATIONS",
+    "question": "What is a realistic food budget for me?",
+    "expectedIntent": "BUDGET_RECOMMENDATION",
+    "expectedTools": [
+      "calculate_budget_recommendation"
+    ],
+    "requiredFacts": [
+      "Food",
+      "budget"
+    ],
+    "forbiddenInventions": [
+      "external demographic assumptions"
+    ]
+  },
+  {
+    "id": "FOL-13",
+    "category": "RECOMMENDATIONS",
+    "question": "What spending target should I set for travel?",
+    "expectedIntent": "BUDGET_RECOMMENDATION",
+    "expectedTools": [
+      "calculate_budget_recommendation"
+    ],
+    "requiredFacts": [
+      "Travel",
+      "budget"
+    ],
+    "forbiddenInventions": [
+      "external demographic assumptions"
+    ]
+  },
+  {
+    "id": "FOL-14",
+    "category": "RECOMMENDATIONS",
+    "question": "What should my savings target be each month?",
+    "expectedIntent": "SAVINGS_TARGET",
+    "expectedTools": [
+      "calculate_savings_target"
+    ],
+    "requiredFacts": [
+      "savings target"
+    ],
+    "forbiddenInventions": [
+      "generic 50/30/20 dogma"
+    ]
+  },
+  {
+    "id": "FOL-15",
+    "category": "RECOMMENDATIONS",
+    "question": "How much can I realistically save every month?",
+    "expectedIntent": "SAVINGS_TARGET",
+    "expectedTools": [
+      "calculate_savings_target"
+    ],
+    "requiredFacts": [
+      "savings target"
+    ],
+    "forbiddenInventions": [
+      "ungrounded estimates"
+    ]
+  },
+  {
+    "id": "FOL-16",
+    "category": "FLEXIBILITY",
+    "question": "How much discretionary capacity do I actually have?",
+    "expectedIntent": "SPENDING_FLEXIBILITY",
+    "expectedTools": [
+      "get_spending_flexibility"
+    ],
+    "requiredFacts": [
+      "flexibility"
+    ],
+    "forbiddenInventions": [
+      "invented debt commitments"
+    ]
+  },
+  {
+    "id": "FOL-17",
+    "category": "FLEXIBILITY",
+    "question": "Where is most of my financial flexibility going?",
+    "expectedIntent": "SPENDING_FLEXIBILITY",
+    "expectedTools": [
+      "get_spending_flexibility"
+    ],
+    "requiredFacts": [
+      "flexibility"
+    ],
+    "forbiddenInventions": [
+      "assumptions about non-discretionary commitments"
+    ]
+  },
+  {
+    "id": "FOL-18",
+    "category": "CATEGORY_INSIGHTS",
+    "question": "Which categories are taking most of my income?",
+    "expectedIntent": "CATEGORY_INSIGHTS",
+    "expectedTools": [
+      "get_category_insights"
+    ],
+    "requiredFacts": [
+      "Category insights"
+    ],
+    "forbiddenInventions": [
+      "invented income sources"
+    ]
+  },
+  {
+    "id": "FOL-19",
+    "category": "CATEGORY_INSIGHTS",
+    "question": "Which category has shown the greatest volatility?",
+    "expectedIntent": "CATEGORY_INSIGHTS",
+    "expectedTools": [
+      "get_category_insights"
+    ],
+    "requiredFacts": [
+      "volatile"
+    ],
+    "forbiddenInventions": [
+      "random guesses"
+    ]
+  },
+  {
+    "id": "FOL-20",
+    "category": "FINANCIAL_CONTEXT",
+    "question": "Give me an overview of my financial situation",
+    "expectedIntent": "FINANCIAL_CONTEXT",
+    "expectedTools": [
+      "get_financial_context"
+    ],
+    "requiredFacts": [
+      "financial profile"
+    ],
+    "forbiddenInventions": [
+      "hallucinated credit scores"
+    ]
+  },
+  {
+    "id": "TRN-11",
+    "category": "TRENDS",
+    "question": "How has my spending changed over the last 3 months?",
+    "expectedIntent": "SPENDING_TREND",
+    "expectedTools": [
+      "get_spending_trend"
+    ],
+    "requiredFacts": [
+      "spending trend"
+    ],
+    "forbiddenInventions": [
+      "invented monthly totals"
+    ]
+  },
+  {
+    "id": "TRN-12",
+    "category": "TRENDS",
+    "question": "Show my spending trend over the past 30 days",
+    "expectedIntent": "SPENDING_TREND",
+    "expectedTools": [
+      "get_spending_trend"
+    ],
+    "requiredFacts": [
+      "spending trend"
+    ],
+    "forbiddenInventions": [
+      "invented days"
+    ]
+  },
+  {
+    "id": "TRN-13",
+    "category": "COMPARISON",
+    "question": "Did my expenses decrease compared to last month?",
+    "expectedIntent": "COMPARE_PERIODS",
+    "expectedTools": [
+      "compare_spending_periods"
+    ],
+    "requiredFacts": [
+      "expenses",
+      "prior period"
+    ],
+    "forbiddenInventions": [
+      "manual percentage math"
+    ]
+  },
+  {
+    "id": "TRN-14",
+    "category": "CHANGE_EXPLANATION",
+    "question": "Why did my spending increase so much this month?",
+    "expectedIntent": "ANALYZE_SPENDING_CHANGE",
+    "expectedTools": [
+      "analyze_spending_change"
+    ],
+    "requiredFacts": [
+      "drivers"
+    ],
+    "forbiddenInventions": [
+      "blaming lifestyle choices"
+    ]
+  },
+  {
+    "id": "TRN-15",
+    "category": "CHANGE_EXPLANATION",
+    "question": "What were the primary drivers of my spending change?",
+    "expectedIntent": "ANALYZE_SPENDING_CHANGE",
+    "expectedTools": [
+      "analyze_spending_change"
+    ],
+    "requiredFacts": [
+      "drivers"
+    ],
+    "forbiddenInventions": [
+      "conjectural inflation commentary"
+    ]
+  },
+  {
+    "id": "TRN-16",
+    "category": "COMPARISON",
+    "question": "Did I spend more than normal this month?",
+    "expectedIntent": "COMPARE_PERIODS",
+    "expectedTools": [
+      "compare_spending_periods"
+    ],
+    "requiredFacts": [
+      "expenses"
+    ],
+    "forbiddenInventions": [
+      "invented baseline"
+    ]
+  },
+  {
+    "id": "RET-11",
+    "category": "TRANSACTION_SEARCH",
+    "question": "Find transactions over 5000",
+    "expectedIntent": "SEARCH_TRANSACTIONS",
+    "expectedTools": [
+      "search_transactions"
+    ],
+    "requiredFacts": [
+      "transactions",
+      "Amazon"
+    ],
+    "forbiddenInventions": [
+      "hallucinated receipts"
+    ]
+  },
+  {
+    "id": "RET-12",
+    "category": "TRANSACTION_SEARCH",
+    "question": "Find my transactions for Amazon",
+    "expectedIntent": "SEARCH_TRANSACTIONS",
+    "expectedTools": [
+      "search_transactions"
+    ],
+    "requiredFacts": [
+      "Amazon"
+    ],
+    "forbiddenInventions": [
+      "hallucinated order numbers"
+    ]
+  },
+  {
+    "id": "RET-13",
+    "category": "RECURRING_EXPENSES",
+    "question": "Show me my recurring subscriptions",
+    "expectedIntent": "GET_RECURRING_EXPENSES",
+    "expectedTools": [
+      "get_recurring_expenses"
+    ],
+    "requiredFacts": [
+      "recurring",
+      "Netflix"
+    ],
+    "forbiddenInventions": [
+      "hallucinated recurring charges"
+    ]
+  },
+  {
+    "id": "RET-14",
+    "category": "RECURRING_EXPENSES",
+    "question": "What monthly bills and subscriptions do I have?",
+    "expectedIntent": "GET_RECURRING_EXPENSES",
+    "expectedTools": [
+      "get_recurring_expenses"
+    ],
+    "requiredFacts": [
+      "recurring"
+    ],
+    "forbiddenInventions": [
+      "invented utilities"
+    ]
+  },
+  {
+    "id": "RET-15",
+    "category": "GOAL_STATUS",
+    "question": "Are my savings goals on track?",
+    "expectedIntent": "GET_GOAL_STATUS",
+    "expectedTools": [
+      "get_goal_status"
+    ],
+    "requiredFacts": [
+      "Emergency Fund"
+    ],
+    "forbiddenInventions": [
+      "invented completion dates"
+    ]
+  },
+  {
+    "id": "RET-16",
+    "category": "GOAL_STATUS",
+    "question": "How much progress have I made on my emergency fund goal?",
+    "expectedIntent": "GET_GOAL_STATUS",
+    "expectedTools": [
+      "get_goal_status"
+    ],
+    "requiredFacts": [
+      "Emergency Fund",
+      "84000"
+    ],
+    "forbiddenInventions": [
+      "hallucinated contributions"
+    ]
+  },
+  {
+    "id": "RET-17",
+    "category": "FINANCIAL_ACCOUNTS",
+    "question": "What accounts are linked to my Mintmate profile?",
+    "expectedIntent": "GET_FINANCIAL_ACCOUNTS",
+    "expectedTools": [
+      "get_financial_accounts"
+    ],
+    "requiredFacts": [
+      "HDFC"
+    ],
+    "forbiddenInventions": [
+      "exposing full account numbers or passwords"
+    ]
+  },
+  {
+    "id": "GRD-01",
+    "category": "INCOME",
+    "question": "Did I make any salary deposits this month?",
+    "expectedIntent": "INCOME_SUMMARY",
+    "expectedTools": [
+      "get_income_summary"
+    ],
+    "requiredFacts": [
+      "income",
+      "deposit"
+    ],
+    "forbiddenInventions": [
+      "counting transfers as salary"
+    ]
+  },
+  {
+    "id": "GRD-02",
+    "category": "SAVINGS",
+    "question": "How much did I save this month?",
+    "expectedIntent": "SAVINGS_SUMMARY",
+    "expectedTools": [
+      "get_savings_summary"
+    ],
+    "requiredFacts": [
+      "net savings"
+    ],
+    "forbiddenInventions": [
+      "hallucinated interest earnings"
+    ]
+  },
+  {
+    "id": "GRD-03",
+    "category": "SAVINGS",
+    "question": "What is my current net savings rate?",
+    "expectedIntent": "SAVINGS_SUMMARY",
+    "expectedTools": [
+      "get_savings_summary"
+    ],
+    "requiredFacts": [
+      "savings rate"
+    ],
+    "forbiddenInventions": [
+      "unverified investment returns"
+    ]
+  },
+  {
+    "id": "GRD-04",
+    "category": "CATEGORY_SPENDING",
+    "question": "How much did I spend on dining out this month?",
+    "expectedIntent": "CATEGORY_SPENDING",
+    "expectedTools": [
+      "get_spending_by_category"
+    ],
+    "requiredFacts": [
+      "Food"
+    ],
+    "forbiddenInventions": [
+      "moralizing food delivery habits"
+    ]
+  },
+  {
+    "id": "GRD-05",
+    "category": "CATEGORY_SPENDING",
+    "question": "What did I spend on Uber and travel this month?",
+    "expectedIntent": "CATEGORY_SPENDING",
+    "expectedTools": [
+      "get_spending_by_category"
+    ],
+    "requiredFacts": [
+      "Travel"
+    ],
+    "forbiddenInventions": [
+      "guessing destinations"
+    ]
+  },
+  {
+    "id": "GRD-06",
+    "category": "CATEGORY_SPENDING",
+    "question": "How much did I spend on Amazon shopping this month?",
+    "expectedIntent": "CATEGORY_SPENDING",
+    "expectedTools": [
+      "get_spending_by_category"
+    ],
+    "requiredFacts": [
+      "Shopping"
+    ],
+    "forbiddenInventions": [
+      "guessing purchased items"
+    ]
+  },
+  {
+    "id": "GRD-07",
+    "category": "SPENDING_SUMMARY",
+    "question": "What is my total spending this month?",
+    "expectedIntent": "SPENDING_SUMMARY",
+    "expectedTools": [
+      "get_spending_summary"
+    ],
+    "requiredFacts": [
+      "consumer expenses"
+    ],
+    "forbiddenInventions": [
+      "arbitrary percentages"
+    ]
+  },
+  {
+    "id": "GRD-08",
+    "category": "BUDGET_STATUS",
+    "question": "How is my travel budget looking this month?",
+    "expectedIntent": "BUDGET_STATUS",
+    "expectedTools": [
+      "get_budget_status"
+    ],
+    "requiredFacts": [
+      "Travel",
+      "budget"
+    ],
+    "forbiddenInventions": [
+      "hallucinated overspend"
+    ]
+  },
+  {
+    "id": "GRD-09",
+    "category": "BUDGET_STATUS",
+    "question": "Check my shopping budget",
+    "expectedIntent": "BUDGET_STATUS",
+    "expectedTools": [
+      "get_budget_status"
+    ],
+    "requiredFacts": [
+      "Shopping",
+      "budget"
+    ],
+    "forbiddenInventions": [
+      "hallucinated numbers"
+    ]
+  }
+]

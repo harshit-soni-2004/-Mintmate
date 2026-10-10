@@ -1,6 +1,6 @@
-# SpendSense
+# Mintmate
 
-Personal financial intelligence: import transactions, understand spending, and (later) ask questions in natural language.
+Personal financial intelligence: import transactions, understand spending, and interact with an AI assistant in natural language.
 
 Stack: **Angular** → **Spring Boot REST** → **MySQL**. Modular monolith.
 

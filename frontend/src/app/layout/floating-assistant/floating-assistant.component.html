@@ -1,0 +1,159 @@
+<aside class="floating-bot-wrapper" [class.chat-open]="isChatOpen()" [class.on-assistant-route]="isAssistantPage()" aria-label="Mintmate AI Assistant shortcut">
+  <!-- First-time Onboarding Speech Bubble -->
+  <div
+    class="onboarding-bubble"
+    *ngIf="showOnboardingBubble() && !isChatOpen()"
+    role="dialog"
+    aria-label="AI Assistant Welcome">
+    <p class="bubble-text">Hi! Ask me anything about your spending.</p>
+    <button
+      type="button"
+      class="bubble-close-btn"
+      (click)="dismissBubble($event)"
+      title="Dismiss tooltip"
+      aria-label="Dismiss">
+      ×
+    </button>
+  </div>
+
+  <!-- Polished Floating AI Chat Flyout Panel (Docked directly above/beside mascot) -->
+  <section
+    class="floating-chat-flyout"
+    *ngIf="isChatOpen()"
+    role="dialog"
+    aria-label="Mintmate AI Financial Assistant">
+    
+    <!-- Flyout Header -->
+    <header class="flyout-header">
+      <div class="header-branding">
+        <div class="assistant-status-dot"></div>
+        <div>
+          <h3 class="header-title">Mintmate AI</h3>
+          <p class="header-subtitle">Your personal financial AI assistant</p>
+        </div>
+      </div>
+      <div class="header-controls">
+        <button
+          type="button"
+          class="icon-action-btn expand-action"
+          (click)="openFullAssistant()"
+          title="Open full page assistant"
+          aria-label="Open full page assistant">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line>
+            <line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="icon-action-btn close-action"
+          (click)="closeChat()"
+          title="Close assistant"
+          aria-label="Close assistant">
+          ×
+        </button>
+      </div>
+    </header>
+
+    <!-- Chat Stream Viewport -->
+    <div class="flyout-body" #chatScrollContainer>
+      <!-- Initial Welcome Banner -->
+      <div class="welcome-box">
+        <div class="welcome-badge">
+          <span class="sparkle-icon">✨</span> Financial Intelligence
+        </div>
+        <h4 class="welcome-heading">Hey! How can I help you today?</h4>
+        <p class="welcome-desc">
+          Ask about your spending, category breakdowns, budgets, or how to save more this month.
+        </p>
+      </div>
+
+      <!-- Quick Suggestion Chips (Fintech Prompts) -->
+      <div class="suggestions-section" *ngIf="messages().length <= 1">
+        <span class="suggestions-label">Suggested prompts:</span>
+        <div class="suggestion-chips-grid">
+          <button
+            *ngFor="let prompt of suggestions"
+            type="button"
+            class="suggestion-chip"
+            (click)="sendPrompt(prompt)"
+            [disabled]="isLoading()">
+            <span class="chip-accent">›</span>
+            {{ prompt }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Chat Messages List -->
+      <div class="messages-flow">
+        <div *ngFor="let msg of messages()" class="chat-row" [ngClass]="msg.role">
+          <div class="chat-bubble" [ngClass]="msg.role">
+            <div class="bubble-header">
+              <span class="sender-name">{{ msg.role === 'user' ? 'You' : 'Mintmate AI' }}</span>
+              <span class="timestamp">{{ msg.timestamp | date:'shortTime' }}</span>
+            </div>
+            <div class="bubble-text">{{ cleanText(msg.content) }}</div>
+          </div>
+        </div>
+
+        <!-- Real-time Thinking Indicator -->
+        <div *ngIf="isLoading()" class="chat-row assistant">
+          <div class="chat-bubble assistant thinking-bubble">
+            <div class="dots-spinner">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <span class="analyzing-text">Analyzing your financial records...</span>
+          </div>
+        </div>
+
+        <!-- Error Notification -->
+        <div *ngIf="errorMessage()" class="flyout-error-notice" role="alert">
+          <span class="alert-icon">⚠</span>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Query Input Bar -->
+    <footer class="flyout-footer">
+      <form class="query-form" (ngSubmit)="sendCurrentMessage()">
+        <input
+          type="text"
+          [(ngModel)]="userInput"
+          name="assistantQuery"
+          class="query-input"
+          placeholder="Ask anything about your money..."
+          [disabled]="isLoading()"
+          autocomplete="off"
+        />
+        <button
+          type="submit"
+          class="btn-send-query"
+          [disabled]="!userInput.trim() || isLoading()"
+          aria-label="Send message">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </form>
+    </footer>
+  </section>
+
+  <!-- Reusable 3D Mintmate AI Mascot -->
+  <div class="mascot-dock">
+    <app-ai-mascot
+      [state]="mascotState()"
+      [size]="isSmallScreen() ? 'sm' : 'md'"
+      [interactive]="true"
+      [showCoin]="true"
+      [tooltipText]="isChatOpen() ? 'Close assistant' : 'Ask Mintmate AI'"
+      (clicked)="handleMascotClick()"
+      (stateChange)="handleStateChange($event)"
+    />
+  </div>
+</aside>

@@ -187,4 +187,69 @@ class AssistantOrchestratorTest {
         assertThat(response.answer()).contains("Kotak Mahindra (...4821)");
         verify(financialAccountsTool).execute(any(), any());
     }
+
+    @Test
+    @DisplayName("Case 7: Caching efficiency prevents duplicate execution of identical read-only tool calls in same turn")
+    void shouldReuseCachedReadOnlyResultWhenIdenticalCallsOccur() {
+        when(spendingSummaryTool.execute(any(), any())).thenReturn(
+                com.spendsense.assistant.tool.ToolExecutionResult.success(
+                        com.spendsense.assistant.tool.ToolResponseEnvelope.of(null, "Consumer spending: ₹35,000.")
+                )
+        );
+
+        // Model gateway emits duplicate tool calls for same arguments
+        com.spendsense.assistant.model.ModelGateway customGateway = new com.spendsense.assistant.model.ModelGateway() {
+            private int step = 0;
+            @Override
+            public String getProviderName() { return "mock-dedup"; }
+            @Override
+            public com.spendsense.assistant.model.AssistantResponse generateResponse(
+                    com.spendsense.assistant.model.AssistantConversationContext ctx,
+                    List<com.spendsense.assistant.tool.ToolDefinition> tools) {
+                if (step == 0) {
+                    step++;
+                    return com.spendsense.assistant.model.AssistantResponse.ofToolCalls(List.of(
+                            new com.spendsense.assistant.model.ToolCallRequest("call-1", "get_spending_summary", Map.of("startDate", "2026-09-01", "endDate", "2026-09-30")),
+                            new com.spendsense.assistant.model.ToolCallRequest("call-2", "get_spending_summary", Map.of("startDate", "2026-09-01", "endDate", "2026-09-30"))
+                    ));
+                }
+                return com.spendsense.assistant.model.AssistantResponse.text("Summary: Consumer spending: ₹35,000.");
+            }
+        };
+
+        ToolRegistry registry = new ToolRegistry(List.of(spendingSummaryTool));
+        ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        ToolDispatcher dispatcher = new ToolDispatcher(registry, currentUser, objectMapper, Validation.buildDefaultValidatorFactory().getValidator());
+        AssistantOrchestrator customOrchestrator = new AssistantOrchestrator(customGateway, registry, dispatcher);
+
+        AssistantChatRequest request = new AssistantChatRequest("Summary please", List.of());
+        AssistantChatResponse response = customOrchestrator.processChat(request);
+
+        assertThat(response.answer()).contains("Consumer spending: ₹35,000.");
+        // Tool service executed exactly ONCE due to caching deduplication
+        verify(spendingSummaryTool, times(1)).execute(any(), any());
+    }
+
+    @Test
+    @DisplayName("Case 8: Conversational follow-up correctly preserves prior category context")
+    void shouldResolveContextualFollowUpWithHistory() {
+        when(budgetStatusTool.execute(any(), any())).thenReturn(
+                com.spendsense.assistant.tool.ToolExecutionResult.success(
+                        com.spendsense.assistant.tool.ToolResponseEnvelope.of(null, "Food budget is ₹10,000 with ₹6,000 spent (60%). Status: ON_TRACK.")
+                )
+        );
+
+        List<ChatMessageDto> history = List.of(
+                new ChatMessageDto("user", "How much did I spend on food this month?"),
+                new ChatMessageDto("assistant", "You spent ₹6,000 on Food this month.")
+        );
+
+        AssistantChatRequest request = new AssistantChatRequest("Is that high?", history);
+        AssistantChatResponse response = orchestrator.processChat(request);
+
+        assertThat(response.executedTools()).hasSize(1);
+        assertThat(response.executedTools().getFirst().toolName()).isEqualTo("get_budget_status");
+        assertThat(response.answer()).contains("Food budget is ₹10,000");
+        verify(budgetStatusTool).execute(any(), any());
+    }
 }

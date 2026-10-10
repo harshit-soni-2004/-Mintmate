@@ -4,6 +4,8 @@ import { AssistantService } from './assistant.service';
 import { of } from 'rxjs';
 import { ApiResponse, AssistantChatResponse, PendingActionResult } from '../../core/api/api.types';
 
+import { ActivatedRoute } from '@angular/router';
+
 describe('AssistantComponent', () => {
   let component: AssistantComponent;
   let fixture: ComponentFixture<AssistantComponent>;
@@ -14,7 +16,10 @@ describe('AssistantComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [AssistantComponent],
-      providers: [{ provide: AssistantService, useValue: mockAssistantService }],
+      providers: [
+        { provide: AssistantService, useValue: mockAssistantService },
+        { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AssistantComponent);

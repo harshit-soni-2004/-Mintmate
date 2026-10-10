@@ -85,8 +85,8 @@ public class GetSpendingByCategoryTool implements FinancialTool<GetSpendingByCat
 
             if (matched.isPresent()) {
                 CategoryAnalysis c = matched.get();
-                summaryText = String.format("From %s to %s, spending on %s (%s) was ₹%.2f across %d transactions (%.1f%% of total expenses).",
-                        start, end, c.category().getDisplayName(), c.category().name(), c.amount(), c.transactionCount(), c.percentage());
+                summaryText = String.format("From %s to %s, spending on %s was ₹%.2f across %d transactions (%.1f%% of total expenses).",
+                        start, end, c.category().getDisplayName(), c.amount(), c.transactionCount(), c.percentage());
             } else {
                 summaryText = String.format("From %s to %s, there was no recorded spending for category %s.",
                         start, end, input.category().getDisplayName());

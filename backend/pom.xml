@@ -12,10 +12,10 @@
     </parent>
 
     <groupId>com.spendsense</groupId>
-    <artifactId>spendsense-api</artifactId>
+    <artifactId>mintmate-api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>spendsense-api</name>
-    <description>SpendSense REST API</description>
+    <name>mintmate-api</name>
+    <description>Mintmate REST API</description>
 
     <properties>
         <java.version>21</java.version>

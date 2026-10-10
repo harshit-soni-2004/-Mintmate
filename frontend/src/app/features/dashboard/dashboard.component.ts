@@ -1,7 +1,7 @@
 import { CurrencyPipe, DatePipe, NgClass } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import {
   BudgetStatus,
@@ -10,6 +10,7 @@ import {
   DailySpending,
   DashboardData,
   FinancialInsight,
+  ProactiveInsightDto,
   SpendingAnomaly,
   Transaction,
   TransactionCategory,
@@ -19,6 +20,7 @@ import {
 import { AuthService } from '../../core/auth/auth.service';
 import { BudgetService } from '../budgets/budget.service';
 import { InsightsService } from '../insights/insights.service';
+import { AssistantService } from '../assistant/assistant.service';
 import { TransactionService } from '../transactions/transaction.service';
 import { DashboardService } from './dashboard.service';
 
@@ -30,7 +32,7 @@ export interface CalendarDay {
   totalExpense: number;
   totalIncome: number;
   transactionCount: number;
-  intensity: 'none' | 'low' | 'moderate' | 'high';
+  intensity: 'none' | 'low' | 'moderate' | 'high' | 'very-high';
 }
 
 export interface ChartBar {
@@ -39,6 +41,17 @@ export interface ChartBar {
   expense: number;
   income: number;
   heightPct: number;
+}
+
+export interface CashflowPoint {
+  date: string;
+  dayNumber: number;
+  income: number;
+  expense: number;
+  net: number;
+  cumulativeNet: number;
+  x: number;
+  y: number;
 }
 
 export interface DonutSegment {
@@ -75,6 +88,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly transactionService = inject(TransactionService);
   private readonly budgetService = inject(BudgetService);
   private readonly insightsService = inject(InsightsService);
+  private readonly assistantService = inject(AssistantService);
+  private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
 
   private mutationSub?: Subscription;
@@ -89,9 +104,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
   budgetSummary: BudgetSummary | null = null;
   topInsight: FinancialInsight | null = null;
   recentAnomaly: SpendingAnomaly | null = null;
+  activeProactiveInsight: ProactiveInsightDto | null = null;
 
   // Selected period: "YYYY-MM"
   currentYearMonth = new Date().toISOString().slice(0, 7);
+
+  // Available Balance & Cashflow dynamic chart state
+  cashflowPoints: CashflowPoint[] = [];
+  cashflowLinePath = '';
+  cashflowAreaPath = '';
+  cashflowZeroY: number | null = null;
+  hoveredCashflowPoint: CashflowPoint | null = null;
+  isCashflowEmpty = false;
 
   // Chart view mode
   chartMode: 'day' | 'week' | 'month' = 'day';
@@ -113,6 +137,47 @@ export class DashboardComponent implements OnInit, OnDestroy {
     transactions: [] as Transaction[],
   };
 
+  hoveredDate: string | null = null;
+  hoveredDateSummary: {
+    date: string;
+    totalExpense: number;
+    transactionCount: number;
+    topCategories: { category: string; amount: number }[];
+  } | null = null;
+
+  onDayHover(day: CalendarDay): void {
+    if (!day.isCurrentMonth) {
+      this.hoveredDate = null;
+      this.hoveredDateSummary = null;
+      return;
+    }
+    this.hoveredDate = day.dateString;
+    const dayTx = (this.dashboardData?.periodTransactions || []).filter(
+      (t) => t.transactionDate === day.dateString && t.transactionType === 'EXPENSE'
+    );
+    const catMap = new Map<string, number>();
+    for (const t of dayTx) {
+      const label = this.categoryLabel(t.category);
+      catMap.set(label, (catMap.get(label) || 0) + t.amount);
+    }
+    const topCats = Array.from(catMap.entries())
+      .map(([category, amount]) => ({ category, amount }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 3);
+
+    this.hoveredDateSummary = {
+      date: day.dateString,
+      totalExpense: day.totalExpense,
+      transactionCount: day.transactionCount,
+      topCategories: topCats,
+    };
+  }
+
+  onDayLeave(): void {
+    this.hoveredDate = null;
+    this.hoveredDateSummary = null;
+  }
+
   // Selected Category filter for inspection
   selectedCategory: TransactionCategory | null = null;
 
@@ -121,6 +186,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   editing: Transaction | null = null;
   submitting = false;
   formError = '';
+  showDeepDive = false;
 
   readonly form = this.fb.nonNullable.group({
     amount: [null as number | null, [Validators.required, Validators.min(0.01)]],
@@ -131,26 +197,72 @@ export class DashboardComponent implements OnInit, OnDestroy {
     notes: ['', Validators.maxLength(1000)],
   });
 
+  toggleDeepDive(): void {
+    this.showDeepDive = !this.showDeepDive;
+  }
+
+  getGreetingTime(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  get topBudget() {
+    if (!this.budgetSummary || !this.budgetSummary.budgets.length) return null;
+    return this.budgetSummary.budgets.slice().sort((a, b) => b.percentageUsed - a.percentageUsed)[0];
+  }
+
   ngOnInit(): void {
     this.loadDashboard();
     this.loadBudgets();
     this.loadInsights();
+    this.loadProactiveInsights();
 
     // Automatically refresh dashboard, budgets, and insights whenever any transaction is mutated
     const sub1 = this.transactionService.onTransactionMutated$.subscribe(() => {
       this.loadDashboard(false);
       this.loadBudgets();
       this.loadInsights();
+      this.loadProactiveInsights();
     });
 
     const sub2 = this.budgetService.onBudgetMutated$.subscribe(() => {
       this.loadBudgets();
       this.loadInsights();
+      this.loadProactiveInsights();
     });
 
     this.mutationSub = new Subscription();
     this.mutationSub.add(sub1);
     this.mutationSub.add(sub2);
+  }
+
+  loadProactiveInsights(): void {
+    this.assistantService.getProactiveInsights().subscribe({
+      next: (res) => {
+        if (res.data && res.data.length > 0) {
+          this.activeProactiveInsight = res.data[0];
+        } else {
+          this.activeProactiveInsight = null;
+        }
+      },
+      error: () => {
+        this.activeProactiveInsight = null;
+      },
+    });
+  }
+
+  dismissProactiveInsight(insightId: string): void {
+    this.activeProactiveInsight = null;
+    this.assistantService.dismissInsight(insightId).subscribe({
+      error: () => {},
+    });
+  }
+
+  askAiAboutInsight(insight: ProactiveInsightDto): void {
+    const prompt = `Can you explain this proactive insight: "${insight.title}"? ${insight.summary}`;
+    this.router.navigate(['/app/assistant'], { queryParams: { prompt } });
   }
 
   ngOnDestroy(): void {
@@ -207,6 +319,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.buildCalendar();
         this.updateSelectedDateSummary();
         this.buildChart();
+        this.buildCashflowChart();
         this.buildDonutSegments();
       },
       error: () => {
@@ -292,11 +405,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
       const totalIncome = spend ? spend.totalIncome : 0;
       const count = spend ? spend.transactionCount : 0;
 
-      let intensity: 'none' | 'low' | 'moderate' | 'high' = 'none';
+      let intensity: 'none' | 'low' | 'moderate' | 'high' | 'very-high' = 'none';
       if (totalExpense > 0) {
-        if (maxExpense > 0 && totalExpense >= maxExpense * 0.6) {
+        if (maxExpense > 0 && totalExpense >= maxExpense * 0.75) {
+          intensity = 'very-high';
+        } else if (maxExpense > 0 && totalExpense >= maxExpense * 0.45) {
           intensity = 'high';
-        } else if (maxExpense > 0 && totalExpense >= maxExpense * 0.25) {
+        } else if (maxExpense > 0 && totalExpense >= maxExpense * 0.2) {
           intensity = 'moderate';
         } else {
           intensity = 'low';
@@ -430,6 +545,166 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     this.chartBars = bars;
+  }
+
+  buildCashflowChart(): void {
+    if (!this.dashboardData) {
+      this.cashflowPoints = [];
+      this.cashflowLinePath = '';
+      this.cashflowAreaPath = '';
+      this.cashflowZeroY = null;
+      this.isCashflowEmpty = true;
+      return;
+    }
+
+    const [yearStr, monthStr] = this.currentYearMonth.split('-');
+    const year = parseInt(yearStr, 10);
+    const monthIndex = parseInt(monthStr, 10) - 1;
+
+    // Accurate days in month (handles 28, 29, 30, 31 days)
+    const totalDays = new Date(year, monthIndex + 1, 0).getDate();
+
+    // Map daily records from API response
+    const dailyMap = new Map<string, { expense: number; income: number }>();
+    let hasActivity = false;
+
+    if (this.dashboardData.dailySpending && this.dashboardData.dailySpending.length > 0) {
+      for (const d of this.dashboardData.dailySpending) {
+        dailyMap.set(d.date, { expense: d.totalExpense, income: d.totalIncome });
+        if (d.totalExpense > 0 || d.totalIncome > 0) {
+          hasActivity = true;
+        }
+      }
+    }
+
+    const summary = this.dashboardData.summary;
+    if (!hasActivity && summary.totalIncome === 0 && summary.totalExpenses === 0) {
+      this.isCashflowEmpty = true;
+      this.cashflowPoints = [];
+      this.cashflowLinePath = '';
+      this.cashflowAreaPath = '';
+      this.cashflowZeroY = null;
+      this.hoveredCashflowPoint = null;
+      return;
+    }
+
+    this.isCashflowEmpty = false;
+
+    // Generate accurate daily points for each day of the month
+    const points: CashflowPoint[] = [];
+    let runningNet = 0;
+
+    for (let day = 1; day <= totalDays; day++) {
+      const padDay = day < 10 ? `0${day}` : `${day}`;
+      const dateStr = `${yearStr}-${monthStr}-${padDay}`;
+      const dayData = dailyMap.get(dateStr);
+      const expense = dayData ? dayData.expense : 0;
+      const income = dayData ? dayData.income : 0;
+      const net = income - expense;
+      runningNet += net;
+
+      points.push({
+        date: dateStr,
+        dayNumber: day,
+        income,
+        expense,
+        net,
+        cumulativeNet: runningNet,
+        x: 0,
+        y: 0,
+      });
+    }
+
+    // SVG coordinates setup: 500w x 64h
+    const svgWidth = 500;
+    const svgHeight = 64;
+    const padTop = 8;
+    const padBottom = 12;
+    const padLeft = 8;
+    const padRight = 8;
+    const plotWidth = svgWidth - padLeft - padRight;
+    const plotHeight = svgHeight - padTop - padBottom;
+
+    // Determine range including 0 baseline anchor
+    let minNet = Math.min(0, ...points.map((p) => p.cumulativeNet));
+    let maxNet = Math.max(0, ...points.map((p) => p.cumulativeNet));
+
+    if (maxNet === minNet) {
+      maxNet += 1;
+    }
+    const span = maxNet - minNet;
+
+    // Calculate (x, y) for each day
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
+      const x = padLeft + (i / (points.length - 1)) * plotWidth;
+      const y = padTop + plotHeight - ((p.cumulativeNet - minNet) / span) * plotHeight;
+      p.x = Math.round(x * 10) / 10;
+      p.y = Math.round(y * 10) / 10;
+    }
+
+    // Zero baseline Y
+    const zeroY = padTop + plotHeight - ((0 - minNet) / span) * plotHeight;
+    this.cashflowZeroY = Math.round(zeroY * 10) / 10;
+
+    // Build smooth Bezier path
+    let linePath = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const midX = Math.round(((prev.x + curr.x) / 2) * 10) / 10;
+      linePath += ` C ${midX} ${prev.y}, ${midX} ${curr.y}, ${curr.x} ${curr.y}`;
+    }
+
+    const firstPt = points[0];
+    const lastPt = points[points.length - 1];
+    const areaPath = `${linePath} L ${lastPt.x} ${svgHeight} L ${firstPt.x} ${svgHeight} Z`;
+
+    this.cashflowPoints = points;
+    this.cashflowLinePath = linePath;
+    this.cashflowAreaPath = areaPath;
+  }
+
+  onCashflowMove(event: MouseEvent): void {
+    if (!this.cashflowPoints.length) return;
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const mouseX = event.clientX - rect.left;
+    const ratio = Math.max(0, Math.min(1, mouseX / rect.width));
+    const targetX = ratio * 500;
+
+    this.findClosestCashflowPoint(targetX);
+  }
+
+  onCashflowTouch(event: TouchEvent): void {
+    if (!this.cashflowPoints.length || !event.touches.length) return;
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const touchX = event.touches[0].clientX - rect.left;
+    const ratio = Math.max(0, Math.min(1, touchX / rect.width));
+    const targetX = ratio * 500;
+
+    this.findClosestCashflowPoint(targetX);
+  }
+
+  onCashflowLeave(): void {
+    this.hoveredCashflowPoint = null;
+  }
+
+  private findClosestCashflowPoint(targetX: number): void {
+    let closest = this.cashflowPoints[0];
+    let minDist = Math.abs(closest.x - targetX);
+
+    for (let i = 1; i < this.cashflowPoints.length; i++) {
+      const dist = Math.abs(this.cashflowPoints[i].x - targetX);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = this.cashflowPoints[i];
+      }
+    }
+    this.hoveredCashflowPoint = closest;
   }
 
   buildDonutSegments(): void {

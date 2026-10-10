@@ -1,7 +1,9 @@
+name: mintmate
+
 services:
   mysql:
     image: mysql:8.4
-    container_name: spendsense-mysql
+    container_name: mintmate-mysql
     environment:
       MYSQL_DATABASE: spendsense
       MYSQL_USER: spendsense

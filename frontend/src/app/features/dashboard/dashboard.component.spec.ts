@@ -7,6 +7,7 @@ import { DashboardData, InsightsOverview } from '../../core/api/api.types';
 import { AuthService } from '../../core/auth/auth.service';
 import { InsightsService } from '../insights/insights.service';
 import { TransactionService } from '../transactions/transaction.service';
+import { AssistantService } from '../assistant/assistant.service';
 import { DashboardComponent } from './dashboard.component';
 import { DashboardService } from './dashboard.service';
 
@@ -15,6 +16,7 @@ describe('DashboardComponent', () => {
   let fixture: ComponentFixture<DashboardComponent>;
   let dashboardServiceSpy: jasmine.SpyObj<DashboardService>;
   let insightsServiceSpy: jasmine.SpyObj<InsightsService>;
+  let assistantServiceSpy: jasmine.SpyObj<AssistantService>;
   let transactionService: TransactionService;
 
   const mockDashboardData: DashboardData = {
@@ -125,6 +127,11 @@ describe('DashboardComponent', () => {
       } as unknown as InsightsOverview)
     );
 
+    assistantServiceSpy = jasmine.createSpyObj('AssistantService', ['getProactiveInsights', 'dismissInsight']);
+    assistantServiceSpy.getProactiveInsights.and.returnValue(
+      of({ data: [], error: null, meta: null })
+    );
+
     await TestBed.configureTestingModule({
       imports: [DashboardComponent],
       providers: [
@@ -133,6 +140,7 @@ describe('DashboardComponent', () => {
         provideHttpClientTesting(),
         { provide: DashboardService, useValue: dashboardServiceSpy },
         { provide: InsightsService, useValue: insightsServiceSpy },
+        { provide: AssistantService, useValue: assistantServiceSpy },
         {
           provide: AuthService,
           useValue: {
@@ -144,6 +152,7 @@ describe('DashboardComponent', () => {
 
     fixture = TestBed.createComponent(DashboardComponent);
     component = fixture.componentInstance;
+    component.currentYearMonth = '2026-09';
     transactionService = TestBed.inject(TransactionService);
     fixture.detectChanges();
   });
@@ -195,5 +204,130 @@ describe('DashboardComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.dash-insights-content')?.textContent).toContain('Strong Savings Rate');
     expect(compiled.querySelector('.dash-anomaly-alert')?.textContent).toContain('High Transaction');
+  });
+
+  it('builds dynamic cashflow chart matching calendar days and daily spending', () => {
+    expect(component.cashflowPoints.length).toBe(30); // September 2026 has 30 days
+    expect(component.isCashflowEmpty).toBeFalse();
+    expect(component.cashflowLinePath).toContain('M ');
+    expect(component.cashflowAreaPath).toContain(' Z');
+
+    // Day 8 has 2450 expense
+    const day8 = component.cashflowPoints.find((p) => p.date === '2026-09-08');
+    expect(day8).toBeDefined();
+    expect(day8?.expense).toBe(2450);
+    expect(day8?.net).toBe(-2450);
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.cashflow-line')).toBeTruthy();
+  });
+
+  it('updates cashflow chart dynamically when month changes with different day counts', () => {
+    // Navigate from September 2026 (30 days) to August 2026 (31 days)
+    component.changeMonth(-1);
+    expect(component.currentYearMonth).toBe('2026-08');
+    expect(component.cashflowPoints.length).toBe(31);
+
+    // Navigate to February 2026 (28 days non-leap)
+    component.currentYearMonth = '2026-02';
+    component.buildCashflowChart();
+    expect(component.cashflowPoints.length).toBe(28);
+
+    // Navigate to February 2024 (29 days leap year)
+    component.currentYearMonth = '2024-02';
+    component.buildCashflowChart();
+    expect(component.cashflowPoints.length).toBe(29);
+  });
+
+  it('renders empty state notice when selected month has zero financial activity', () => {
+    const emptyData: DashboardData = {
+      ...mockDashboardData,
+      summary: {
+        ...mockDashboardData.summary,
+        totalIncome: 0,
+        totalExpenses: 0,
+        netSavings: 0,
+        savingsRate: 0,
+      },
+      dailySpending: [],
+      periodTransactions: [],
+    };
+
+    dashboardServiceSpy.getDashboard.and.returnValue(
+      of({ data: emptyData, error: null, meta: null })
+    );
+
+    component.loadDashboard();
+    fixture.detectChanges();
+
+    expect(component.isCashflowEmpty).toBeTrue();
+    expect(component.cashflowPoints.length).toBe(0);
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.empty-sparkline-notice')).toBeTruthy();
+    expect(compiled.querySelector('.empty-sparkline-text')?.textContent).toContain(
+      'No financial activity recorded for this month.'
+    );
+  });
+
+  it('handles hover and touch interactions on cashflow chart to display responsive tooltip', () => {
+    expect(component.hoveredCashflowPoint).toBeNull();
+
+    // Find Day 8 point
+    const day8 = component.cashflowPoints.find((p) => p.date === '2026-09-08');
+    expect(day8).toBeDefined();
+
+    // Trigger hover on chart
+    const compiled = fixture.nativeElement as HTMLElement;
+    const chartWrap = compiled.querySelector('.hero-sparkline-wrap') as HTMLElement;
+    expect(chartWrap).toBeTruthy();
+
+    // Simulate mousemove with targetX matching day8.x
+    component['findClosestCashflowPoint'](day8!.x);
+    fixture.detectChanges();
+
+    expect(component.hoveredCashflowPoint).toBe(day8!);
+    expect(compiled.querySelector('.cashflow-tooltip')).toBeTruthy();
+    expect(compiled.querySelector('.cashflow-cursor-dot')).toBeTruthy();
+
+    // Leave chart
+    component.onCashflowLeave();
+    fixture.detectChanges();
+
+    expect(component.hoveredCashflowPoint).toBeNull();
+    expect(compiled.querySelector('.cashflow-tooltip')).toBeFalsy();
+  });
+
+  it('loads and renders proactive insight banner when available and allows dismissal', () => {
+    const mockInsight = {
+      id: 'insight-1',
+      type: 'CATEGORY_SPIKE',
+      severity: 'WARNING' as const,
+      title: 'Food spending is 28% above your recent average',
+      summary: 'You spent ₹12,000 on Food this month.',
+      supportingFacts: {},
+      createdAt: '2026-09-28T00:00:00Z',
+    };
+    assistantServiceSpy.getProactiveInsights.and.returnValue(
+      of({ data: [mockInsight], error: null, meta: null })
+    );
+
+    component.loadProactiveInsights();
+    fixture.detectChanges();
+
+    expect(component.activeProactiveInsight).toBeDefined();
+    expect(component.activeProactiveInsight?.title).toContain('Food spending is 28%');
+
+    const banner = fixture.nativeElement.querySelector('.proactive-insight-banner');
+    expect(banner).toBeTruthy();
+    expect(banner.textContent).toContain('Food spending is 28%');
+
+    // Dismiss
+    assistantServiceSpy.dismissInsight.and.returnValue(of({ data: { message: 'ok' }, error: null, meta: null }));
+    component.dismissProactiveInsight('insight-1');
+    fixture.detectChanges();
+
+    expect(component.activeProactiveInsight).toBeNull();
+    expect(fixture.nativeElement.querySelector('.proactive-insight-banner')).toBeNull();
   });
 });

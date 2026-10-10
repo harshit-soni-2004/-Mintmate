@@ -20,7 +20,7 @@ export interface OnboardingStep {
       <header class="top-nav">
         <div class="nav-brand">
           <span class="brand-badge"></span>
-          <span class="brand-text">SpendSense</span>
+          <span class="brand-text">Mintmate</span>
         </div>
         <div class="nav-actions">
           <span class="step-counter">Step {{ currentStep() + 1 }} of {{ steps.length }}</span>

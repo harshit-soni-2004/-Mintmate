@@ -23,4 +23,8 @@ public record ToolExecutionResult<T>(
     public static <T> ToolExecutionResult<T> confirmationRequired(String message, Object pendingAction) {
         return new ToolExecutionResult<>(true, ToolResponseEnvelope.of(null, message), null, true, pendingAction);
     }
+
+    public boolean isSuccess() {
+        return success;
+    }
 }

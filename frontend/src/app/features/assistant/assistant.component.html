@@ -2,21 +2,23 @@
   <!-- Assistant Header -->
   <header class="assistant-header">
     <div class="header-left">
-      <div class="assistant-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
-          <path d="M12 12L2.5 7.5"></path>
-          <path d="M12 12v10"></path>
-        </svg>
+      <div class="assistant-icon mascot-brand-icon">
+        <app-ai-mascot
+          [size]="'sm'"
+          [state]="loading ? 'THINKING' : 'IDLE'"
+          [showCoin]="false"
+          [showTooltipOnHover]="false"
+          ariaLabel="Mintmate AI Mascot"
+        />
       </div>
       <div>
-        <h2>AI Financial Assistant</h2>
-        <p class="subtitle">Grounded in verified SpendSense database calculations &middot; Asia/Kolkata (IST)</p>
+        <h2>Mintmate Assistant</h2>
+        <p class="subtitle">Your personal financial companion &middot; Powered by Mintmate intelligence</p>
       </div>
     </div>
     <div class="header-badge">
       <span class="pulse-dot"></span>
-      Deterministic Truth
+      Verified Intelligence
     </div>
   </header>
 
@@ -42,20 +44,30 @@
       <div class="message-bubble" [ngClass]="msg.role">
         <!-- Message Author Header -->
         <div class="bubble-meta">
-          <span class="author-name">{{ msg.role === 'user' ? 'You' : 'SpendSense Assistant' }}</span>
+          <span class="author-name">{{ msg.role === 'user' ? 'You' : 'Mintmate Assistant' }}</span>
           <span class="timestamp">{{ msg.timestamp | date:'shortTime' }}</span>
         </div>
 
-        <!-- Executed Tools Badges -->
-        <div *ngIf="msg.executedTools && msg.executedTools.length > 0" class="tool-badges">
-          <div *ngFor="let tool of msg.executedTools" class="tool-badge">
-            <span class="tool-icon">&#9881;</span>
-            <span class="tool-name">{{ tool.toolName }}</span>
+        <!-- Clean Formatted Message Body -->
+        <div class="bubble-text">{{ cleanText(msg.content) }}</div>
+
+        <!-- Visual Highlight Card (For category spending breakdown) -->
+        <div *ngIf="msg.role === 'assistant' && getVisualHighlight(msg.content) as visual" class="asst-visual-card">
+          <div class="asst-visual-top">
+            <span class="asst-visual-category">{{ visual.category }}</span>
+            <span class="asst-visual-count" *ngIf="visual.count">{{ visual.count }} transactions</span>
+          </div>
+          <div class="asst-visual-stat-row">
+            <span class="asst-visual-amount">{{ visual.amount }}</span>
+            <span class="asst-visual-share" *ngIf="visual.percentage">{{ visual.percentage }}% of spending</span>
+          </div>
+          <div class="asst-visual-progress-track" *ngIf="visual.percentage">
+            <div class="asst-visual-progress-fill" [style.width.%]="visual.percentage > 100 ? 100 : visual.percentage"></div>
+          </div>
+          <div class="asst-visual-footer">
+            <a routerLink="/app/insights" class="asst-visual-link">View insights breakdown &rarr;</a>
           </div>
         </div>
-
-        <!-- Message Body -->
-        <div class="bubble-text">{{ msg.content }}</div>
 
         <!-- Phase 8C Mutation Confirmation Card -->
         <div *ngIf="msg.pendingAction" class="confirmation-card" [ngClass]="msg.actionStatus?.toLowerCase()">
@@ -97,7 +109,7 @@
 
           <!-- Action Completed State -->
           <div *ngIf="msg.actionStatus === 'EXECUTED'" class="status-indicator executed">
-            &#10003; {{ msg.actionResult || 'Changes applied successfully to your SpendSense records.' }}
+            &#10003; {{ msg.actionResult || 'Changes applied successfully to your Mintmate records.' }}
           </div>
 
           <!-- Action Cancelled State -->
@@ -121,14 +133,17 @@
           <span></span>
           <span></span>
         </div>
-        <span class="loading-label">Consulting verified backend tools...</span>
+        <span class="loading-label">Analyzing your finances...</span>
       </div>
     </div>
 
-    <!-- Error Alert Banner -->
+    <!-- Error Alert Banner (User-friendly, no stack trace/internal URL) -->
     <div *ngIf="errorMessage" class="error-banner">
-      <span class="error-icon">&#9888;</span>
-      <span class="error-text">{{ errorMessage }}</span>
+      <div class="err-content">
+        <span class="error-icon">&#9888;</span>
+        <span class="error-text">{{ errorMessage }}</span>
+      </div>
+      <button type="button" class="btn-retry-err" (click)="retryLast()">Try again</button>
     </div>
   </main>
 
@@ -140,7 +155,7 @@
         [(ngModel)]="userInput"
         name="assistantQuery"
         id="assistant-query-input"
-        placeholder="Ask about spending, categories, budgets, or accounts (e.g., 'How much did I spend on food?')..."
+        placeholder="Ask about spending, categories, budgets, or accounts..."
         [disabled]="loading"
         autocomplete="off"
       />

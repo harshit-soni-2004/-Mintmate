@@ -1,6 +1,7 @@
-import { Component, ElementRef, ViewChild, inject } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AssistantService } from './assistant.service';
 import {
   AssistantPendingAction,
@@ -20,30 +21,50 @@ export interface DisplayMessage {
   actionResult?: string | null;
 }
 
+export interface AssistantVisualHighlight {
+  category: string;
+  amount: string;
+  percentage?: number;
+  count?: number;
+}
+
+import { AiMascotComponent } from '../../shared/components/ai-mascot/ai-mascot.component';
+
 @Component({
   selector: 'app-assistant',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink, AiMascotComponent],
   templateUrl: './assistant.component.html',
   styleUrl: './assistant.component.scss',
 })
-export class AssistantComponent {
+export class AssistantComponent implements OnInit {
   private readonly assistantService = inject(AssistantService);
+  private readonly route = inject(ActivatedRoute);
 
   @ViewChild('chatScroll') private readonly chatScrollContainer?: ElementRef<HTMLDivElement>;
 
   userInput = '';
   loading = false;
   errorMessage: string | null = null;
+  lastSubmittedPrompt = '';
 
   messages: DisplayMessage[] = [
     {
       id: 'welcome',
       role: 'assistant',
-      content: 'Hello! I am your SpendSense Financial Assistant. I can review your verified spending, category breakdowns, budgets, and linked accounts. How can I help you today?',
+      content: 'Hello! I am your Mintmate Financial Assistant. I can review your verified spending, category breakdowns, budgets, and linked accounts. How can I help you today?',
       timestamp: new Date(),
     },
   ];
+
+  ngOnInit(): void {
+    this.route.queryParams.subscribe((params) => {
+      const prompt = params['prompt'];
+      if (prompt && typeof prompt === 'string' && prompt.trim()) {
+        this.sendMessage(prompt.trim());
+      }
+    });
+  }
 
   readonly starterPrompts: string[] = [
     'How much did I spend last month?',
@@ -54,12 +75,51 @@ export class AssistantComponent {
     'What transactions over ₹5,000 do I have?',
   ];
 
+  cleanText(content: string): string {
+    if (!content) return '';
+    // Format human-friendly dates if ISO dates appear:
+    return content
+      .replace(/From (\d{4})-(\d{2})-(\d{2}) to (\d{4})-(\d{2})-(\d{2}),?\s*/gi, (_match, y1, m1, d1, y2, m2, d2) => {
+        const d1Obj = new Date(Number(y1), Number(m1) - 1, Number(d1));
+        const d2Obj = new Date(Number(y2), Number(m2) - 1, Number(d2));
+        const m1Name = d1Obj.toLocaleString('en-US', { month: 'short' });
+        const m2Name = d2Obj.toLocaleString('en-US', { month: 'short' });
+        if (m1Name === m2Name && y1 === y2) {
+          return `In ${d1Obj.toLocaleString('en-US', { month: 'long', year: 'numeric' })}, `;
+        }
+        return `Between ${m1Name} ${Number(d1)} and ${m2Name} ${Number(d2)}, `;
+      })
+      .replace(/\s*\([A-Z_]{3,}\)/g, ''); // Strip internal category enums like (FOOD)
+  }
+
+  getVisualHighlight(content: string): AssistantVisualHighlight | null {
+    if (!content) return null;
+    // Pattern: spending on <Category> was <₹Amount> [across <N> transactions] [(<X>% of total expenses)]
+    const match = content.match(/spending on ([^,]+?) was (₹[\d,]+(?:\.\d{1,2})?)(?: across (\d+) transactions)?(?:\s*\(([0-9.]+)% of total expenses\))?/i);
+    if (match) {
+      return {
+        category: match[1].trim(),
+        amount: match[2].trim(),
+        count: match[3] ? parseInt(match[3], 10) : undefined,
+        percentage: match[4] ? Math.round(parseFloat(match[4])) : undefined,
+      };
+    }
+    return null;
+  }
+
+  retryLast(): void {
+    if (this.lastSubmittedPrompt) {
+      this.sendMessage(this.lastSubmittedPrompt);
+    }
+  }
+
   sendMessage(textToSubmit?: string): void {
     const text = (textToSubmit || this.userInput).trim();
     if (!text || this.loading) {
       return;
     }
 
+    this.lastSubmittedPrompt = text;
     this.errorMessage = null;
     const userMessage: DisplayMessage = {
       id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
@@ -94,13 +154,13 @@ export class AssistantComponent {
           };
           this.messages.push(assistantMsg);
         } else if (res.error) {
-          this.errorMessage = res.error.message || 'Failed to receive assistant response.';
+          this.errorMessage = 'Something went wrong. Please try again.';
         }
         this.scrollToBottom();
       },
-      error: (err) => {
+      error: () => {
         this.loading = false;
-        this.errorMessage = err?.error?.error?.message || err?.message || 'Error communicating with assistant.';
+        this.errorMessage = 'Something went wrong. Please try again.';
         this.scrollToBottom();
       },
     });

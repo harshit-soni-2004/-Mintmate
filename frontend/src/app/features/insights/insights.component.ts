@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe, DecimalPipe, NgClass } from '@angular/common';
+import { CurrencyPipe, DecimalPipe, NgClass } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import {
@@ -12,6 +12,7 @@ import { InsightsService } from './insights.service';
 
 export interface ChartBar {
   label: string;
+  displayLabel: string;
   dateKey?: string;
   expense: number;
   income: number;
@@ -42,7 +43,7 @@ const CATEGORY_COLORS: Record<TransactionCategory, string> = {
 @Component({
   selector: 'app-insights',
   standalone: true,
-  imports: [ReactiveFormsModule, CurrencyPipe, DatePipe, DecimalPipe, NgClass],
+  imports: [ReactiveFormsModule, CurrencyPipe, DecimalPipe, NgClass],
   templateUrl: './insights.component.html',
   styleUrl: './insights.component.scss',
 })
@@ -67,8 +68,43 @@ export class InsightsComponent implements OnInit {
   chartBars: ChartBar[] = [];
   hoveredBar: ChartBar | null = null;
 
-  // Donut chart segments
+  // Donut chart segments & simplified category display
   donutSegments: DonutSegment[] = [];
+  displayCategories: Array<{
+    category: string;
+    label: string;
+    amount: number;
+    percentage: number;
+    color: string;
+  }> = [];
+
+  // Progressive disclosure toggle
+  showDetailedBreakdown = false;
+
+  get topInsight(): FinancialInsight | null {
+    return this.overview?.insights && this.overview.insights.length > 0
+      ? this.overview.insights[0]
+      : null;
+  }
+
+  get topAnomaly(): SpendingAnomaly | null {
+    return this.overview?.anomalies && this.overview.anomalies.length > 0
+      ? this.overview.anomalies[0]
+      : null;
+  }
+
+  get topCategoryShift() {
+    if (!this.overview?.categories?.categories?.length) return null;
+    // Find category with highest percentage increase or highest change
+    const sorted = [...this.overview.categories.categories].sort(
+      (a, b) => Math.abs(b.percentageChange) - Math.abs(a.percentageChange)
+    );
+    return sorted[0] || null;
+  }
+
+  toggleDetailedBreakdown(): void {
+    this.showDetailedBreakdown = !this.showDetailedBreakdown;
+  }
 
   ngOnInit(): void {
     this.applyPreset('this-month');
@@ -169,18 +205,32 @@ export class InsightsComponent implements OnInit {
       if (m > maxVal) maxVal = m;
     }
 
-    this.chartBars = pts.map((p) => ({
-      label: p.label,
-      dateKey: p.date,
-      expense: p.totalExpense,
-      income: p.totalIncome,
-      heightPct: p.totalExpense > 0 ? Math.max(8, Math.round((p.totalExpense / maxVal) * 100)) : 4,
-    }));
+    const totalPoints = pts.length;
+    // Adaptively show X-axis labels to prevent text crowding and horizontal overflow
+    const step =
+      totalPoints <= 8 ? 1 : totalPoints <= 16 ? 2 : totalPoints <= 35 ? 5 : Math.ceil(totalPoints / 7);
+
+    this.chartBars = pts.map((p, idx) => {
+      const isBoundary = idx === 0 || idx === totalPoints - 1;
+      const isStep = idx % step === 0;
+      const tooCloseToLast = totalPoints - 1 - idx < Math.floor(step / 2) && !isBoundary;
+      const showLabel = (isBoundary || isStep) && !tooCloseToLast;
+
+      return {
+        label: p.label,
+        displayLabel: showLabel ? p.label : '',
+        dateKey: p.date,
+        expense: p.totalExpense,
+        income: p.totalIncome,
+        heightPct: p.totalExpense > 0 ? Math.max(8, Math.round((p.totalExpense / maxVal) * 100)) : 4,
+      };
+    });
   }
 
   buildDonut(): void {
     if (!this.overview || !this.overview.categories || !this.overview.categories.categories) {
       this.donutSegments = [];
+      this.displayCategories = [];
       return;
     }
 
@@ -188,21 +238,68 @@ export class InsightsComponent implements OnInit {
     const circumference = 2 * Math.PI * radius;
     let cumulativePercent = 0;
 
-    const filtered = this.overview.categories.categories.filter((c) => c.amount > 0);
+    const sorted = [...this.overview.categories.categories]
+      .filter((c) => c.amount > 0)
+      .sort((a, b) => b.amount - a.amount);
 
-    this.donutSegments = filtered.map((c) => {
+    let displayList: Array<{
+      category: string;
+      label: string;
+      amount: number;
+      percentage: number;
+      color: string;
+    }> = [];
+
+    if (sorted.length <= 5) {
+      displayList = sorted.map((c) => ({
+        category: c.category,
+        label: this.categoryLabel(c.category),
+        amount: c.amount,
+        percentage: c.percentage,
+        color: this.getCategoryColor(c.category as TransactionCategory),
+      }));
+    } else {
+      const top4 = sorted.slice(0, 4);
+      const remaining = sorted.slice(4);
+      const otherAmount = remaining.reduce((sum, c) => sum + c.amount, 0);
+      const otherPct = Number(
+        remaining.reduce((sum, c) => sum + c.percentage, 0).toFixed(1)
+      );
+
+      displayList = top4.map((c) => ({
+        category: c.category,
+        label: this.categoryLabel(c.category),
+        amount: c.amount,
+        percentage: c.percentage,
+        color: this.getCategoryColor(c.category as TransactionCategory),
+      }));
+
+      if (otherAmount > 0) {
+        displayList.push({
+          category: 'OTHER',
+          label: 'Other',
+          amount: otherAmount,
+          percentage: otherPct,
+          color: '#73808c',
+        });
+      }
+    }
+
+    this.displayCategories = displayList;
+
+    this.donutSegments = displayList.map((c) => {
       const segmentLen = (c.percentage / 100) * circumference;
       const strokeDasharray = `${segmentLen} ${circumference}`;
       const strokeDashoffset = -((cumulativePercent / 100) * circumference);
       cumulativePercent += c.percentage;
 
       return {
-        category: c.category,
+        category: c.category as TransactionCategory,
         amount: c.amount,
         percentage: c.percentage,
         strokeDasharray,
         strokeDashoffset,
-        color: this.getCategoryColor(c.category),
+        color: c.color,
       };
     });
   }

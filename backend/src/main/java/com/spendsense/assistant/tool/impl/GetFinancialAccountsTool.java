@@ -70,7 +70,7 @@ public class GetFinancialAccountsTool implements FinancialTool<GetFinancialAccou
             String accountNames = accounts.stream()
                     .map(a -> a.institutionName() + " (..." + (a.accountNumberLast4() != null ? a.accountNumberLast4() : "N/A") + ")")
                     .collect(Collectors.joining(", "));
-            summaryText = String.format("You have %d linked account(s): %s.", accounts.size(), accountNames);
+            summaryText = String.format("You have %d active linked accounts: %s.", accounts.size(), accountNames);
         }
 
         ToolResponseEnvelope<List<FinancialAccountResponse>> envelope = ToolResponseEnvelope.of(

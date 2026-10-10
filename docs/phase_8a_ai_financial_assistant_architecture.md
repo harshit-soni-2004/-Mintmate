@@ -3,12 +3,12 @@
 ## 1. Architecture Overview
 
 ### 1.1 Executive Summary
-The SpendSense AI Financial Assistant enables users to query financial history, track budget progress, evaluate savings goals, and understand personal financial habits using natural language.
+The Mintmate AI Financial Assistant enables users to query financial history, track budget progress, evaluate savings goals, and understand personal financial habits using natural language.
 
 The primary architectural requirement of this system is **absolute financial determinism**:
 > **The Large Language Model (LLM) is strictly an intent parser, parameter extractor, tool selector, and natural-language synthesizer. The LLM is NEVER the financial source of truth and NEVER performs internal arithmetic.**
 
-All monetary calculations, transaction aggregations, transfer reconciliations, budget evaluations, and account balances are computed exclusively by verified SpendSense backend services running against the authoritative MySQL database.
+All monetary calculations, transaction aggregations, transfer reconciliations, budget evaluations, and account balances are computed exclusively by verified Mintmate backend services running against the authoritative MySQL database.
 
 ---
 
@@ -23,7 +23,7 @@ All monetary calculations, transaction aggregations, transfer reconciliations, b
                                          | HTTPS / JWT Authenticated Request (Stateless Session)
                                          v
 +-----------------------------------------------------------------------------------+
-|                        SPENDSENSE BACKEND API GATEWAY                             |
+|                         MINTMATE BACKEND API GATEWAY                              |
 |               Spring Security Filter Chain -> CurrentUser Principal               |
 +-----------------------------------------------------------------------------------+
                                          |

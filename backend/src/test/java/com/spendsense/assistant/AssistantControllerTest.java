@@ -37,6 +37,9 @@ class AssistantControllerTest {
     @Mock
     private PendingActionService pendingActionService;
 
+    @Mock
+    private com.spendsense.assistant.proactive.ProactiveInsightService proactiveInsightService;
+
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -45,7 +48,7 @@ class AssistantControllerTest {
         LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
         validator.afterPropertiesSet();
 
-        mockMvc = MockMvcBuilders.standaloneSetup(new AssistantController(orchestrator, pendingActionService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new AssistantController(orchestrator, pendingActionService, proactiveInsightService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setValidator(validator)
                 .build();

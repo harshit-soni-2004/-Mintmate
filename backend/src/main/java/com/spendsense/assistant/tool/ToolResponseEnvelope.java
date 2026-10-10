@@ -34,5 +34,11 @@ public record ToolResponseEnvelope<T>(
         return new ToolResponseEnvelope<>(true, "INR", new PeriodDto(start, end), scope, data, summaryText, warnings != null ? warnings : Collections.emptyList());
     }
 
-    public record PeriodDto(LocalDate start, LocalDate end) {}
+    public record PeriodDto(
+            @com.fasterxml.jackson.annotation.JsonProperty("startDate") LocalDate startDate,
+            @com.fasterxml.jackson.annotation.JsonProperty("endDate") LocalDate endDate
+    ) {
+        public LocalDate start() { return startDate; }
+        public LocalDate end() { return endDate; }
+    }
 }

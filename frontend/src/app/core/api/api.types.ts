@@ -430,4 +430,15 @@ export interface PendingActionResult {
   executedAt: string;
 }
 
+export interface ProactiveInsightDto {
+  id: string;
+  type: string;
+  severity: InsightSeverity;
+  title: string;
+  summary: string;
+  supportingFacts: Record<string, unknown>;
+  suggestedAction?: string | null;
+  createdAt: string;
+}
+
 

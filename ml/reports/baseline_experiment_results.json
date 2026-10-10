@@ -1,0 +1,1449 @@
+{
+  "model_metadata": {
+    "model_version": "v1.0.0-baseline-tfidf-lr",
+    "model_type": "LogisticRegression",
+    "feature_pipeline_version": "v1.0.0",
+    "dataset_version": "us_bank_categories_v2_processed_v1",
+    "preprocessing_version": "v1.0.0",
+    "random_seed": 42,
+    "classes": [
+      "BILLS",
+      "EDUCATION",
+      "ENTERTAINMENT",
+      "FOOD",
+      "HEALTH",
+      "OTHER",
+      "PERSONAL",
+      "SHOPPING",
+      "TRAVEL"
+    ],
+    "hyperparameters": {
+      "C": 2.0,
+      "class_weight": "balanced",
+      "max_iter": 1000,
+      "word_ngram_range": [
+        1,
+        2
+      ],
+      "char_ngram_range": [
+        3,
+        5
+      ],
+      "sublinear_tf": true
+    }
+  },
+  "benchmarks": {
+    "logistic_regression_random_split_val": {
+      "accuracy": 0.9967,
+      "macro_precision": 0.9965,
+      "macro_recall": 0.9955,
+      "macro_f1": 0.996,
+      "micro_f1": 0.9967,
+      "per_category": {
+        "BILLS": {
+          "precision": 0.9961,
+          "recall": 1.0,
+          "f1": 0.998,
+          "support": 511
+        },
+        "EDUCATION": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 156
+        },
+        "ENTERTAINMENT": {
+          "precision": 0.9958,
+          "recall": 0.9958,
+          "f1": 0.9958,
+          "support": 478
+        },
+        "FOOD": {
+          "precision": 0.9985,
+          "recall": 0.9985,
+          "f1": 0.9985,
+          "support": 663
+        },
+        "HEALTH": {
+          "precision": 0.9802,
+          "recall": 0.9802,
+          "f1": 0.9802,
+          "support": 202
+        },
+        "OTHER": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 186
+        },
+        "PERSONAL": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 226
+        },
+        "SHOPPING": {
+          "precision": 1.0,
+          "recall": 0.9847,
+          "f1": 0.9923,
+          "support": 196
+        },
+        "TRAVEL": {
+          "precision": 0.9978,
+          "recall": 1.0,
+          "f1": 0.9989,
+          "support": 446
+        }
+      },
+      "confusion_matrix": [
+        [
+          511,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          156,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          476,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          662,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          1,
+          0,
+          198,
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          186,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          226,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          3,
+          0,
+          0,
+          193,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          446
+        ]
+      ],
+      "confidence_calibration": {
+        "HIGH (>= 0.85)": {
+          "count": 2329,
+          "percentage": 76.01,
+          "accuracy": 0.9991,
+          "mean_confidence": 0.9422
+        },
+        "MEDIUM (0.60 - 0.85)": {
+          "count": 648,
+          "percentage": 21.15,
+          "accuracy": 0.9969,
+          "mean_confidence": 0.7689
+        },
+        "LOW (< 0.60)": {
+          "count": 87,
+          "percentage": 2.84,
+          "accuracy": 0.931,
+          "mean_confidence": 0.5027
+        }
+      }
+    },
+    "logistic_regression_random_split_test": {
+      "accuracy": 0.9964,
+      "macro_precision": 0.9954,
+      "macro_recall": 0.9938,
+      "macro_f1": 0.9946,
+      "micro_f1": 0.9964,
+      "per_category": {
+        "BILLS": {
+          "precision": 0.9961,
+          "recall": 1.0,
+          "f1": 0.9981,
+          "support": 512
+        },
+        "EDUCATION": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 156
+        },
+        "ENTERTAINMENT": {
+          "precision": 0.9979,
+          "recall": 1.0,
+          "f1": 0.999,
+          "support": 478
+        },
+        "FOOD": {
+          "precision": 0.9985,
+          "recall": 1.0,
+          "f1": 0.9992,
+          "support": 663
+        },
+        "HEALTH": {
+          "precision": 0.9706,
+          "recall": 0.9851,
+          "f1": 0.9778,
+          "support": 201
+        },
+        "OTHER": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 185
+        },
+        "PERSONAL": {
+          "precision": 0.9956,
+          "recall": 1.0,
+          "f1": 0.9978,
+          "support": 227
+        },
+        "SHOPPING": {
+          "precision": 1.0,
+          "recall": 0.9592,
+          "f1": 0.9792,
+          "support": 196
+        },
+        "TRAVEL": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 447
+        }
+      },
+      "confusion_matrix": [
+        [
+          512,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          156,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          478,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          663,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          1,
+          0,
+          198,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          185,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          227,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1,
+          6,
+          0,
+          1,
+          188,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          447
+        ]
+      ],
+      "confidence_calibration": {
+        "HIGH (>= 0.85)": {
+          "count": 2342,
+          "percentage": 76.41,
+          "accuracy": 0.997,
+          "mean_confidence": 0.9441
+        },
+        "MEDIUM (0.60 - 0.85)": {
+          "count": 647,
+          "percentage": 21.11,
+          "accuracy": 0.9985,
+          "mean_confidence": 0.7678
+        },
+        "LOW (< 0.60)": {
+          "count": 76,
+          "percentage": 2.48,
+          "accuracy": 0.9605,
+          "mean_confidence": 0.4995
+        }
+      }
+    },
+    "calibrated_svm_random_split_test": {
+      "accuracy": 0.9964,
+      "macro_precision": 0.9955,
+      "macro_recall": 0.9938,
+      "macro_f1": 0.9946,
+      "micro_f1": 0.9964,
+      "per_category": {
+        "BILLS": {
+          "precision": 0.9981,
+          "recall": 1.0,
+          "f1": 0.999,
+          "support": 512
+        },
+        "EDUCATION": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 156
+        },
+        "ENTERTAINMENT": {
+          "precision": 0.9979,
+          "recall": 1.0,
+          "f1": 0.999,
+          "support": 478
+        },
+        "FOOD": {
+          "precision": 0.997,
+          "recall": 1.0,
+          "f1": 0.9985,
+          "support": 663
+        },
+        "HEALTH": {
+          "precision": 0.9706,
+          "recall": 0.9851,
+          "f1": 0.9778,
+          "support": 201
+        },
+        "OTHER": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 185
+        },
+        "PERSONAL": {
+          "precision": 0.9956,
+          "recall": 1.0,
+          "f1": 0.9978,
+          "support": 227
+        },
+        "SHOPPING": {
+          "precision": 1.0,
+          "recall": 0.9592,
+          "f1": 0.9792,
+          "support": 196
+        },
+        "TRAVEL": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 447
+        }
+      },
+      "confusion_matrix": [
+        [
+          512,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          156,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          478,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          663,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          1,
+          198,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          185,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          227,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1,
+          6,
+          0,
+          1,
+          188,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          447
+        ]
+      ],
+      "confidence_calibration": {
+        "HIGH (>= 0.85)": {
+          "count": 3053,
+          "percentage": 99.61,
+          "accuracy": 0.9974,
+          "mean_confidence": 0.9929
+        },
+        "MEDIUM (0.60 - 0.85)": {
+          "count": 10,
+          "percentage": 0.33,
+          "accuracy": 0.9,
+          "mean_confidence": 0.7633
+        },
+        "LOW (< 0.60)": {
+          "count": 2,
+          "percentage": 0.07,
+          "accuracy": 0.0,
+          "mean_confidence": 0.3272
+        }
+      }
+    },
+    "logistic_regression_merchant_aware_unseen_test": {
+      "accuracy": 0.9958,
+      "macro_precision": 0.9955,
+      "macro_recall": 0.9938,
+      "macro_f1": 0.9946,
+      "micro_f1": 0.9958,
+      "per_category": {
+        "BILLS": {
+          "precision": 0.9925,
+          "recall": 1.0,
+          "f1": 0.9962,
+          "support": 527
+        },
+        "EDUCATION": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 159
+        },
+        "ENTERTAINMENT": {
+          "precision": 0.9957,
+          "recall": 0.9957,
+          "f1": 0.9957,
+          "support": 470
+        },
+        "FOOD": {
+          "precision": 0.9985,
+          "recall": 0.9985,
+          "f1": 0.9985,
+          "support": 649
+        },
+        "HEALTH": {
+          "precision": 0.9846,
+          "recall": 0.9746,
+          "f1": 0.9796,
+          "support": 197
+        },
+        "OTHER": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 172
+        },
+        "PERSONAL": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 203
+        },
+        "SHOPPING": {
+          "precision": 0.99,
+          "recall": 0.9754,
+          "f1": 0.9826,
+          "support": 203
+        },
+        "TRAVEL": {
+          "precision": 0.9979,
+          "recall": 1.0,
+          "f1": 0.999,
+          "support": 481
+        }
+      },
+      "confusion_matrix": [
+        [
+          527,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          159,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          468,
+          0,
+          0,
+          0,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          648,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          1,
+          1,
+          192,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          172,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          203,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          3,
+          0,
+          0,
+          198,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          481
+        ]
+      ],
+      "confidence_calibration": {
+        "HIGH (>= 0.85)": {
+          "count": 2340,
+          "percentage": 76.45,
+          "accuracy": 1.0,
+          "mean_confidence": 0.9425
+        },
+        "MEDIUM (0.60 - 0.85)": {
+          "count": 642,
+          "percentage": 20.97,
+          "accuracy": 0.9969,
+          "mean_confidence": 0.7694
+        },
+        "LOW (< 0.60)": {
+          "count": 79,
+          "percentage": 2.58,
+          "accuracy": 0.8608,
+          "mean_confidence": 0.4849
+        }
+      }
+    },
+    "ablation_word_only_test": {
+      "accuracy": 0.9938,
+      "macro_precision": 0.9938,
+      "macro_recall": 0.9917,
+      "macro_f1": 0.9927,
+      "micro_f1": 0.9938,
+      "per_category": {
+        "BILLS": {
+          "precision": 0.9922,
+          "recall": 1.0,
+          "f1": 0.9961,
+          "support": 512
+        },
+        "EDUCATION": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 156
+        },
+        "ENTERTAINMENT": {
+          "precision": 0.9937,
+          "recall": 0.9895,
+          "f1": 0.9916,
+          "support": 478
+        },
+        "FOOD": {
+          "precision": 0.9925,
+          "recall": 0.9985,
+          "f1": 0.9955,
+          "support": 663
+        },
+        "HEALTH": {
+          "precision": 0.9704,
+          "recall": 0.9801,
+          "f1": 0.9752,
+          "support": 201
+        },
+        "OTHER": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 185
+        },
+        "PERSONAL": {
+          "precision": 0.9956,
+          "recall": 1.0,
+          "f1": 0.9978,
+          "support": 227
+        },
+        "SHOPPING": {
+          "precision": 1.0,
+          "recall": 0.9592,
+          "f1": 0.9792,
+          "support": 196
+        },
+        "TRAVEL": {
+          "precision": 1.0,
+          "recall": 0.9978,
+          "f1": 0.9989,
+          "support": 447
+        }
+      },
+      "confusion_matrix": [
+        [
+          512,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          156,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          473,
+          3,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          662,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          1,
+          1,
+          197,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          185,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          227,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1,
+          6,
+          0,
+          1,
+          188,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          446
+        ]
+      ]
+    },
+    "ablation_merchant_only_test": {
+      "accuracy": 0.9964,
+      "macro_precision": 0.9954,
+      "macro_recall": 0.9938,
+      "macro_f1": 0.9946,
+      "micro_f1": 0.9964,
+      "per_category": {
+        "BILLS": {
+          "precision": 0.9961,
+          "recall": 1.0,
+          "f1": 0.9981,
+          "support": 512
+        },
+        "EDUCATION": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 156
+        },
+        "ENTERTAINMENT": {
+          "precision": 0.9979,
+          "recall": 1.0,
+          "f1": 0.999,
+          "support": 478
+        },
+        "FOOD": {
+          "precision": 0.9985,
+          "recall": 1.0,
+          "f1": 0.9992,
+          "support": 663
+        },
+        "HEALTH": {
+          "precision": 0.9706,
+          "recall": 0.9851,
+          "f1": 0.9778,
+          "support": 201
+        },
+        "OTHER": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 185
+        },
+        "PERSONAL": {
+          "precision": 0.9956,
+          "recall": 1.0,
+          "f1": 0.9978,
+          "support": 227
+        },
+        "SHOPPING": {
+          "precision": 1.0,
+          "recall": 0.9592,
+          "f1": 0.9792,
+          "support": 196
+        },
+        "TRAVEL": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 447
+        }
+      },
+      "confusion_matrix": [
+        [
+          512,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          156,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          478,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          663,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          1,
+          0,
+          198,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          185,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          227,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1,
+          6,
+          0,
+          1,
+          188,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          447
+        ]
+      ]
+    },
+    "indian_domain_sumeet_test": {
+      "accuracy": 0.5194,
+      "macro_precision": 0.6014,
+      "macro_recall": 0.5058,
+      "macro_f1": 0.5078,
+      "micro_f1": 0.5194,
+      "per_category": {
+        "BILLS": {
+          "precision": 0.61,
+          "recall": 0.5446,
+          "f1": 0.5755,
+          "support": 112
+        },
+        "EDUCATION": {
+          "precision": 1.0,
+          "recall": 0.4675,
+          "f1": 0.6372,
+          "support": 77
+        },
+        "ENTERTAINMENT": {
+          "precision": 0.2842,
+          "recall": 0.6585,
+          "f1": 0.3971,
+          "support": 41
+        },
+        "FOOD": {
+          "precision": 0.4172,
+          "recall": 0.7241,
+          "f1": 0.5294,
+          "support": 87
+        },
+        "HEALTH": {
+          "precision": 0.6282,
+          "recall": 0.6622,
+          "f1": 0.6447,
+          "support": 74
+        },
+        "OTHER": {
+          "precision": 0.5,
+          "recall": 0.3676,
+          "f1": 0.4237,
+          "support": 68
+        },
+        "PERSONAL": {
+          "precision": 1.0,
+          "recall": 0.35,
+          "f1": 0.5185,
+          "support": 40
+        },
+        "SHOPPING": {
+          "precision": 0.3404,
+          "recall": 0.3902,
+          "f1": 0.3636,
+          "support": 41
+        },
+        "TRAVEL": {
+          "precision": 0.6327,
+          "recall": 0.3875,
+          "f1": 0.4806,
+          "support": 80
+        }
+      },
+      "confusion_matrix": [
+        [
+          61,
+          0,
+          18,
+          14,
+          15,
+          0,
+          0,
+          1,
+          3
+        ],
+        [
+          0,
+          36,
+          4,
+          19,
+          3,
+          15,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          27,
+          8,
+          1,
+          0,
+          0,
+          3,
+          2
+        ],
+        [
+          8,
+          0,
+          10,
+          63,
+          2,
+          0,
+          0,
+          4,
+          0
+        ],
+        [
+          0,
+          0,
+          6,
+          8,
+          49,
+          6,
+          0,
+          5,
+          0
+        ],
+        [
+          23,
+          0,
+          3,
+          1,
+          4,
+          25,
+          0,
+          0,
+          12
+        ],
+        [
+          4,
+          0,
+          0,
+          14,
+          3,
+          4,
+          14,
+          1,
+          0
+        ],
+        [
+          1,
+          0,
+          14,
+          9,
+          0,
+          0,
+          0,
+          16,
+          1
+        ],
+        [
+          3,
+          0,
+          13,
+          15,
+          1,
+          0,
+          0,
+          17,
+          31
+        ]
+      ],
+      "confidence_calibration": {
+        "HIGH (>= 0.85)": {
+          "count": 166,
+          "percentage": 26.77,
+          "accuracy": 0.8976,
+          "mean_confidence": 0.9442
+        },
+        "MEDIUM (0.60 - 0.85)": {
+          "count": 119,
+          "percentage": 19.19,
+          "accuracy": 0.6639,
+          "mean_confidence": 0.7153
+        },
+        "LOW (< 0.60)": {
+          "count": 335,
+          "percentage": 54.03,
+          "accuracy": 0.2806,
+          "mean_confidence": 0.361
+        }
+      }
+    },
+    "indian_domain_deepam_test": {
+      "accuracy": 0.6,
+      "macro_precision": 0.5111,
+      "macro_recall": 0.4,
+      "macro_f1": 0.4417,
+      "micro_f1": 0.6,
+      "per_category": {
+        "BILLS": {
+          "precision": 0.6,
+          "recall": 0.6,
+          "f1": 0.6,
+          "support": 5
+        },
+        "EDUCATION": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        },
+        "ENTERTAINMENT": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        },
+        "FOOD": {
+          "precision": 0.8,
+          "recall": 0.8,
+          "f1": 0.8,
+          "support": 5
+        },
+        "HEALTH": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        },
+        "OTHER": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        },
+        "PERSONAL": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        },
+        "SHOPPING": {
+          "precision": 1.0,
+          "recall": 0.6,
+          "f1": 0.75,
+          "support": 5
+        },
+        "TRAVEL": {
+          "precision": 0.6667,
+          "recall": 0.4,
+          "f1": 0.5,
+          "support": 5
+        }
+      },
+      "confusion_matrix": [
+        [
+          3,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          4,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          2,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          2
+        ]
+      ]
+    }
+  }
+}

@@ -128,7 +128,7 @@ class AssistantFinancialToolsTest {
         );
 
         assertThat(result.success()).isTrue();
-        assertThat(result.response().summaryText()).contains("spending on Food & Dining (FOOD) was ₹9617.00 across 18 transactions");
+        assertThat(result.response().summaryText()).contains("spending on Food & Dining was ₹9617.00 across 18 transactions");
     }
 
     @Test

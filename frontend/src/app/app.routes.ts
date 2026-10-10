@@ -63,8 +63,8 @@ export const routes: Routes = [
       },
       {
         path: 'settings',
-        component: PlaceholderPageComponent,
-        data: { title: 'Settings', description: 'Manage your personal SpendSense workspace.' },
+        loadComponent: () =>
+          import('./features/settings/settings.component').then((m) => m.SettingsComponent),
       },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],

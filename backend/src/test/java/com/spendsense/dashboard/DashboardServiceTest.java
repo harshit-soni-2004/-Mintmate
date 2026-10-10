@@ -110,4 +110,143 @@ class DashboardServiceTest {
 
         verify(transactionRepository).findCategorySpending(eq(user.getId()), eq(TransactionType.EXPENSE), eq(fromDate), eq(toDate));
     }
+
+    @Test
+    void handlesEmptyMonthWithZeroTransactions() {
+        LocalDate fromDate = LocalDate.of(2026, 11, 1);
+        LocalDate toDate = LocalDate.of(2026, 11, 30);
+
+        when(transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(
+                eq(user.getId()), eq(TransactionType.INCOME), eq(fromDate), eq(toDate)))
+                .thenReturn(BigDecimal.ZERO);
+        when(transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(
+                eq(user.getId()), eq(TransactionType.EXPENSE), eq(fromDate), eq(toDate)))
+                .thenReturn(BigDecimal.ZERO);
+
+        LocalDate prevFrom = LocalDate.of(2026, 10, 1);
+        LocalDate prevTo = LocalDate.of(2026, 10, 31);
+        when(transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(
+                eq(user.getId()), eq(TransactionType.INCOME), eq(prevFrom), eq(prevTo)))
+                .thenReturn(BigDecimal.ZERO);
+        when(transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(
+                eq(user.getId()), eq(TransactionType.EXPENSE), eq(prevFrom), eq(prevTo)))
+                .thenReturn(BigDecimal.ZERO);
+
+        when(transactionRepository.findCategorySpending(eq(user.getId()), eq(TransactionType.EXPENSE), eq(fromDate), eq(toDate)))
+                .thenReturn(List.of());
+        when(transactionRepository.findDailySpending(eq(user.getId()), eq(fromDate), eq(toDate)))
+                .thenReturn(List.of());
+        when(transactionRepository.findTop10ByUser_IdOrderByTransactionDateDescCreatedAtDesc(eq(user.getId())))
+                .thenReturn(List.of());
+        when(transactionRepository.findByUser_IdAndTransactionDateBetweenOrderByTransactionDateDescCreatedAtDesc(
+                eq(user.getId()), eq(fromDate), eq(toDate)))
+                .thenReturn(List.of());
+
+        DashboardDataResponse result = service.getDashboardData("2026-11", null, null);
+
+        assertThat(result.summary().totalIncome()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(result.summary().totalExpenses()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(result.summary().netSavings()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(result.summary().savingsRate()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(result.dailySpending()).isEmpty();
+        assertThat(result.periodTransactions()).isEmpty();
+        assertThat(result.fromDate()).isEqualTo(fromDate);
+        assertThat(result.toDate()).isEqualTo(toDate);
+    }
+
+    @Test
+    void handlesFebruaryNonLeapYear28Days() {
+        LocalDate fromDate = LocalDate.of(2026, 2, 1);
+        LocalDate toDate = LocalDate.of(2026, 2, 28);
+
+        when(transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(
+                eq(user.getId()), any(), any(), any()))
+                .thenReturn(BigDecimal.ZERO);
+        when(transactionRepository.findCategorySpending(eq(user.getId()), eq(TransactionType.EXPENSE), eq(fromDate), eq(toDate)))
+                .thenReturn(List.of());
+        when(transactionRepository.findDailySpending(eq(user.getId()), eq(fromDate), eq(toDate)))
+                .thenReturn(List.of());
+        when(transactionRepository.findTop10ByUser_IdOrderByTransactionDateDescCreatedAtDesc(eq(user.getId())))
+                .thenReturn(List.of());
+        when(transactionRepository.findByUser_IdAndTransactionDateBetweenOrderByTransactionDateDescCreatedAtDesc(
+                eq(user.getId()), eq(fromDate), eq(toDate)))
+                .thenReturn(List.of());
+
+        DashboardDataResponse result = service.getDashboardData("2026-02", null, null);
+
+        assertThat(result.fromDate()).isEqualTo(LocalDate.of(2026, 2, 1));
+        assertThat(result.toDate()).isEqualTo(LocalDate.of(2026, 2, 28));
+        verify(transactionRepository).findDailySpending(eq(user.getId()), eq(fromDate), eq(toDate));
+    }
+
+    @Test
+    void handlesFebruaryLeapYear29Days() {
+        LocalDate fromDate = LocalDate.of(2024, 2, 1);
+        LocalDate toDate = LocalDate.of(2024, 2, 29);
+
+        when(transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(
+                eq(user.getId()), any(), any(), any()))
+                .thenReturn(BigDecimal.ZERO);
+        when(transactionRepository.findCategorySpending(eq(user.getId()), eq(TransactionType.EXPENSE), eq(fromDate), eq(toDate)))
+                .thenReturn(List.of());
+        when(transactionRepository.findDailySpending(eq(user.getId()), eq(fromDate), eq(toDate)))
+                .thenReturn(List.of());
+        when(transactionRepository.findTop10ByUser_IdOrderByTransactionDateDescCreatedAtDesc(eq(user.getId())))
+                .thenReturn(List.of());
+        when(transactionRepository.findByUser_IdAndTransactionDateBetweenOrderByTransactionDateDescCreatedAtDesc(
+                eq(user.getId()), eq(fromDate), eq(toDate)))
+                .thenReturn(List.of());
+
+        DashboardDataResponse result = service.getDashboardData("2024-02", null, null);
+
+        assertThat(result.fromDate()).isEqualTo(LocalDate.of(2024, 2, 1));
+        assertThat(result.toDate()).isEqualTo(LocalDate.of(2024, 2, 29));
+        verify(transactionRepository).findDailySpending(eq(user.getId()), eq(fromDate), eq(toDate));
+    }
+
+    @Test
+    void handles31DayMonthAugustAndReconcilesDailyTransactions() {
+        LocalDate fromDate = LocalDate.of(2026, 8, 1);
+        LocalDate toDate = LocalDate.of(2026, 8, 31);
+
+        when(transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(
+                eq(user.getId()), eq(TransactionType.INCOME), eq(fromDate), eq(toDate)))
+                .thenReturn(new BigDecimal("60000.00"));
+        when(transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(
+                eq(user.getId()), eq(TransactionType.EXPENSE), eq(fromDate), eq(toDate)))
+                .thenReturn(new BigDecimal("35000.00"));
+        when(transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(
+                eq(user.getId()), any(), eq(LocalDate.of(2026, 7, 1)), eq(LocalDate.of(2026, 7, 31))))
+                .thenReturn(new BigDecimal("20000.00"));
+
+        when(transactionRepository.findCategorySpending(eq(user.getId()), eq(TransactionType.EXPENSE), eq(fromDate), eq(toDate)))
+                .thenReturn(List.of());
+        when(transactionRepository.findDailySpending(eq(user.getId()), eq(fromDate), eq(toDate)))
+                .thenReturn(List.of(
+                        new DailySpend(LocalDate.of(2026, 8, 1), TransactionType.INCOME, new BigDecimal("60000.00"), 1),
+                        new DailySpend(LocalDate.of(2026, 8, 5), TransactionType.EXPENSE, new BigDecimal("15000.00"), 2),
+                        new DailySpend(LocalDate.of(2026, 8, 20), TransactionType.EXPENSE, new BigDecimal("20000.00"), 3)
+                ));
+        when(transactionRepository.findTop10ByUser_IdOrderByTransactionDateDescCreatedAtDesc(eq(user.getId())))
+                .thenReturn(List.of());
+        when(transactionRepository.findByUser_IdAndTransactionDateBetweenOrderByTransactionDateDescCreatedAtDesc(
+                eq(user.getId()), eq(fromDate), eq(toDate)))
+                .thenReturn(List.of());
+
+        DashboardDataResponse result = service.getDashboardData("2026-08", null, null);
+
+        assertThat(result.fromDate()).isEqualTo(LocalDate.of(2026, 8, 1));
+        assertThat(result.toDate()).isEqualTo(LocalDate.of(2026, 8, 31));
+        assertThat(result.dailySpending()).hasSize(3);
+
+        BigDecimal sumDailyExpense = result.dailySpending().stream()
+                .map(d -> d.totalExpense())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal sumDailyIncome = result.dailySpending().stream()
+                .map(d -> d.totalIncome())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        assertThat(sumDailyExpense).isEqualByComparingTo(result.summary().totalExpenses());
+        assertThat(sumDailyIncome).isEqualByComparingTo(result.summary().totalIncome());
+    }
 }

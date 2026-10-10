@@ -1,0 +1,384 @@
+{
+  "us_bank_transactions_v2": {
+    "dataset_name": "US Bank Transactions v2 (DoDataThings)",
+    "filename": "us_bank_transactions_v2.csv",
+    "total_rows": 68000,
+    "missing_text_count": 0,
+    "missing_category_count": 0,
+    "exact_duplicates": 22303,
+    "exact_duplicate_rate_pct": 32.8,
+    "normalized_duplicates": 45774,
+    "normalized_duplicate_rate_pct": 67.31,
+    "extremely_short_records": 0,
+    "char_length_stats": {
+      "min": 10,
+      "mean": 35.91,
+      "median": 32,
+      "max": 105
+    },
+    "word_count_stats": {
+      "min": 2,
+      "mean": 5.18,
+      "median": 4,
+      "max": 14
+    },
+    "category_distribution": {
+      "Insurance": 4000,
+      "Rent": 4000,
+      "Transfer": 4000,
+      "Restaurants": 4000,
+      "Education": 4000,
+      "Transportation": 4000,
+      "Income": 4000,
+      "Fees": 4000,
+      "Healthcare": 4000,
+      "Mortgage": 4000,
+      "Subscription": 4000,
+      "Shopping": 4000,
+      "Personal Care": 4000,
+      "Groceries": 4000,
+      "Utilities": 4000,
+      "Entertainment": 4000,
+      "Travel": 4000
+    },
+    "samples_per_category": {
+      "Insurance": [
+        "[debit] NORTHWESTERN MUTUALEFT PYMT PPD ID: 9901629141",
+        "[debit] PreApproved Payment Bill User Payment: AMERICAN FAMILY",
+        "[credit] HOMESITE INSPAYMENT PPD ID: 0828867279"
+      ],
+      "Mortgage": [
+        "[debit] MTG PMT PENFED CU",
+        "[debit] MTG PMT GUARANTEED RATE",
+        "[debit] bethpage fcu mortgage 61521701 ppd id: 926343602"
+      ],
+      "Entertainment": [
+        "[debit] BETMGM 147 PARK BLVD UNION CITY 94587 CA USA",
+        "[debit] HARD ROCK BET SPORTSBOOK",
+        "[debit] DRIVING RANGE INC"
+      ],
+      "Utilities": [
+        "[debit] REPUBLIC SERVICES 222 MISSION CT CHICAGO60601 IL USA",
+        "[debit] MUNICIPAL WATER UTIL PMT WEB ID: 1P3K5KBY",
+        "[debit] republic services 1128 main st raleigh 27601-7390nc usa"
+      ],
+      "Groceries": [
+        "[debit] PYPL*365 MARKET",
+        "[debit] PUBLIX 7860 UNIVERSITY LN OAKLAND 94601-4574CA USA",
+        "[debit] GROCOUTLT #47001 HOUSTON"
+      ],
+      "Personal Care": [
+        "[debit] WITHDRAWAL FROM CERAVE",
+        "[debit] FANTASTIC SAMS",
+        "[debit] CRUNCH FITNESS 1088 UNIVERSITY RD PITTSBURGH15201 PA USA"
+      ],
+      "Shopping": [
+        "[debit] WAL-MART #0006",
+        "[debit] NEIMAN MARCUS 6702",
+        "[debit] DILLARD'S #935"
+      ],
+      "Subscription": [
+        "[debit] APPLE TV+",
+        "[debit] MONDAY.COM* Subscription",
+        "[debit] Subscription Payment: BASECAMP"
+      ],
+      "Healthcare": [
+        "[debit] DR JONES PSYCHIATRY",
+        "[debit] WITHDRAWAL FROM AMERICAS BEST",
+        "[debit] Cvs"
+      ],
+      "Rent": [
+        "[debit] GREYSTAR RENT PMT 02806478 PPD ID: 958027310",
+        "[debit] INVITATION HOMES RENT PMT 28909425 WEB ID: VNKE0NYQ",
+        "[debit] JBG SMITH RENT PAYMENT"
+      ],
+      "Fees": [
+        "[debit] ATM OPERATOR FEE",
+        "[debit] Annual Fee",
+        "[debit] minimum balance fee"
+      ],
+      "Income": [
+        "[credit] US GOVERNMENT DIR DEP PPD ID: 547185326",
+        "[credit] Payment Refund: ASOS",
+        "[credit] SALESFORCE PAYROLL"
+      ],
+      "Transportation": [
+        "[debit] PREAUTHORIZED WITHDRAWAL TO ADVANCE AUTO",
+        "[debit] SPEEDWAY 58649378",
+        "[debit] PHILLIPS 66 #62356 RALEIGH"
+      ],
+      "Education": [
+        "[debit] pearson 8094 park pkwy orlando32801 fl usa",
+        "[debit] PREAPPROVED PAYMENT BILL USER PAYMENT: BRILLIANT.ORG",
+        "[debit] KHAN ACADEMY 9524 INDUSTRIAL AVE SAN JOSE 95101-9225CA USA"
+      ],
+      "Restaurants": [
+        "[debit] PAYPAL INST XFER DEL TACO WEB ID: PAYPALSI43",
+        "[debit] Tofu House 1570 Market Ln Boston02101 Ma Usa",
+        "[debit] GYRO KING 5917 CENTER RD NEWARK 07101 NJ USA"
+      ],
+      "Transfer": [
+        "[debit] MERRILL LYNCH INVESTMENTS MONEYLINE",
+        "[debit] MONTHLY INSTALLMENTS (11 OF 12)",
+        "[debit] MONTHLY INSTALLMENTS (10 OF 24)"
+      ],
+      "Travel": [
+        "[debit] HILTON",
+        "[debit] DOLLAR RENT A CAR 7600209",
+        "[debit] priceline #4270 houston"
+      ]
+    }
+  },
+  "indian_transactions_sumeet": {
+    "dataset_name": "Indian Transactions (Sumeetgpt)",
+    "filename": "indian_transactions_sumeet.csv",
+    "total_rows": 810,
+    "missing_text_count": 0,
+    "missing_category_count": 0,
+    "exact_duplicates": 79,
+    "exact_duplicate_rate_pct": 9.75,
+    "normalized_duplicates": 119,
+    "normalized_duplicate_rate_pct": 14.69,
+    "extremely_short_records": 30,
+    "char_length_stats": {
+      "min": 13,
+      "mean": 37.06,
+      "median": 37,
+      "max": 71
+    },
+    "word_count_stats": {
+      "min": 1,
+      "mean": 4.25,
+      "median": 4,
+      "max": 9
+    },
+    "category_distribution": {
+      "ATM & Cash": 45,
+      "Kids Activities": 45,
+      "Personal Care": 45,
+      "Shopping & Clothing": 45,
+      "Fees & Interest": 45,
+      "Income & Deposits": 45,
+      "Utilities": 45,
+      "Groceries": 45,
+      "Entertainment & Subscriptions": 45,
+      "Medicine & Pharmacy": 45,
+      "Travel": 45,
+      "Education": 45,
+      "Rent & Mortgage": 45,
+      "Investments & Savings Transfer": 45,
+      "Eating Out": 45,
+      "Transportation & Gas": 45,
+      "Insurance": 45,
+      "Hospital & Medical": 45
+    },
+    "samples_per_category": {
+      "ATM & Cash": [
+        "UPI/SBI ATM Withdrawal/vikas.790@okicici/Payment/KOTAK",
+        "IMPS-2949912028-POOJA DESAI-AXIS-HDFC ATM Withdrawal",
+        "NEFT Dr-KOTAK0000485-DIVYA VERMA-SBI ATM Withdrawal"
+      ],
+      "Kids Activities": [
+        "school van fee for Kumon Learning",
+        "POS Sportskids Academy MUMBAI",
+        "ACH/TP ACH Kidzee 0967485733"
+      ],
+      "Insurance": [
+        "annual premium for Bajaj Allianz",
+        "annual premium for HDFC Life Insurance",
+        "insurance premium paid to Star Health Insurance"
+      ],
+      "Transportation & Gas": [
+        "UPI-HP Petrol Pump-pooja.270@ybl-KOTAK-447964670-UPI",
+        "paid Park+ Parking for a ride",
+        "IMPS-1286174002-VIKRAM KAPOOR-KOTAK-IRCTC"
+      ],
+      "Eating Out": [
+        "lunch bill paid at Domino's Pizza",
+        "UPI/Barbeque Nation/arjun.265@oksbi/Payment/KOTAK",
+        "lunch bill paid at Third Wave Coffee"
+      ],
+      "Investments & Savings Transfer": [
+        "mutual fund contribution to Groww",
+        "IMPS-6630774768-MANOJ RAO-AXIS-NPS Contribution",
+        "SIP auto debit for Upstox"
+      ],
+      "Rent & Mortgage": [
+        "IMPS-8808009855-POOJA REDDY-ICICI-NoBroker Rent Payment",
+        "ACH/TP ACH ICICI Home Loan EMI 5116697037",
+        "monthly rent paid via SBI Home Loan EMI"
+      ],
+      "Education": [
+        "IMPS-9489345212-VIKAS MALHOTRA-KOTAK-School Fee Payment",
+        "semester fee via Udemy",
+        "NEFT Dr-ICICI0000335-ROHAN BOSE-School Fee Payment"
+      ],
+      "Travel": [
+        "travel booking payment to IndiGo Airlines",
+        "NEFT Dr-KOTAK0000744-RAHUL MALHOTRA-Goibibo",
+        "ACH/TP ACH Airbnb 9349998051"
+      ],
+      "Medicine & Pharmacy": [
+        "ACH/TP ACH Practo Pharmacy 3425458760",
+        "NEFT Dr-ICICI0000773-MEERA RAO-Apollo Pharmacy",
+        "IMPS-7495822594-VIKRAM RAO-YES BANK-Wellness Forever"
+      ],
+      "Entertainment & Subscriptions": [
+        "UPI-BookMyShow-sneha.503@oksbi-AXIS-739715501-UPI",
+        "UPI-INOX Movies-neha.882@paytm-SBI-345150572-UPI",
+        "paid for Spotify Premium membership"
+      ],
+      "Groceries": [
+        "ACH/TP ACH Blinkit 6577442871",
+        "grocery order from BigBasket",
+        "UPI-DMart-amit.494@ybl-SBI-542596187-UPI"
+      ],
+      "Utilities": [
+        "UPI/BSES Rajdhani/anita.540@ybl/Payment/ICICI",
+        "utility bill for Airtel Postpaid",
+        "Adani Electricity BANGALORE IN"
+      ],
+      "Income & Deposits": [
+        "received Interest Credit this month",
+        "POS Dividend Credit DELHI",
+        "Refund Credit credited to account"
+      ],
+      "Fees & Interest": [
+        "UPI/GST on Bank Charges/divya.430@okaxis/Payment/HDFC",
+        "penalty charge: GST on Bank Charges",
+        "ACH/TP ACH GST on Bank Charges 6992591729"
+      ],
+      "Shopping & Clothing": [
+        "NEFT Dr-KOTAK0000828-RITU RAO-Reliance Trends",
+        "IMPS-8263687505-NEHA VERMA-YES BANK-Westside",
+        "bought clothes online from Lifestyle Stores"
+      ],
+      "Personal Care": [
+        "ACH/TP ACH Lakme Salon 7385607636",
+        "NEFT Dr-KOTAK0000602-VIKAS PILLAI-Lakme Salon",
+        "UPI/YesMadam/rohan.548@okhdfcbank/Payment/IDFC"
+      ],
+      "Hospital & Medical": [
+        "Fortis Healthcare Ref#71159598",
+        "lab test fee at Narayana Health",
+        "doctor consultation fee at Columbia Asia"
+      ]
+    }
+  },
+  "deepam_indian_train": {
+    "dataset_name": "Deepam Indian Train (GitHub)",
+    "filename": "deepam_indian_train.csv",
+    "total_rows": 10000,
+    "missing_text_count": 0,
+    "missing_category_count": 0,
+    "exact_duplicates": 0,
+    "exact_duplicate_rate_pct": 0.0,
+    "normalized_duplicates": 9975,
+    "normalized_duplicate_rate_pct": 99.75,
+    "extremely_short_records": 0,
+    "char_length_stats": {
+      "min": 36,
+      "mean": 44.14,
+      "median": 44,
+      "max": 49
+    },
+    "word_count_stats": {
+      "min": 5,
+      "mean": 6.15,
+      "median": 6,
+      "max": 7
+    },
+    "category_distribution": {
+      "food": 2047,
+      "investment": 2032,
+      "shopping": 2027,
+      "emi": 1960,
+      "travel": 1934
+    },
+    "samples_per_category": {
+      "food": [
+        "Zomato order payment Ref000000 Amt48698 INR",
+        "Swiggy food delivery Ref000005 Amt15347 INR",
+        "Swiggy food delivery Ref000010 Amt45853 INR"
+      ],
+      "emi": [
+        "Credit card EMI payment Ref000001 Amt14728 INR",
+        "Personal loan EMI Ref000018 Amt23800 INR",
+        "Bike loan installment Ref000023 Amt41760 INR"
+      ],
+      "travel": [
+        "Uber ride payment Ref000002 Amt44448 INR",
+        "Ola cab booking Ref000012 Amt22159 INR",
+        "Train ticket booking IRCTC Ref000021 Amt5329 INR"
+      ],
+      "shopping": [
+        "Amazon online shopping Ref000003 Amt38798 INR",
+        "Supermarket shopping bill Ref000006 Amt1839 INR",
+        "Flipkart purchase Ref000007 Amt47025 INR"
+      ],
+      "investment": [
+        "Mutual fund SIP investment Ref000004 Amt2052 INR",
+        "PPF account contribution Ref000009 Amt18331 INR",
+        "Demat account funding Ref000011 Amt18310 INR"
+      ]
+    }
+  },
+  "deepam_indian_test": {
+    "dataset_name": "Deepam Indian Test (GitHub)",
+    "filename": "deepam_indian_test.csv",
+    "total_rows": 1000,
+    "missing_text_count": 0,
+    "missing_category_count": 0,
+    "exact_duplicates": 0,
+    "exact_duplicate_rate_pct": 0.0,
+    "normalized_duplicates": 975,
+    "normalized_duplicate_rate_pct": 97.5,
+    "extremely_short_records": 0,
+    "char_length_stats": {
+      "min": 36,
+      "mean": 44.21,
+      "median": 44,
+      "max": 49
+    },
+    "word_count_stats": {
+      "min": 5,
+      "mean": 6.19,
+      "median": 6,
+      "max": 7
+    },
+    "category_distribution": {
+      "travel": 221,
+      "investment": 207,
+      "emi": 195,
+      "food": 189,
+      "shopping": 188
+    },
+    "samples_per_category": {
+      "shopping": [
+        "Amazon online shopping Ref020000 Amt30247 INR",
+        "Amazon online shopping Ref020004 Amt43862 INR",
+        "Flipkart purchase Ref020010 Amt14416 INR"
+      ],
+      "travel": [
+        "Hotel stay payment Ref020001 Amt38676 INR",
+        "Hotel stay payment Ref020016 Amt39528 INR",
+        "Train ticket booking IRCTC Ref020019 Amt17919 INR"
+      ],
+      "emi": [
+        "Loan EMI auto debit Ref020002 Amt14205 INR",
+        "Personal loan EMI Ref020007 Amt30257 INR",
+        "Credit card EMI payment Ref020011 Amt39426 INR"
+      ],
+      "investment": [
+        "PPF account contribution Ref020003 Amt17287 INR",
+        "Crypto investment transfer Ref020006 Amt47194 INR",
+        "Mutual fund SIP investment Ref020009 Amt27080 INR"
+      ],
+      "food": [
+        "Swiggy food delivery Ref020005 Amt42176 INR",
+        "Bakery item purchase Ref020008 Amt26969 INR",
+        "Zomato order payment Ref020012 Amt6973 INR"
+      ]
+    }
+  }
+}

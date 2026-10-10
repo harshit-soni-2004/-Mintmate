@@ -58,7 +58,7 @@ def download_datasets():
         filepath = os.path.join(DATA_RAW_DIR, meta["filename"])
         if not os.path.exists(filepath):
             print(f"Downloading {key} from {meta['url']}...")
-            req = urllib.request.Request(meta["url"], headers={"User-Agent": "SpendSense-Research/1.0"})
+            req = urllib.request.Request(meta["url"], headers={"User-Agent": "Mintmate-Research/1.0"})
             with urllib.request.urlopen(req, timeout=60) as resp, open(filepath, "wb") as f:
                 f.write(resp.read())
             print(f"Saved to {filepath}")

@@ -1,0 +1,614 @@
+:host {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* ==========================================================================
+   Mascot Stage & Size Presets
+   ========================================================================== */
+.mascot-stage {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+
+  &.size-sm {
+    --mascot-width: 48px;
+    --mascot-height: 48px;
+    --coin-size: 16px;
+    --shadow-width: 28px;
+    --shadow-height: 6px;
+  }
+
+  &.size-md {
+    --mascot-width: 76px;
+    --mascot-height: 76px;
+    --coin-size: 22px;
+    --shadow-width: 46px;
+    --shadow-height: 8px;
+  }
+
+  &.size-lg {
+    --mascot-width: 96px;
+    --mascot-height: 96px;
+    --coin-size: 26px;
+    --shadow-width: 58px;
+    --shadow-height: 10px;
+  }
+
+  &.size-xl {
+    --mascot-width: 128px;
+    --mascot-height: 128px;
+    --coin-size: 32px;
+    --shadow-width: 76px;
+    --shadow-height: 12px;
+  }
+}
+
+/* ==========================================================================
+   Button Container / Trigger
+   ========================================================================== */
+.mascot-button {
+  position: relative;
+  width: var(--mascot-width, 76px);
+  height: var(--mascot-height, 76px);
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  perspective: 800px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  touch-action: manipulation;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:focus-visible {
+    outline: 3px solid rgba(16, 185, 129, 0.55);
+    outline-offset: 6px;
+    border-radius: var(--radius-full);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    filter: grayscale(0.4);
+  }
+}
+
+/* ==========================================================================
+   3D Scene & Perspective Wrapping
+   ========================================================================== */
+.mascot-3d-scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ==========================================================================
+   Robot Figure & Gentle Floating Motion
+   ========================================================================== */
+.robot-figure {
+  position: relative;
+  z-index: 4;
+  width: 100%;
+  height: 100%;
+  transform-origin: center bottom;
+  animation: gentleFloat 3.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  transition: filter 0.3s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  filter: drop-shadow(0 8px 18px rgba(18, 38, 29, 0.18));
+
+  .bot-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+  }
+}
+
+/* Floating ground shadow */
+.mascot-ground-shadow {
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--shadow-width, 46px);
+  height: var(--shadow-height, 8px);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(6, 78, 59, 0.32) 0%, rgba(0, 0, 0, 0) 72%);
+  animation: shadowBreathe 3.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   Fintech Element: Orbiting 3D ₹ Coin
+   ========================================================================== */
+.coin-orbit-track {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--mascot-width) * 1.35);
+  height: calc(var(--mascot-height) * 0.72);
+  margin-top: calc(var(--mascot-height) * -0.36);
+  margin-left: calc(var(--mascot-width) * -0.675);
+  pointer-events: none;
+  transform-style: preserve-3d;
+  animation: orbitTrack 6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+
+  &.paused {
+    animation-play-state: paused;
+  }
+}
+
+.floating-coin-wrap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.fintech-coin {
+  position: relative;
+  width: var(--coin-size, 22px);
+  height: var(--coin-size, 22px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fef08a 0%, #34d399 50%, #059669 100%);
+  border: 1.5px solid #a7f3d0;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.65), 0 2px 6px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+
+  .coin-glyph {
+    color: #ffffff;
+    font-size: calc(var(--coin-size) * 0.58);
+    font-weight: 800;
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(4, 47, 46, 0.6);
+  }
+
+  .coin-glint {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.7) 50%, transparent 60%);
+    animation: coinShimmer 3s ease-in-out infinite;
+  }
+}
+
+/* ==========================================================================
+   Expressive States & Animations
+   ========================================================================== */
+
+/* 1. Blink Animation (when .is-blinking) */
+.robot-figure.is-blinking .eyes-container {
+  transform: scaleY(0.1);
+  transform-origin: center 44px;
+}
+
+/* 2. Thinking State */
+.state-thinking {
+  .robot-figure {
+    animation: gentleFloat 4.2s ease-in-out infinite;
+    filter: drop-shadow(0 8px 22px rgba(16, 185, 129, 0.38));
+  }
+
+  .orbital-halo {
+    animation: haloThinkingPulse 2s ease-in-out infinite alternate;
+  }
+
+  .think-dot {
+    animation: dotPulse 1.2s ease-in-out infinite;
+
+    &.dot-1 {
+      animation-delay: 0s;
+    }
+    &.dot-2 {
+      animation-delay: 0.25s;
+    }
+    &.dot-3 {
+      animation-delay: 0.5s;
+    }
+  }
+}
+
+/* 3. Success State */
+.state-success {
+  .robot-figure {
+    animation: successBounce 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 12px 28px rgba(16, 185, 129, 0.55));
+  }
+
+  .celebration-particles {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    pointer-events: none;
+    z-index: 12;
+
+    .particle {
+      position: absolute;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #34d399;
+      text-shadow: 0 0 8px #10b981;
+      animation: particleBurst 1.8s ease-out forwards;
+
+      &.p-1 { --tx: -28px; --ty: -34px; animation-delay: 0.05s; }
+      &.p-2 { --tx: 30px; --ty: -32px; animation-delay: 0.12s; color: #fef08a; }
+      &.p-3 { --tx: -32px; --ty: 12px; animation-delay: 0.18s; }
+      &.p-4 { --tx: 34px; --ty: 16px; animation-delay: 0.22s; color: #5eead4; }
+      &.p-5 { --tx: 0px; --ty: -42px; animation-delay: 0.26s; }
+    }
+  }
+}
+
+/* 4. Alert State */
+.state-alert {
+  .robot-figure {
+    animation: alertWiggle 1.5s ease-in-out infinite;
+    filter: drop-shadow(0 8px 24px rgba(245, 158, 11, 0.4));
+  }
+
+  .beacon-bulb {
+    fill: #f59e0b;
+  }
+}
+
+/* 5. Chat Open State */
+.state-chat_open {
+  .robot-figure {
+    transform: scale(1.04);
+    filter: drop-shadow(0 10px 24px rgba(16, 185, 129, 0.4));
+  }
+
+  .orbital-halo {
+    opacity: 1;
+    stroke-width: 2.8;
+  }
+}
+
+/* ==========================================================================
+   Hover State
+   ========================================================================== */
+.mascot-stage:hover:not(.is-disabled),
+.mascot-stage.is-hovered:not(.is-disabled) {
+  .robot-figure {
+    transform: scale(1.06) translateY(-4px);
+    filter: drop-shadow(0 14px 26px rgba(16, 185, 129, 0.42));
+  }
+
+  .mascot-ground-shadow {
+    transform: translateX(-50%) scale(0.82);
+    opacity: 0.25;
+  }
+
+  .mascot-tooltip {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .coin-orbit-track:not(.paused) {
+    animation-duration: 4.2s; /* orbits slightly faster on hover */
+  }
+
+  .orbital-halo {
+    opacity: 1;
+    stroke-width: 2.8;
+  }
+}
+
+/* ==========================================================================
+   Click / Activation Sequence Animation
+   ========================================================================== */
+.mascot-stage.is-activating {
+  .robot-figure {
+    animation: activationPunch 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  .activation-ripple {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60px;
+    height: 60px;
+    margin-top: -30px;
+    margin-left: -30px;
+    border-radius: 50%;
+    border: 2px solid #34d399;
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.6);
+    pointer-events: none;
+    z-index: 10;
+    animation: rippleExpand 0.34s ease-out forwards;
+  }
+}
+
+/* ==========================================================================
+   Speech Tooltip
+   ========================================================================== */
+.mascot-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 50%;
+  transform: translateX(50%) translateY(6px);
+  padding: 0.42rem 0.85rem;
+  background: var(--surface-elevated, #ffffff);
+  color: var(--text-primary, #13221b);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  border-radius: var(--radius-sm, 0.65rem);
+  border: 1px solid var(--border, #d2ded7);
+  box-shadow: var(--shadow, 0 12px 32px rgba(18, 38, 29, 0.12));
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 20;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    margin-left: -4px;
+    width: 8px;
+    height: 8px;
+    background: var(--surface-elevated, #ffffff);
+    border-right: 1px solid var(--border, #d2ded7);
+    border-bottom: 1px solid var(--border, #d2ded7);
+    transform: rotate(45deg);
+  }
+}
+
+/* ==========================================================================
+   Dark Theme Adaptations
+   ========================================================================== */
+:host-context([data-theme="dark"]) {
+  .robot-figure {
+    filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 16px rgba(139, 227, 90, 0.25));
+  }
+
+  .mascot-ground-shadow {
+    background: radial-gradient(ellipse at center, rgba(139, 227, 90, 0.22) 0%, rgba(0, 0, 0, 0) 70%);
+  }
+
+  .mascot-tooltip {
+    background: #182824;
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.65);
+
+    &::after {
+      background: #182824;
+      border-right-color: rgba(255, 255, 255, 0.1);
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  .mascot-stage:hover:not(.is-disabled) .robot-figure {
+    filter: drop-shadow(0 14px 30px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 24px rgba(139, 227, 90, 0.45));
+  }
+}
+
+/* ==========================================================================
+   Keyframes (GPU Accelerated Transforms)
+   ========================================================================== */
+
+/* 1. Gentle Floating: 0 -> -6px -> 0, slight rotateZ -1deg to 1deg */
+@keyframes gentleFloat {
+  0% {
+    transform: translateY(0px) rotateZ(0deg);
+  }
+  25% {
+    transform: translateY(-3px) rotateZ(-1deg);
+  }
+  50% {
+    transform: translateY(-6px) rotateZ(0deg);
+  }
+  75% {
+    transform: translateY(-3px) rotateZ(1deg);
+  }
+  100% {
+    transform: translateY(0px) rotateZ(0deg);
+  }
+}
+
+/* 2. Ground Shadow Breathe: Expands when bot is near ground, shrinks when floating high */
+@keyframes shadowBreathe {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateX(-50%) scale(0.74);
+    opacity: 0.18;
+  }
+}
+
+/* 3. Orbit Track: True 3D movement traveling in FRONT (z: 10) and BEHIND (z: 1) the robot */
+@keyframes orbitTrack {
+  0% {
+    transform: translate(28px, 0px) scale(1.05);
+    z-index: 10;
+  }
+  25% {
+    transform: translate(0px, 14px) scale(1.12);
+    z-index: 10;
+  }
+  50% {
+    transform: translate(-28px, 0px) scale(0.95);
+    z-index: 10;
+  }
+  50.01% {
+    z-index: 1; /* flip behind robot figure */
+  }
+  75% {
+    transform: translate(0px, -14px) scale(0.8);
+    z-index: 1;
+  }
+  99.99% {
+    z-index: 1;
+  }
+  100% {
+    transform: translate(28px, 0px) scale(1.05);
+    z-index: 10; /* flip back to front */
+  }
+}
+
+/* 4. Coin Shimmer */
+@keyframes coinShimmer {
+  0%, 100% {
+    transform: translateX(-120%);
+  }
+  40%, 60% {
+    transform: translateX(120%);
+  }
+}
+
+/* 5. Activation Sequence: Compress -> Bounce -> Settle */
+@keyframes activationPunch {
+  0% {
+    transform: scale(1, 1) translateY(0);
+  }
+  30% {
+    transform: scale(1.08, 0.9) translateY(2px);
+  }
+  65% {
+    transform: scale(1.04, 1.08) translateY(-8px);
+  }
+  100% {
+    transform: scale(1, 1) translateY(0);
+  }
+}
+
+/* 6. Ripple Expand */
+@keyframes rippleExpand {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* 7. Thinking Dots Pulse */
+@keyframes dotPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* 8. Halo Pulse */
+@keyframes haloThinkingPulse {
+  0% {
+    opacity: 0.4;
+    stroke-width: 1.8;
+  }
+  100% {
+    opacity: 1;
+    stroke-width: 3.2;
+  }
+}
+
+/* 9. Success Bounce */
+@keyframes successBounce {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    transform: translateY(-12px) scale(1.12);
+  }
+  65% {
+    transform: translateY(-3px) scale(1.02);
+  }
+  85% {
+    transform: translateY(-6px) scale(1.05);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 10. Particle Burst */
+@keyframes particleBurst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(0.6);
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(1.3);
+  }
+}
+
+/* 11. Alert Wiggle */
+@keyframes alertWiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-3deg);
+  }
+  75% {
+    transform: rotate(3deg);
+  }
+}
+
+/* ==========================================================================
+   Prefers-Reduced-Motion (Strict Accessibility Compliance)
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .robot-figure,
+  .mascot-ground-shadow,
+  .coin-orbit-track,
+  .orbital-halo,
+  .coin-glint,
+  .think-dot,
+  .particle,
+  .activation-ripple {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .mascot-button {
+    perspective: none !important;
+    transform: none !important;
+    transition: opacity 0.15s ease !important;
+  }
+
+  .mascot-3d-scene {
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .mascot-stage:hover:not(.is-disabled) .robot-figure,
+  .mascot-stage.is-hovered:not(.is-disabled) .robot-figure {
+    transform: none !important;
+  }
+}

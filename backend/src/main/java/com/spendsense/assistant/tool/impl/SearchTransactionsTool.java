@@ -104,10 +104,19 @@ public class SearchTransactionsTool implements FinancialTool<SearchTransactionsT
                 pageResult.meta().totalPages()
         );
 
-        String summaryText = String.format("Found %d matching transactions (showing page %d of %d).",
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("Found %d matching transactions (showing page %d of %d).",
                 pageResult.meta().totalElements(),
                 pageResult.meta().page() + 1,
-                Math.max(1, pageResult.meta().totalPages()));
+                Math.max(1, pageResult.meta().totalPages())));
+        if (!sanitizedItems.isEmpty()) {
+            sb.append(" Transactions:");
+            for (int i = 0; i < Math.min(5, sanitizedItems.size()); i++) {
+                SanitizedTransactionItem item = sanitizedItems.get(i);
+                sb.append(String.format(" %s: amount ₹%s (%s);", item.merchant(), item.amount(), item.category()));
+            }
+        }
+        String summaryText = sb.toString();
 
         ToolResponseEnvelope<SearchResult> envelope = ToolResponseEnvelope.of(
                 result,

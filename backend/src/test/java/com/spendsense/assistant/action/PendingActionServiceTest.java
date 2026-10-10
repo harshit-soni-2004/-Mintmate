@@ -194,4 +194,67 @@ class PendingActionServiceTest {
                 eq(actionId), eq(principal.getUserId()), eq(PendingActionStatus.FAILED), eq("Goal target date must be in the future")
         );
     }
+
+    @Test
+    @DisplayName("State Machine: CANCELLED action cannot be confirmed")
+    void cancelledAction_cannotBeConfirmed() {
+        UUID actionId = UUID.randomUUID();
+        PendingAction action = new PendingAction(
+                testUser,
+                "update_transaction_category",
+                "{}",
+                "Change to Food",
+                Instant.now().plus(10, ChronoUnit.MINUTES)
+        );
+        action.setStatus(PendingActionStatus.CANCELLED);
+
+        when(pendingActionRepository.findByIdAndUser_Id(actionId, principal.getUserId()))
+                .thenReturn(Optional.of(action));
+
+        assertThatThrownBy(() -> service.confirmAndExecute(actionId))
+                .isInstanceOf(ApiException.class)
+                .hasFieldOrPropertyWithValue("status", HttpStatus.CONFLICT);
+    }
+
+    @Test
+    @DisplayName("State Machine: EXECUTED action cannot be re-executed")
+    void executedAction_cannotBeReConfirmed() {
+        UUID actionId = UUID.randomUUID();
+        PendingAction action = new PendingAction(
+                testUser,
+                "update_transaction_category",
+                "{}",
+                "Change to Food",
+                Instant.now().plus(10, ChronoUnit.MINUTES)
+        );
+        action.setStatus(PendingActionStatus.EXECUTED);
+
+        when(pendingActionRepository.findByIdAndUser_Id(actionId, principal.getUserId()))
+                .thenReturn(Optional.of(action));
+
+        assertThatThrownBy(() -> service.confirmAndExecute(actionId))
+                .isInstanceOf(ApiException.class)
+                .hasFieldOrPropertyWithValue("status", HttpStatus.CONFLICT);
+    }
+
+    @Test
+    @DisplayName("State Machine: Non-pending action cannot be cancelled")
+    void nonPendingAction_cannotBeCancelled() {
+        UUID actionId = UUID.randomUUID();
+        PendingAction action = new PendingAction(
+                testUser,
+                "update_transaction_category",
+                "{}",
+                "Change to Food",
+                Instant.now().plus(10, ChronoUnit.MINUTES)
+        );
+        action.setStatus(PendingActionStatus.EXECUTED);
+
+        when(pendingActionRepository.findByIdAndUser_Id(actionId, principal.getUserId()))
+                .thenReturn(Optional.of(action));
+
+        assertThatThrownBy(() -> service.cancelAction(actionId))
+                .isInstanceOf(ApiException.class)
+                .hasFieldOrPropertyWithValue("status", HttpStatus.CONFLICT);
+    }
 }
