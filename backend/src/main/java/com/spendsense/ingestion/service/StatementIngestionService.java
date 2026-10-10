@@ -8,6 +8,8 @@ import com.spendsense.categorization.CategorizationService;
 import com.spendsense.categorization.CategorizationSource;
 import com.spendsense.categorization.ConfidenceLevel;
 import com.spendsense.categorization.model.CategorizationCandidate;
+import com.spendsense.categorization.TransactionNormalizer;
+import com.spendsense.categorization.policy.CategorizationConfidencePolicy;
 import com.spendsense.common.exception.ApiException;
 import com.spendsense.account.FinancialAccount;
 import com.spendsense.account.FinancialAccountRepository;
@@ -84,6 +86,8 @@ public class StatementIngestionService {
     private final FinancialAccountService accountService;
     private final FinancialAccountRepository accountRepository;
     private final TransferMatchingService transferMatchingService;
+    private final TransactionNormalizer transactionNormalizer;
+    private final CategorizationConfidencePolicy confidencePolicy;
 
     public StatementIngestionService(
             FinancialDocumentRepository documentRepository,
@@ -99,7 +103,27 @@ public class StatementIngestionService {
     ) {
         this(documentRepository, documentStorage, extractors, candidateValidator, deduplicationService,
                 settlementResolutionService, categorizationService, transactionRepository, userRepository, currentUser,
-                null, null, null);
+                null, null, null, null, null);
+    }
+
+    public StatementIngestionService(
+            FinancialDocumentRepository documentRepository,
+            DocumentStorage documentStorage,
+            List<DocumentExtractor> extractors,
+            CandidateValidator candidateValidator,
+            DeduplicationService deduplicationService,
+            SettlementResolutionService settlementResolutionService,
+            CategorizationService categorizationService,
+            TransactionRepository transactionRepository,
+            UserRepository userRepository,
+            CurrentUser currentUser,
+            FinancialAccountService accountService,
+            FinancialAccountRepository accountRepository,
+            TransferMatchingService transferMatchingService
+    ) {
+        this(documentRepository, documentStorage, extractors, candidateValidator, deduplicationService,
+                settlementResolutionService, categorizationService, transactionRepository, userRepository, currentUser,
+                accountService, accountRepository, transferMatchingService, null, null);
     }
 
     @Autowired
@@ -116,7 +140,9 @@ public class StatementIngestionService {
             CurrentUser currentUser,
             @Autowired(required = false) FinancialAccountService accountService,
             @Autowired(required = false) FinancialAccountRepository accountRepository,
-            @Autowired(required = false) TransferMatchingService transferMatchingService
+            @Autowired(required = false) TransferMatchingService transferMatchingService,
+            @Autowired(required = false) TransactionNormalizer transactionNormalizer,
+            @Autowired(required = false) CategorizationConfidencePolicy confidencePolicy
     ) {
         this.documentRepository = documentRepository;
         this.documentStorage = documentStorage;
@@ -131,6 +157,8 @@ public class StatementIngestionService {
         this.accountService = accountService;
         this.accountRepository = accountRepository;
         this.transferMatchingService = transferMatchingService;
+        this.transactionNormalizer = transactionNormalizer != null ? transactionNormalizer : new TransactionNormalizer();
+        this.confidencePolicy = confidencePolicy != null ? confidencePolicy : new CategorizationConfidencePolicy(0.85, 0.60);
     }
 
     /**
@@ -356,12 +384,13 @@ public class StatementIngestionService {
                     );
                     CategorizationResult catResult = categorizationService.categorize(catReq);
                     if (catResult != null) {
-                        assignedCategory = catResult.category();
                         confidence = BigDecimal.valueOf(catResult.confidence());
                         confidenceLevel = catResult.confidenceLevel();
                         source = catResult.source();
-                        requiresReview = requiresReview || catResult.requiresUserConfirmation();
-                        predictedCategory = catResult.category();
+                        predictedCategory = catResult.predictedCategory();
+                        boolean isLow = confidencePolicy.isLowConfidence(confidenceLevel);
+                        assignedCategory = isLow ? TransactionCategory.OTHER : catResult.category();
+                        requiresReview = requiresReview || catResult.requiresUserConfirmation() || confidencePolicy.requiresConfirmation(confidenceLevel);
                         if (catResult.alternatives() != null && !catResult.alternatives().isEmpty()) {
                             alternatives = serializeAlternatives(catResult.alternatives());
                         }
@@ -460,16 +489,20 @@ public class StatementIngestionService {
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Authentication required"));
     }
 
-    private static String cleanMerchant(String rawMerchant, String rawDescription) {
+    private String cleanMerchant(String rawMerchant, String rawDescription) {
         if (rawMerchant != null && !rawMerchant.isBlank()) {
             String clean = rawMerchant.trim();
-            return clean.length() > 120 ? clean.substring(0, 120) : clean;
+            if (transactionNormalizer == null || !transactionNormalizer.isRawBankNarration(clean)) {
+                return clean.length() > 120 ? clean.substring(0, 120) : clean;
+            }
         }
-        if (rawDescription != null && !rawDescription.isBlank()) {
-            String clean = rawDescription.trim();
-            return clean.length() > 120 ? clean.substring(0, 120) : clean;
+        String display = transactionNormalizer != null
+                ? transactionNormalizer.deriveDisplayMerchant(rawMerchant, rawDescription)
+                : null;
+        if (display == null || display.isBlank() || "Unknown merchant".equalsIgnoreCase(display) || "Unknown".equalsIgnoreCase(display)) {
+            return "Unknown merchant";
         }
-        return "Unknown";
+        return display.length() > 120 ? display.substring(0, 120) : display;
     }
 
     private static String cleanDescription(String rawDescription) {

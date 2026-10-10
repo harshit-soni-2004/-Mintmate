@@ -241,7 +241,7 @@ public class FinancialAiAccuracyAndReliabilityRegressionTest {
                 TransactionCategory.TRAVEL, new BigDecimal("4500.00"), new BigDecimal("100.0"),
                 null, null, null, null, 3
         );
-        when(analyticsService.getCategoryBreakdown(start, end))
+        when(analyticsService.getCategoryBreakdown(any(), any()))
                 .thenReturn(new CategoryBreakdownResponse(new BigDecimal("4500.00"), List.of(travelAnalysis), TransactionCategory.TRAVEL));
 
         AssistantChatRequest request = new AssistantChatRequest("How much did I spend in travelling and petrol?", List.of());

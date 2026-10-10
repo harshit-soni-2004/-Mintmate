@@ -1,6 +1,7 @@
 import { CurrencyPipe, DecimalPipe, NgClass } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import {
   AggregationPeriod,
   FinancialInsight,
@@ -43,7 +44,7 @@ const CATEGORY_COLORS: Record<TransactionCategory, string> = {
 @Component({
   selector: 'app-insights',
   standalone: true,
-  imports: [ReactiveFormsModule, CurrencyPipe, DecimalPipe, NgClass],
+  imports: [ReactiveFormsModule, CurrencyPipe, DecimalPipe, NgClass, RouterLink],
   templateUrl: './insights.component.html',
   styleUrl: './insights.component.scss',
 })
@@ -76,6 +77,8 @@ export class InsightsComponent implements OnInit {
     amount: number;
     percentage: number;
     color: string;
+    transactionCount?: number;
+    requiresReviewCount?: number;
   }> = [];
 
   // Progressive disclosure toggle
@@ -248,6 +251,8 @@ export class InsightsComponent implements OnInit {
       amount: number;
       percentage: number;
       color: string;
+      transactionCount?: number;
+      requiresReviewCount?: number;
     }> = [];
 
     if (sorted.length <= 5) {
@@ -257,6 +262,8 @@ export class InsightsComponent implements OnInit {
         amount: c.amount,
         percentage: c.percentage,
         color: this.getCategoryColor(c.category as TransactionCategory),
+        transactionCount: c.transactionCount,
+        requiresReviewCount: c.requiresReviewCount,
       }));
     } else {
       const top4 = sorted.slice(0, 4);
@@ -265,6 +272,8 @@ export class InsightsComponent implements OnInit {
       const otherPct = Number(
         remaining.reduce((sum, c) => sum + c.percentage, 0).toFixed(1)
       );
+      const otherReviewCount = remaining.reduce((sum, c) => sum + (c.requiresReviewCount || 0), 0);
+      const otherTxCount = remaining.reduce((sum, c) => sum + (c.transactionCount || 0), 0);
 
       displayList = top4.map((c) => ({
         category: c.category,
@@ -272,6 +281,8 @@ export class InsightsComponent implements OnInit {
         amount: c.amount,
         percentage: c.percentage,
         color: this.getCategoryColor(c.category as TransactionCategory),
+        transactionCount: c.transactionCount,
+        requiresReviewCount: c.requiresReviewCount,
       }));
 
       if (otherAmount > 0) {
@@ -281,6 +292,8 @@ export class InsightsComponent implements OnInit {
           amount: otherAmount,
           percentage: otherPct,
           color: '#73808c',
+          transactionCount: otherTxCount,
+          requiresReviewCount: otherReviewCount,
         });
       }
     }

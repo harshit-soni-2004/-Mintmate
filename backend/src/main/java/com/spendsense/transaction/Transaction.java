@@ -250,6 +250,7 @@ public class Transaction {
     public User getUser() { return user; }
     public BigDecimal getAmount() { return amount; }
     public String getMerchant() { return merchant; }
+    public void setMerchant(String merchant) { this.merchant = merchant; }
     public String getDescription() { return description; }
     public TransactionCategory getCategory() { return category; }
     public TransactionType getTransactionType() { return transactionType; }

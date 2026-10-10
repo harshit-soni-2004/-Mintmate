@@ -56,7 +56,7 @@ spendsense:
   storage:
     local-dir: ${SPENDSENSE_STORAGE_LOCAL_DIR:./data/documents}
   assistant:
-    provider: ${ASSISTANT_PROVIDER:mock}
+    provider: ${ASSISTANT_PROVIDER:gemini}
     model: ${ASSISTANT_MODEL:gemini-2.5-flash}
     api-key: ${GEMINI_API_KEY:}
     base-url: ${ASSISTANT_BASE_URL:https://generativelanguage.googleapis.com}

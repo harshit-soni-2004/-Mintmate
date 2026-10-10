@@ -73,6 +73,47 @@
     </div>
   } @else if (overview) {
     <!-- ============================================== -->
+    <!-- CATEGORIZATION QUALITY & CONFIDENCE HEALTH     -->
+    <!-- ============================================== -->
+    @if (overview.categories && (overview.categories.totalTransactions || 0) > 0) {
+      <section class="categorization-health-card" aria-label="Categorization quality and review status">
+        <div class="health-meta-group">
+          <div class="health-header-badge">
+            <span class="health-sparkle">✦</span>
+            <span class="health-badge-text">Categorization Health</span>
+          </div>
+          <div class="health-stats-row">
+            <span class="stat-auto">
+              <strong>{{ overview.categories.autoClassifiedPercentage || 0 }}%</strong> Confidently auto-classified
+              <span class="stat-count">({{ overview.categories.autoClassifiedCount || 0 }} of {{ overview.categories.totalTransactions }} transactions)</span>
+            </span>
+            <span class="stat-divider">•</span>
+            <span class="stat-review">
+              <strong>{{ overview.categories.requiresReviewPercentage || 0 }}%</strong> Flagged for review
+              <span class="stat-count">({{ overview.categories.requiresReviewCount || 0 }} transactions)</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="health-progress-wrap" role="progressbar" [attr.aria-valuenow]="overview.categories.autoClassifiedPercentage" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-bar-auto" [style.width.%]="overview.categories.autoClassifiedPercentage || 0" title="Confidently Auto-Classified"></div>
+          <div class="progress-bar-review" [style.width.%]="overview.categories.requiresReviewPercentage || 0" title="Flagged for Review"></div>
+        </div>
+
+        @if ((overview.categories.requiresReviewCount || 0) > 0) {
+          <div class="health-action-row">
+            <p class="health-notice">
+              Uncertain & low-confidence transactions are isolated in <strong>Other</strong> to prevent distorted analytics until confirmed.
+            </p>
+            <a routerLink="/app/transactions" [queryParams]="{ needsReview: 'true' }" class="btn-review-link">
+              Review {{ overview.categories.requiresReviewCount }} transactions →
+            </a>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- ============================================== -->
     <!-- FIRST VIEW: PRIORITY INSIGHTS HERO GRID        -->
     <!-- ============================================== -->
     <div class="priority-insights-grid">
@@ -199,6 +240,16 @@
                 <div class="cat-identity">
                   <span class="cat-bullet" [style.background-color]="cat.color"></span>
                   <span class="cat-title">{{ cat.label }}</span>
+                  @if (cat.requiresReviewCount && cat.requiresReviewCount > 0) {
+                    <a
+                      routerLink="/app/transactions"
+                      [queryParams]="{ needsReview: 'true', category: cat.category }"
+                      class="cat-review-pill"
+                      [title]="cat.requiresReviewCount + ' transactions need review'"
+                    >
+                      {{ cat.requiresReviewCount }} need review
+                    </a>
+                  }
                 </div>
                 <div class="cat-values">
                   <span class="cat-pct">{{ cat.percentage }}%</span>
@@ -345,6 +396,7 @@
                   <th class="text-right">Spent</th>
                   <th class="text-right">% of Total</th>
                   <th class="text-right">Change vs Prev</th>
+                  <th class="text-right">Review Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -362,6 +414,20 @@
                       <span class="change-tag" [ngClass]="cat.direction.toLowerCase()">
                         {{ cat.percentageChange >= 0 ? '+' : '' }}{{ cat.percentageChange }}%
                       </span>
+                    </td>
+                    <td class="text-right">
+                      @if (cat.requiresReviewCount && cat.requiresReviewCount > 0) {
+                        <a
+                          routerLink="/app/transactions"
+                          [queryParams]="{ needsReview: 'true', category: cat.category }"
+                          class="table-review-link"
+                          title="Click to review flagged transactions"
+                        >
+                          <span class="review-tag">{{ cat.requiresReviewCount }} flagged</span>
+                        </a>
+                      } @else {
+                        <span class="verified-tag">Auto-classified</span>
+                      }
                     </td>
                   </tr>
                 }

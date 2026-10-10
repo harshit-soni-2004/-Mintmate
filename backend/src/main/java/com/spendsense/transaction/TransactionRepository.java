@@ -136,4 +136,40 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
             @Param("direction") TransferDirection direction,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT t FROM Transaction t WHERE t.transactionDate >= :fromDate AND t.transactionDate <= :toDate ORDER BY t.transactionDate ASC, t.createdAt ASC")
+    List<Transaction> findByTransactionDateBetween(
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT t FROM Transaction t WHERE t.transactionDate >= :fromDate AND t.transactionDate <= :toDate ORDER BY t.transactionDate ASC, t.createdAt ASC")
+    List<Transaction> findByTransactionDateBetweenOrderByTransactionDateAsc(
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT COUNT(t.id) FROM Transaction t " +
+           "WHERE t.user.id = :userId " +
+           "AND t.transactionDate >= :fromDate AND t.transactionDate <= :toDate")
+    long countTotalByUserIdAndDateBetween(
+            @Param("userId") UUID userId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT COUNT(t.id) FROM Transaction t " +
+           "WHERE t.user.id = :userId AND t.requiresReview = true " +
+           "AND t.transactionDate >= :fromDate AND t.transactionDate <= :toDate")
+    long countRequiresReviewByUserIdAndDateBetween(
+            @Param("userId") UUID userId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT t.category, COUNT(t.id), COALESCE(SUM(t.amount), 0) FROM Transaction t " +
+           "WHERE t.user.id = :userId AND t.transactionType = :type AND t.requiresReview = true " +
+           "AND t.transactionDate >= :fromDate AND t.transactionDate <= :toDate " +
+           "GROUP BY t.category")
+    List<Object[]> findRequiresReviewCategorySpending(
+            @Param("userId") UUID userId,
+            @Param("type") TransactionType type,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
 }

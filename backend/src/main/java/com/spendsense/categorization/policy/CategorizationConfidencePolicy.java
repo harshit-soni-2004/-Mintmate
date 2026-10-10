@@ -54,6 +54,13 @@ public class CategorizationConfidencePolicy {
         return level != ConfidenceLevel.HIGH;
     }
 
+    /**
+     * Returns true if the prediction confidence is low or none, precluding persistence as a named category.
+     */
+    public boolean isLowConfidence(ConfidenceLevel level) {
+        return level == null || level == ConfidenceLevel.LOW || level == ConfidenceLevel.NONE;
+    }
+
     public double getHighThreshold() {
         return highThreshold;
     }

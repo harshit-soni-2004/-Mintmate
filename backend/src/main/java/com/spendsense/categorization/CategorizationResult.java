@@ -12,6 +12,7 @@ import java.util.List;
  */
 public record CategorizationResult(
         TransactionCategory category,
+        TransactionCategory predictedCategory,
         double confidence,
         ConfidenceLevel confidenceLevel,
         CategorizationSource source,
@@ -24,6 +25,28 @@ public record CategorizationResult(
 ) {
     public CategorizationResult {
         alternatives = alternatives != null ? Collections.unmodifiableList(alternatives) : Collections.emptyList();
+        if (predictedCategory == null) {
+            predictedCategory = category;
+        }
+    }
+
+    /**
+     * Backwards-compatible 10-parameter constructor where assigned and predicted category are identical.
+     */
+    public CategorizationResult(
+            TransactionCategory category,
+            double confidence,
+            ConfidenceLevel confidenceLevel,
+            CategorizationSource source,
+            List<CategorizationCandidate> alternatives,
+            String modelVersion,
+            boolean personalizationApplied,
+            boolean requiresUserConfirmation,
+            String rationale,
+            String normalizedMerchant
+    ) {
+        this(category, category, confidence, confidenceLevel, source, alternatives, modelVersion,
+                personalizationApplied, requiresUserConfirmation, rationale, normalizedMerchant);
     }
 
     public static CategorizationResult fromRule(
@@ -35,6 +58,7 @@ public record CategorizationResult(
             String normalizedMerchant
     ) {
         return new CategorizationResult(
+                category,
                 category,
                 confidence,
                 confidenceLevel,
@@ -59,6 +83,7 @@ public record CategorizationResult(
     ) {
         return new CategorizationResult(
                 category,
+                category,
                 confidence,
                 confidenceLevel,
                 CategorizationSource.USER_MEMORY,
@@ -67,6 +92,33 @@ public record CategorizationResult(
                 true,
                 !isStrong,
                 explanation,
+                normalizedMerchant
+        );
+    }
+
+    public static CategorizationResult fromMl(
+            TransactionCategory assignedCategory,
+            TransactionCategory predictedCategory,
+            double confidence,
+            ConfidenceLevel confidenceLevel,
+            List<CategorizationCandidate> alternatives,
+            String modelVersion,
+            boolean personalizationApplied,
+            boolean requiresUserConfirmation,
+            String rationale,
+            String normalizedMerchant
+    ) {
+        return new CategorizationResult(
+                assignedCategory,
+                predictedCategory,
+                confidence,
+                confidenceLevel,
+                CategorizationSource.ML,
+                alternatives,
+                modelVersion,
+                personalizationApplied,
+                requiresUserConfirmation,
+                rationale,
                 normalizedMerchant
         );
     }
@@ -83,6 +135,7 @@ public record CategorizationResult(
             String normalizedMerchant
     ) {
         return new CategorizationResult(
+                category,
                 category,
                 confidence,
                 confidenceLevel,
@@ -102,6 +155,7 @@ public record CategorizationResult(
             String normalizedMerchant
     ) {
         return new CategorizationResult(
+                category,
                 category,
                 0.0,
                 ConfidenceLevel.NONE,

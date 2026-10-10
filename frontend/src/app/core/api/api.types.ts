@@ -333,12 +333,19 @@ export interface CategoryAnalysis {
   percentageChange: number;
   direction: TrendDirection;
   transactionCount: number;
+  requiresReviewCount?: number;
+  requiresReviewAmount?: number;
 }
 
 export interface CategoryBreakdown {
   totalExpenses: number;
   categories: CategoryAnalysis[];
   topCategory?: TransactionCategory | null;
+  totalTransactions?: number;
+  autoClassifiedCount?: number;
+  requiresReviewCount?: number;
+  autoClassifiedPercentage?: number;
+  requiresReviewPercentage?: number;
 }
 
 export interface SpendingTrendPoint {

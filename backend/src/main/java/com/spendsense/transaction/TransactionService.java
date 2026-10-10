@@ -9,6 +9,7 @@ import com.spendsense.categorization.CategorizationResult;
 import com.spendsense.categorization.CategorizationService;
 import com.spendsense.categorization.CategorizationSource;
 import com.spendsense.categorization.ConfidenceLevel;
+import com.spendsense.categorization.policy.CategorizationConfidencePolicy;
 import com.spendsense.common.api.PageMeta;
 import com.spendsense.common.exception.ApiException;
 import com.spendsense.security.CurrentUser;
@@ -46,9 +47,20 @@ public class TransactionService {
     private final CurrentUser currentUser;
     private final CategorizationService categorizationService;
     private final CategorizationFeedbackService categorizationFeedbackService;
+    private final CategorizationConfidencePolicy confidencePolicy;
 
     public TransactionService(TransactionRepository transactionRepository, UserRepository userRepository, CurrentUser currentUser) {
-        this(transactionRepository, userRepository, currentUser, null, null);
+        this(transactionRepository, userRepository, currentUser, null, null, null);
+    }
+
+    public TransactionService(
+            TransactionRepository transactionRepository,
+            UserRepository userRepository,
+            CurrentUser currentUser,
+            CategorizationService categorizationService,
+            CategorizationFeedbackService categorizationFeedbackService
+    ) {
+        this(transactionRepository, userRepository, currentUser, categorizationService, categorizationFeedbackService, null);
     }
 
     @Autowired
@@ -57,13 +69,15 @@ public class TransactionService {
             UserRepository userRepository,
             CurrentUser currentUser,
             @Autowired(required = false) CategorizationService categorizationService,
-            @Autowired(required = false) CategorizationFeedbackService categorizationFeedbackService
+            @Autowired(required = false) CategorizationFeedbackService categorizationFeedbackService,
+            @Autowired(required = false) CategorizationConfidencePolicy confidencePolicy
     ) {
         this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
         this.currentUser = currentUser;
         this.categorizationService = categorizationService;
         this.categorizationFeedbackService = categorizationFeedbackService;
+        this.confidencePolicy = confidencePolicy != null ? confidencePolicy : new CategorizationConfidencePolicy(0.85, 0.60);
     }
 
     @Transactional
@@ -99,12 +113,17 @@ public class TransactionService {
                         request.transactionDate()
                 );
                 CategorizationResult catResult = categorizationService.categorize(catReq);
-                assignedCategory = catResult.category();
                 confidence = catResult.confidence();
                 confidenceLevel = catResult.confidenceLevel();
                 source = catResult.source();
-                requiresReview = catResult.requiresUserConfirmation();
-                predictedCategory = catResult.category();
+                predictedCategory = catResult.predictedCategory();
+                boolean isLow = confidencePolicy != null
+                        ? confidencePolicy.isLowConfidence(confidenceLevel)
+                        : (confidenceLevel == null || confidenceLevel == ConfidenceLevel.LOW || confidenceLevel == ConfidenceLevel.NONE);
+                assignedCategory = isLow ? TransactionCategory.OTHER : catResult.category();
+                requiresReview = catResult.requiresUserConfirmation()
+                        || isLow
+                        || (confidencePolicy != null && confidencePolicy.requiresConfirmation(confidenceLevel));
                 if (catResult.alternatives() != null) {
                     alternatives = catResult.alternatives().stream()
                             .limit(3)
