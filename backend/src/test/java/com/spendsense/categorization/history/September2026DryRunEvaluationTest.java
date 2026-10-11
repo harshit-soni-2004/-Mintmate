@@ -26,7 +26,7 @@ import org.springframework.test.context.TestPropertySource;
         "spring.datasource.username=root",
         "spring.datasource.password=Harshit#$04",
         "spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver",
-        "spring.flyway.enabled=false"
+        "spring.flyway.enabled=true"
 })
 class September2026DryRunEvaluationTest {
 

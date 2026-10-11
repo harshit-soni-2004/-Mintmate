@@ -88,6 +88,7 @@ public class StatementIngestionService {
     private final TransferMatchingService transferMatchingService;
     private final TransactionNormalizer transactionNormalizer;
     private final CategorizationConfidencePolicy confidencePolicy;
+    private final com.spendsense.onboarding.IncomeClassificationService incomeClassificationService;
 
     public StatementIngestionService(
             FinancialDocumentRepository documentRepository,
@@ -103,7 +104,7 @@ public class StatementIngestionService {
     ) {
         this(documentRepository, documentStorage, extractors, candidateValidator, deduplicationService,
                 settlementResolutionService, categorizationService, transactionRepository, userRepository, currentUser,
-                null, null, null, null, null);
+                null, null, null, null, null, null);
     }
 
     public StatementIngestionService(
@@ -123,7 +124,7 @@ public class StatementIngestionService {
     ) {
         this(documentRepository, documentStorage, extractors, candidateValidator, deduplicationService,
                 settlementResolutionService, categorizationService, transactionRepository, userRepository, currentUser,
-                accountService, accountRepository, transferMatchingService, null, null);
+                accountService, accountRepository, transferMatchingService, null, null, null);
     }
 
     @Autowired
@@ -142,7 +143,8 @@ public class StatementIngestionService {
             @Autowired(required = false) FinancialAccountRepository accountRepository,
             @Autowired(required = false) TransferMatchingService transferMatchingService,
             @Autowired(required = false) TransactionNormalizer transactionNormalizer,
-            @Autowired(required = false) CategorizationConfidencePolicy confidencePolicy
+            @Autowired(required = false) CategorizationConfidencePolicy confidencePolicy,
+            @Autowired(required = false) com.spendsense.onboarding.IncomeClassificationService incomeClassificationService
     ) {
         this.documentRepository = documentRepository;
         this.documentStorage = documentStorage;
@@ -159,6 +161,7 @@ public class StatementIngestionService {
         this.transferMatchingService = transferMatchingService;
         this.transactionNormalizer = transactionNormalizer != null ? transactionNormalizer : new TransactionNormalizer();
         this.confidencePolicy = confidencePolicy != null ? confidencePolicy : new CategorizationConfidencePolicy(0.85, 0.60);
+        this.incomeClassificationService = incomeClassificationService;
     }
 
     /**
@@ -229,6 +232,28 @@ public class StatementIngestionService {
 
         if (minDate != null && maxDate != null) {
             document.updateStatementDates(minDate, maxDate);
+        }
+
+        // Infer metadata (institution name, account number last 4) from document stream if not explicitly provided
+        if ((document.getInstitutionName() == null || document.getInstitutionName().isBlank())
+                || (document.getAccountNumberLast4() == null || document.getAccountNumberLast4().isBlank())) {
+            try (InputStream metaStream = documentStorage.retrieve(user.getId(), storageRef)) {
+                com.spendsense.ingestion.extractor.StatementDocumentMetadata meta = extractor.extractMetadata(metaStream);
+                boolean metaUpdated = false;
+                if ((document.getInstitutionName() == null || document.getInstitutionName().isBlank()) && meta.hasInstitution()) {
+                    document.setInstitutionName(meta.institutionName());
+                    metaUpdated = true;
+                }
+                if ((document.getAccountNumberLast4() == null || document.getAccountNumberLast4().isBlank()) && meta.hasAccountNumberLast4()) {
+                    document.setAccountNumberLast4(meta.accountNumberLast4());
+                    metaUpdated = true;
+                }
+                if (metaUpdated) {
+                    documentRepository.save(document);
+                }
+            } catch (Exception e) {
+                log.debug("Document metadata inference skipped for {}: {}", documentId, e.getMessage());
+            }
         }
 
         // Ensure account is linked to document
@@ -340,6 +365,10 @@ public class StatementIngestionService {
             TransferDirection transferDirection = null;
             TransferMatchStatus transferMatchStatus = TransferMatchStatus.NONE;
 
+            com.spendsense.transaction.IncomeTier incomeTier = null;
+            boolean isIncomeVerified = false;
+            boolean incomeRequiresReview = false;
+
             if (isCashWithdrawal) {
                 finalType = TransactionType.CASH_WITHDRAWAL;
             } else if (isInvestment) {
@@ -349,7 +378,25 @@ public class StatementIngestionService {
                 transferDirection = isCredit ? TransferDirection.IN : TransferDirection.OUT;
                 transferMatchStatus = bilateralCounterpart.isPresent() ? TransferMatchStatus.AUTO_MATCHED : TransferMatchStatus.UNMATCHED;
             } else if (isCredit) {
-                finalType = TransactionType.INCOME;
+                if (incomeClassificationService != null) {
+                    com.spendsense.onboarding.IncomeClassificationResult incRes = incomeClassificationService.classifyCredit(
+                            user, candidate.amount(), candidate.transactionDate(),
+                            candidate.rawDescription(), candidate.rawMerchant(), candidate.classification());
+                    incomeTier = incRes.tier();
+                    isIncomeVerified = incRes.isVerified();
+                    if (incRes.requiresReview()) {
+                        incomeRequiresReview = true;
+                    }
+                    if (incRes.isIncome()) {
+                        finalType = TransactionType.INCOME;
+                    } else {
+                        finalType = TransactionType.TRANSFER;
+                        transferDirection = TransferDirection.IN;
+                        transferMatchStatus = TransferMatchStatus.NONE;
+                    }
+                } else {
+                    finalType = TransactionType.INCOME;
+                }
             } else {
                 finalType = TransactionType.EXPENSE;
             }
@@ -361,7 +408,7 @@ public class StatementIngestionService {
             BigDecimal confidence = BigDecimal.ZERO;
             ConfidenceLevel confidenceLevel = ConfidenceLevel.NONE;
             CategorizationSource source = CategorizationSource.FALLBACK;
-            boolean requiresReview = dupResult.isProbableDuplicate();
+            boolean requiresReview = dupResult.isProbableDuplicate() || incomeRequiresReview;
             TransactionCategory predictedCategory = TransactionCategory.OTHER;
             String alternatives = null;
 
@@ -446,6 +493,9 @@ public class StatementIngestionService {
                     null,
                     transferMatchStatus
             );
+
+            transaction.setIncomeTier(incomeTier);
+            transaction.setIncomeVerified(isIncomeVerified);
 
             Transaction saved = transactionRepository.save(transaction);
             if (bilateralCounterpart.isPresent() && transferMatchingService != null) {

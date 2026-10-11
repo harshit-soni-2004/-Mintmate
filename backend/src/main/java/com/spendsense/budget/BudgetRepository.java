@@ -28,4 +28,6 @@ public interface BudgetRepository extends JpaRepository<Budget, UUID> {
 
     boolean existsByUser_IdAndCategoryAndPeriodAndStartDateAndIdNot(
             UUID userId, TransactionCategory category, BudgetPeriod period, LocalDate startDate, UUID id);
+
+    boolean existsByUser_IdAndCategory(UUID userId, TransactionCategory category);
 }

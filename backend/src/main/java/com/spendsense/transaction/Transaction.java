@@ -112,6 +112,13 @@ public class Transaction {
     @Column(name = "transfer_match_status", nullable = false, length = 32)
     private TransferMatchStatus transferMatchStatus = TransferMatchStatus.NONE;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "income_tier", length = 32)
+    private IncomeTier incomeTier;
+
+    @Column(name = "is_income_verified", nullable = false)
+    private boolean isIncomeVerified = false;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -305,4 +312,10 @@ public class Transaction {
             this.transferMatchStatus = TransferMatchStatus.NONE;
         }
     }
+
+    public IncomeTier getIncomeTier() { return incomeTier; }
+    public void setIncomeTier(IncomeTier incomeTier) { this.incomeTier = incomeTier; }
+
+    public boolean isIncomeVerified() { return isIncomeVerified; }
+    public void setIncomeVerified(boolean incomeVerified) { this.isIncomeVerified = incomeVerified; }
 }
