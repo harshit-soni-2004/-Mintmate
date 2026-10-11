@@ -1,4 +1,6 @@
-:root {
+:root,
+[data-theme="light"] {
+  color-scheme: light;
   /* ========================================================================
      Mintmate Apple-Inspired Fintech Design System - Light (Default)
      ======================================================================== */
@@ -99,6 +101,7 @@
    Mintmate Dark Mode - Deep Forest Charcoal
    ======================================================================== */
 [data-theme="dark"] {
+  color-scheme: dark;
   --color-background: #0a1210;       /* Very dark green-black charcoal */
   --color-surface: #121e1b;          /* Slightly lighter charcoal */
   --color-surface-elevated: #182824;
@@ -196,12 +199,8 @@ img, svg {
   max-width: 100%;
 }
 
-button, input, select, textarea {
-  font: inherit;
-  color: inherit;
-}
-
 button {
+  font: inherit;
   font-weight: 600;
 }
 
@@ -215,6 +214,146 @@ textarea:focus-visible {
 }
 
 /* ========================================================================
+   App-Wide Native Form Controls (Light & Dark Themes)
+   ======================================================================== */
+input,
+select,
+textarea {
+  font: inherit;
+  color: var(--ink);
+  background-color: var(--input-bg);
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  color-scheme: inherit;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: var(--muted);
+    opacity: 0.85;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: var(--input-border-hover);
+  }
+
+  &:focus,
+  &:focus-visible {
+    border-color: var(--brand);
+    background-color: var(--input-bg);
+    color: var(--ink);
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+
+  &:disabled {
+    background-color: var(--surface-muted);
+    color: var(--muted);
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+}
+
+/* App-wide .form-input reusable standard */
+.form-input {
+  width: 100%;
+  padding: 0.72rem 0.85rem;
+  font-size: 0.94rem;
+  line-height: 1.4;
+  color: var(--ink);
+  background-color: var(--input-bg);
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  color-scheme: inherit;
+  box-sizing: border-box;
+
+  &:hover:not(:disabled) {
+    border-color: var(--input-border-hover);
+  }
+
+  &:focus {
+    border-color: var(--brand);
+    background-color: var(--input-bg);
+    color: var(--ink);
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+}
+
+/* Native select & option elements */
+select,
+select.form-input {
+  background-color: var(--input-bg);
+  color: var(--ink);
+  color-scheme: inherit;
+  cursor: pointer;
+
+  option {
+    background-color: var(--surface-elevated, var(--surface));
+    color: var(--ink);
+    color-scheme: inherit;
+    padding: 0.5rem 0.75rem;
+  }
+
+  optgroup {
+    background-color: var(--surface-muted);
+    color: var(--muted);
+    font-weight: 600;
+  }
+}
+
+/* Native checkboxes and radio buttons */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--brand);
+  color-scheme: inherit;
+  cursor: pointer;
+}
+
+/* Native number input spinners */
+input[type="number"] {
+  color-scheme: inherit;
+  color: var(--ink);
+  background-color: var(--input-bg);
+}
+
+/* Native date, month, time pickers */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+input[type="month"] {
+  color-scheme: inherit;
+  color: var(--ink);
+  background-color: var(--input-bg);
+  cursor: pointer;
+
+  &::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.15s ease;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+/* General autofill styling */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--input-bg) inset !important;
+  box-shadow: 0 0 0px 1000px var(--input-bg) inset !important;
+  caret-color: var(--brand);
+}
+
+/* ========================================================================
    Universal Input Error & Invalid States (Light + Dark Themes)
    ======================================================================== */
 .form-input[aria-invalid="true"],
@@ -223,9 +362,18 @@ textarea:focus-visible {
 .field-group.has-error input,
 .field-group.has-error select,
 .field-group.has-error textarea,
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"],
+input.is-invalid,
+select.is-invalid,
+textarea.is-invalid,
 input.ng-invalid.ng-touched,
+input.ng-invalid.ng-dirty,
 select.ng-invalid.ng-touched,
-textarea.ng-invalid.ng-touched {
+select.ng-invalid.ng-dirty,
+textarea.ng-invalid.ng-touched,
+textarea.ng-invalid.ng-dirty {
   border-color: var(--input-border-error, var(--danger)) !important;
   background-color: var(--input-bg-error, rgba(248, 113, 113, 0.12)) !important;
   color: var(--ink) !important;
