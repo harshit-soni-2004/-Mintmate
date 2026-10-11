@@ -31,9 +31,10 @@ public class DashboardService {
     private final CurrentUser currentUser;
     private final com.spendsense.onboarding.UserFinancialProfileRepository profileRepository;
     private final com.spendsense.onboarding.UserIncomeSourceRepository incomeSourceRepository;
+    private final com.spendsense.debt.DebtRepository debtRepository;
 
     public DashboardService(TransactionRepository transactionRepository, CurrentUser currentUser) {
-        this(transactionRepository, currentUser, null, null);
+        this(transactionRepository, currentUser, null, null, null);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -41,12 +42,14 @@ public class DashboardService {
             TransactionRepository transactionRepository,
             CurrentUser currentUser,
             @org.springframework.beans.factory.annotation.Autowired(required = false) com.spendsense.onboarding.UserFinancialProfileRepository profileRepository,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) com.spendsense.onboarding.UserIncomeSourceRepository incomeSourceRepository
+            @org.springframework.beans.factory.annotation.Autowired(required = false) com.spendsense.onboarding.UserIncomeSourceRepository incomeSourceRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) com.spendsense.debt.DebtRepository debtRepository
     ) {
         this.transactionRepository = transactionRepository;
         this.currentUser = currentUser;
         this.profileRepository = profileRepository;
         this.incomeSourceRepository = incomeSourceRepository;
+        this.debtRepository = debtRepository;
     }
 
     @Transactional(readOnly = true)
@@ -134,6 +137,17 @@ public class DashboardService {
             }
         }
 
+        BigDecimal debtOwedToUser = BigDecimal.ZERO;
+        BigDecimal debtOwedByUser = BigDecimal.ZERO;
+        int activeDebtRemindersCount = 0;
+        if (debtRepository != null) {
+            debtOwedToUser = debtRepository.sumActiveAmountByUserIdAndDebtType(userId, com.spendsense.debt.DebtType.OWED_TO_ME);
+            debtOwedByUser = debtRepository.sumActiveAmountByUserIdAndDebtType(userId, com.spendsense.debt.DebtType.I_OWE);
+            activeDebtRemindersCount = debtRepository.findOverdueDebts(userId, LocalDate.now()).size()
+                    + debtRepository.findUpcomingDebts(userId, LocalDate.now()).size();
+        }
+        BigDecimal netDebtPosition = debtOwedToUser.subtract(debtOwedByUser);
+
         DashboardSummaryResponse summary = new DashboardSummaryResponse(
                 totalIncome,
                 totalExpenses,
@@ -148,7 +162,11 @@ public class DashboardService {
                 declaredIncome,
                 savingsTarget,
                 investTarget,
-                hasOnboardingBaseline
+                hasOnboardingBaseline,
+                debtOwedToUser,
+                debtOwedByUser,
+                netDebtPosition,
+                activeDebtRemindersCount
         );
 
         List<CategorySpend> categorySpends = transactionRepository.findCategorySpending(
