@@ -91,6 +91,6 @@ describe('RegisterComponent', () => {
       email: 'alex@example.com',
       password: 'Password123',
     });
-    expect(router.navigate).toHaveBeenCalledWith(['/app/dashboard']);
+    expect(router.navigate).toHaveBeenCalledWith(['/app/onboarding']);
   });
 });

@@ -73,7 +73,7 @@ export class RegisterComponent {
     const { confirmPassword, ...payload } = this.form.getRawValue();
     this.auth.register(payload).subscribe({
       next: () => {
-        void this.router.navigate(['/app/dashboard']);
+        void this.router.navigate(['/app/onboarding']);
       },
       error: (err: HttpErrorResponse) => {
         this.submitting = false;

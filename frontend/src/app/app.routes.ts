@@ -18,8 +18,9 @@ export const routes: Routes = [
   },
   {
     path: 'onboarding',
+    canActivate: [authGuard],
     loadComponent: () =>
-      import('./features/onboarding/onboarding-page.component').then((m) => m.OnboardingPageComponent),
+      import('./features/onboarding/onboarding-wizard.component').then((m) => m.OnboardingWizardComponent),
   },
   {
     path: 'app',
@@ -65,6 +66,11 @@ export const routes: Routes = [
         path: 'settings',
         loadComponent: () =>
           import('./features/settings/settings.component').then((m) => m.SettingsComponent),
+      },
+      {
+        path: 'onboarding',
+        loadComponent: () =>
+          import('./features/onboarding/onboarding-wizard.component').then((m) => m.OnboardingWizardComponent),
       },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],

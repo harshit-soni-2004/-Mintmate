@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { SettingsComponent } from './settings.component';
 import { ThemeService } from '../../core/theme/theme.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -17,6 +18,7 @@ describe('SettingsComponent', () => {
     await TestBed.configureTestingModule({
       imports: [SettingsComponent],
       providers: [
+        provideRouter([]),
         ThemeService,
         { provide: AuthService, useValue: authServiceMock }
       ]

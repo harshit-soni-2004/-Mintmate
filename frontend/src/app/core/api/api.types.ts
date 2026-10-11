@@ -185,6 +185,14 @@ export interface DashboardSummary {
   expenseChangePercentage: number | null;
   totalTransfers?: number;
   investmentContributions?: number;
+  declaredIncome?: number | null;
+  savingsTarget?: number | null;
+  investTarget?: number | null;
+  hasOnboardingBaseline?: boolean;
+  debtOwedToUser?: number;
+  debtOwedByUser?: number;
+  netDebtPosition?: number;
+  activeDebtRemindersCount?: number;
 }
 
 export interface CategorySpending {
@@ -447,6 +455,52 @@ export interface ProactiveInsightDto {
   supportingFacts: Record<string, unknown>;
   suggestedAction?: string | null;
   createdAt: string;
+}
+
+export type UserPersona = 'STUDENT' | 'SALARIED' | 'BUSINESS_OWNER' | 'FREELANCER';
+
+export type IncomeType =
+  | 'SALARY'
+  | 'BUSINESS_REVENUE'
+  | 'FREELANCE'
+  | 'PENSION'
+  | 'STIPEND'
+  | 'INVESTMENT_RETURN';
+
+export type IncomeFrequency = 'MONTHLY' | 'BIWEEKLY' | 'IRREGULAR';
+
+export interface IncomeSourceDto {
+  sourceName: string;
+  incomeType: IncomeType;
+  frequency: IncomeFrequency;
+  declaredAmount: number;
+  expectedDayOfMonth?: number | null;
+  employerOrPayerKeyword?: string | null;
+  primary?: boolean;
+  variable?: boolean;
+}
+
+export interface CategoryAllocationDto {
+  category: TransactionCategory;
+  estimatedAmount: number;
+}
+
+export interface OnboardingRequest {
+  persona: UserPersona;
+  monthlySavingsTarget?: number | null;
+  monthlyInvestmentTarget?: number | null;
+  incomeSources?: IncomeSourceDto[];
+  categoryAllocations?: CategoryAllocationDto[];
+}
+
+export interface OnboardingResponse {
+  profileId: string;
+  persona: UserPersona;
+  onboardingCompleted: boolean;
+  monthlySavingsTarget?: number | null;
+  monthlyInvestmentTarget?: number | null;
+  incomeSources: IncomeSourceDto[];
+  categoryAllocations: CategoryAllocationDto[];
 }
 
 
