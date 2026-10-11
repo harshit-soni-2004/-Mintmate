@@ -20,4 +20,8 @@ public interface DocumentExtractor {
         DocumentAccountType accountType,
         InputStream stream
     ) throws DocumentExtractionException;
+
+    default StatementDocumentMetadata extractMetadata(InputStream stream) {
+        return StatementDocumentMetadata.empty();
+    }
 }

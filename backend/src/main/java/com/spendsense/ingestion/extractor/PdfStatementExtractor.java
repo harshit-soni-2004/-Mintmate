@@ -56,6 +56,35 @@ public class PdfStatementExtractor implements DocumentExtractor {
     }
 
     @Override
+    public StatementDocumentMetadata extractMetadata(InputStream stream) {
+        if (stream == null) {
+            return StatementDocumentMetadata.empty();
+        }
+        try {
+            byte[] bytes = stream.readAllBytes();
+            if (bytes.length == 0) {
+                return StatementDocumentMetadata.empty();
+            }
+            try (PDDocument document = Loader.loadPDF(bytes)) {
+                if (document.isEncrypted() || document.getNumberOfPages() == 0) {
+                    return StatementDocumentMetadata.empty();
+                }
+                StatementPdfTextStripper stripper = new StatementPdfTextStripper();
+                stripper.setStartPage(1);
+                stripper.setEndPage(Math.min(2, document.getNumberOfPages()));
+                stripper.getText(document);
+                List<String> headerLines = stripper.getExtractedLines().stream()
+                        .map(TextLine::lineText)
+                        .limit(60)
+                        .toList();
+                return BankInstitutionDetector.detectMetadata(headerLines);
+            }
+        } catch (Exception e) {
+            return StatementDocumentMetadata.empty();
+        }
+    }
+
+    @Override
     public List<TransactionCandidate> extract(
         UUID documentId,
         DocumentAccountType accountType,
