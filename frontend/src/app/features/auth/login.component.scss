@@ -269,11 +269,21 @@ h1 {
 }
 
 .has-error .form-input {
-  border-color: var(--danger);
-  background: #fffafa;
+  border-color: var(--input-border-error, var(--danger));
+  background: var(--input-bg-error, rgba(248, 113, 113, 0.12));
+  color: var(--ink);
 }
 .has-error .form-input:focus {
-  box-shadow: 0 0 0 3px rgba(196, 56, 56, 0.18);
+  border-color: var(--input-border-error, var(--danger));
+  box-shadow: var(--input-focus-error-shadow, 0 0 0 3px rgba(248, 113, 113, 0.28));
+}
+.has-error .form-input:-webkit-autofill,
+.has-error .form-input:-webkit-autofill:hover,
+.has-error .form-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  -webkit-box-shadow: 0 0 0px 1000px var(--input-bg-error, rgba(248, 113, 113, 0.12)) inset;
+  box-shadow: 0 0 0px 1000px var(--input-bg-error, rgba(248, 113, 113, 0.12)) inset;
+  caret-color: var(--ink);
 }
 .has-error .input-icon {
   color: var(--danger);

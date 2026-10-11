@@ -58,6 +58,9 @@
   --input-bg: #ffffff;
   --input-border: #dcd6c8;
   --input-border-hover: #073b35;
+  --input-bg-error: #fff5f5;
+  --input-border-error: var(--danger);
+  --input-focus-error-shadow: 0 0 0 3px rgba(207, 58, 58, 0.18);
   --income: #1b8a5a;
   --income-soft: #e5f6ee;
   --expense: #cf3a3a;
@@ -142,6 +145,9 @@
   --input-bg: #152420;
   --input-border: rgba(255, 255, 255, 0.12);
   --input-border-hover: #8be35a;
+  --input-bg-error: rgba(248, 113, 113, 0.12);
+  --input-border-error: var(--danger);
+  --input-focus-error-shadow: 0 0 0 3px rgba(248, 113, 113, 0.28);
 
   --success: #34d399;
   --success-soft: rgba(52, 211, 153, 0.15);
@@ -206,6 +212,43 @@ select:focus-visible,
 textarea:focus-visible {
   outline: 3px solid rgba(18, 116, 87, 0.35);
   outline-offset: 2px;
+}
+
+/* ========================================================================
+   Universal Input Error & Invalid States (Light + Dark Themes)
+   ======================================================================== */
+.form-input[aria-invalid="true"],
+.form-input.is-invalid,
+.has-error .form-input,
+.field-group.has-error input,
+.field-group.has-error select,
+.field-group.has-error textarea,
+input.ng-invalid.ng-touched,
+select.ng-invalid.ng-touched,
+textarea.ng-invalid.ng-touched {
+  border-color: var(--input-border-error, var(--danger)) !important;
+  background-color: var(--input-bg-error, rgba(248, 113, 113, 0.12)) !important;
+  color: var(--ink) !important;
+  -webkit-text-fill-color: var(--ink) !important;
+
+  &:focus,
+  &:focus-visible {
+    border-color: var(--input-border-error, var(--danger)) !important;
+    background-color: var(--input-bg-error, rgba(248, 113, 113, 0.15)) !important;
+    color: var(--ink) !important;
+    -webkit-text-fill-color: var(--ink) !important;
+    box-shadow: var(--input-focus-error-shadow, 0 0 0 3px rgba(248, 113, 113, 0.28)) !important;
+    outline: none !important;
+  }
+
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--ink) !important;
+    -webkit-box-shadow: 0 0 0px 1000px var(--input-bg-error, rgba(248, 113, 113, 0.12)) inset !important;
+    box-shadow: 0 0 0px 1000px var(--input-bg-error, rgba(248, 113, 113, 0.12)) inset !important;
+    caret-color: var(--ink) !important;
+  }
 }
 
 a {

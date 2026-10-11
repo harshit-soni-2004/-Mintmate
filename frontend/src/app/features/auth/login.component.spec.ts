@@ -40,6 +40,18 @@ describe('LoginComponent', () => {
     expect(component.form.valid).toBeTrue();
   });
 
+  it('marks email field invalid with aria-invalid and has-error class on blur/touch', () => {
+    const emailInput: HTMLInputElement = fixture.nativeElement.querySelector('#email');
+    component.form.controls.email.setValue('not-an-email');
+    component.form.controls.email.markAsTouched();
+    fixture.detectChanges();
+
+    expect(component.isFieldInvalid('email')).toBeTrue();
+    const fieldGroup = emailInput.closest('.field-group');
+    expect(fieldGroup?.classList.contains('has-error')).toBeTrue();
+    expect(emailInput.getAttribute('aria-invalid')).toBe('true');
+  });
+
   it('toggles password visibility', () => {
     expect(component.showPassword).toBeFalse();
     component.togglePassword();
