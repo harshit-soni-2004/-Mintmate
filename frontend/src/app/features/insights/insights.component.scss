@@ -289,6 +289,12 @@
           background: rgba(239, 68, 68, 0.12);
           color: #ef4444;
         }
+
+        &.neutral {
+          background: var(--surface-subtle, rgba(0, 0, 0, 0.05));
+          color: var(--muted, #64748b);
+          font-weight: 500;
+        }
       }
     }
 
@@ -626,6 +632,14 @@
 
         strong {
           color: #ea580c;
+        }
+
+        .shift-subtext {
+          display: block;
+          font-size: 0.8rem;
+          color: var(--muted, #64748b);
+          margin-top: 0.25rem;
+          font-style: italic;
         }
       }
     }
@@ -1019,7 +1033,8 @@
         background: rgba(22, 163, 74, 0.1);
         color: #16a34a;
       }
-      &.unchanged {
+      &.unchanged,
+      &.neutral {
         background: var(--surface-subtle);
         color: var(--muted);
       }

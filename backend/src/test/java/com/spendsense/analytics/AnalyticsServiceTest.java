@@ -170,4 +170,33 @@ class AnalyticsServiceTest {
         assertThat(trend.points().get(3).date()).isEqualTo(LocalDate.of(2026, 9, 4));
         assertThat(trend.points().get(3).totalExpense()).isEqualByComparingTo("800.00");
     }
+
+    @Test
+    void returnsNullPercentageChangeWhenPreviousPeriodHasZeroOrNoSpending() {
+        LocalDate from = LocalDate.of(2026, 9, 1);
+        LocalDate to = LocalDate.of(2026, 9, 30);
+        LocalDate prevFrom = LocalDate.of(2026, 8, 1);
+        LocalDate prevTo = LocalDate.of(2026, 8, 31);
+
+        when(transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(user.getId(), TransactionType.INCOME, from, to))
+                .thenReturn(new BigDecimal("10000.00"));
+        when(transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(user.getId(), TransactionType.EXPENSE, from, to))
+                .thenReturn(new BigDecimal("1406.00"));
+
+        // Prior period has 0 income and 0 expenses (e.g. brand new user)
+        when(transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(user.getId(), TransactionType.INCOME, prevFrom, prevTo))
+                .thenReturn(BigDecimal.ZERO);
+        when(transactionRepository.sumAmountByUserIdAndTypeAndDateBetween(user.getId(), TransactionType.EXPENSE, prevFrom, prevTo))
+                .thenReturn(BigDecimal.ZERO);
+
+        PeriodComparisonResponse comparison = analyticsService.getComparison(from, to);
+
+        assertThat(comparison.expenses().currentAmount()).isEqualByComparingTo("1406.00");
+        assertThat(comparison.expenses().previousAmount()).isEqualByComparingTo("0.00");
+        assertThat(comparison.expenses().changeAmount()).isEqualByComparingTo("1406.00");
+        // Must suppress the misleading +100% calculation
+        assertThat(comparison.expenses().percentageChange()).isNull();
+        assertThat(comparison.expenses().direction()).isEqualTo(TrendDirection.UNCHANGED);
+        assertThat(comparison.hasPriorPeriodData()).isFalse();
+    }
 }

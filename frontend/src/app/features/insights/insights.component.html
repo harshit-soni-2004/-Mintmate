@@ -124,14 +124,20 @@
             <span class="card-eyebrow">Spending this {{ rangePreset === 'this-month' ? 'month' : 'period' }}</span>
             <div class="hero-amount-group">
               <span class="hero-amount">{{ overview.summary.totalExpenses | currency:'INR':'symbol-narrow':'1.0-0' }}</span>
-              <span
-                class="trend-change-badge"
-                [class.favorable]="overview.comparison.expenses.direction === 'DECREASED'"
-                [class.unfavorable]="overview.comparison.expenses.direction === 'INCREASED'"
-              >
-                {{ overview.comparison.expenses.percentageChange >= 0 ? '↑' : '↓' }}
-                {{ overview.comparison.expenses.percentageChange | number:'1.0-1' }}% vs prior period
-              </span>
+              @if (overview.comparison.hasPriorPeriodData && overview.comparison.expenses.percentageChange != null) {
+                <span
+                  class="trend-change-badge"
+                  [class.favorable]="overview.comparison.expenses.direction === 'DECREASED'"
+                  [class.unfavorable]="overview.comparison.expenses.direction === 'INCREASED'"
+                >
+                  {{ (overview.comparison.expenses.percentageChange || 0) >= 0 ? '↑' : '↓' }}
+                  {{ overview.comparison.expenses.percentageChange | number:'1.0-1' }}% vs prior period
+                </span>
+              } @else {
+                <span class="trend-change-badge neutral">
+                  Not enough data yet
+                </span>
+              }
             </div>
           </div>
 
@@ -280,12 +286,19 @@
                 <span class="dot" [style.background-color]="getCategoryColor(topCategoryShift.category)"></span>
                 <strong>{{ categoryLabel(topCategoryShift.category) }}</strong>
               </div>
-              <p class="shift-summary">
-                {{ categoryLabel(topCategoryShift.category) }} spending
-                {{ topCategoryShift.percentageChange >= 0 ? 'increased' : 'decreased' }}
-                <strong>{{ topCategoryShift.percentageChange >= 0 ? '+' : '' }}{{ topCategoryShift.percentageChange }}%</strong>
-                vs prior period.
-              </p>
+              @if (topCategoryShift.percentageChange != null && (topCategoryShift.previousAmount || 0) > 0) {
+                <p class="shift-summary">
+                  {{ categoryLabel(topCategoryShift.category) }} spending
+                  {{ topCategoryShift.percentageChange >= 0 ? 'increased' : 'decreased' }}
+                  <strong>{{ topCategoryShift.percentageChange >= 0 ? '+' : '' }}{{ topCategoryShift.percentageChange }}%</strong>
+                  vs prior period.
+                </p>
+              } @else {
+                <p class="shift-summary">
+                  {{ categoryLabel(topCategoryShift.category) }} spending is {{ topCategoryShift.amount | currency:'INR':'symbol-narrow':'1.0-0' }} ({{ topCategoryShift.percentage }}% of total).
+                  <span class="shift-subtext">Not enough prior period data yet for comparison.</span>
+                </p>
+              }
             </div>
           }
 
@@ -411,9 +424,13 @@
                     <td class="text-right font-mono">{{ cat.amount | currency:'INR':'symbol-narrow':'1.0-0' }}</td>
                     <td class="text-right font-mono">{{ cat.percentage }}%</td>
                     <td class="text-right">
-                      <span class="change-tag" [ngClass]="cat.direction.toLowerCase()">
-                        {{ cat.percentageChange >= 0 ? '+' : '' }}{{ cat.percentageChange }}%
-                      </span>
+                      @if (cat.percentageChange != null && (cat.previousAmount || 0) > 0) {
+                        <span class="change-tag" [ngClass]="cat.direction.toLowerCase()">
+                          {{ cat.percentageChange >= 0 ? '+' : '' }}{{ cat.percentageChange }}%
+                        </span>
+                      } @else {
+                        <span class="change-tag neutral" title="Not enough prior period data">—</span>
+                      }
                     </td>
                     <td class="text-right">
                       @if (cat.requiresReviewCount && cat.requiresReviewCount > 0) {
@@ -450,9 +467,13 @@
                 <span class="val-current">{{ overview.comparison.expenses.currentAmount | currency:'INR':'symbol-narrow':'1.0-0' }}</span>
                 <span class="val-previous">prev: {{ overview.comparison.expenses.previousAmount | currency:'INR':'symbol-narrow':'1.0-0' }}</span>
               </div>
-              <div class="comp-badge" [ngClass]="overview.comparison.expenses.direction.toLowerCase()">
-                {{ overview.comparison.expenses.percentageChange >= 0 ? '+' : '' }}{{ overview.comparison.expenses.percentageChange }}%
-              </div>
+              @if (overview.comparison.expenses.percentageChange != null && (overview.comparison.expenses.previousAmount || 0) > 0) {
+                <div class="comp-badge" [ngClass]="overview.comparison.expenses.direction.toLowerCase()">
+                  {{ overview.comparison.expenses.percentageChange >= 0 ? '+' : '' }}{{ overview.comparison.expenses.percentageChange }}%
+                </div>
+              } @else {
+                <div class="comp-badge neutral" title="Not enough prior period data">—</div>
+              }
             </div>
 
             <div class="comparison-row">
@@ -461,9 +482,13 @@
                 <span class="val-current">{{ overview.comparison.income.currentAmount | currency:'INR':'symbol-narrow':'1.0-0' }}</span>
                 <span class="val-previous">prev: {{ overview.comparison.income.previousAmount | currency:'INR':'symbol-narrow':'1.0-0' }}</span>
               </div>
-              <div class="comp-badge" [ngClass]="overview.comparison.income.direction.toLowerCase()">
-                {{ overview.comparison.income.percentageChange >= 0 ? '+' : '' }}{{ overview.comparison.income.percentageChange }}%
-              </div>
+              @if (overview.comparison.income.percentageChange != null && (overview.comparison.income.previousAmount || 0) > 0) {
+                <div class="comp-badge" [ngClass]="overview.comparison.income.direction.toLowerCase()">
+                  {{ overview.comparison.income.percentageChange >= 0 ? '+' : '' }}{{ overview.comparison.income.percentageChange }}%
+                </div>
+              } @else {
+                <div class="comp-badge neutral" title="Not enough prior period data">—</div>
+              }
             </div>
 
             <div class="comparison-row">
@@ -472,9 +497,13 @@
                 <span class="val-current">{{ overview.comparison.currentSavingsRate }}%</span>
                 <span class="val-previous">prev: {{ overview.comparison.previousSavingsRate }}%</span>
               </div>
-              <div class="comp-badge" [class.increased]="overview.comparison.savingsRateChange >= 0" [class.decreased]="overview.comparison.savingsRateChange < 0">
-                {{ overview.comparison.savingsRateChange >= 0 ? '+' : '' }}{{ overview.comparison.savingsRateChange }}% pts
-              </div>
+              @if (overview.comparison.hasPriorPeriodData && (overview.comparison.income.previousAmount || 0) > 0) {
+                <div class="comp-badge" [class.increased]="overview.comparison.savingsRateChange >= 0" [class.decreased]="overview.comparison.savingsRateChange < 0">
+                  {{ overview.comparison.savingsRateChange >= 0 ? '+' : '' }}{{ overview.comparison.savingsRateChange }}% pts
+                </div>
+              } @else {
+                <div class="comp-badge neutral" title="Not enough prior period data">—</div>
+              }
             </div>
           </div>
         </div>

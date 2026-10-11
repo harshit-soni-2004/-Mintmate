@@ -447,11 +447,8 @@ public class AnalyticsService {
     }
 
     private BigDecimal calculatePercentageChange(BigDecimal current, BigDecimal previous) {
-        if (previous == null || previous.compareTo(BigDecimal.ZERO) == 0) {
-            if (current != null && current.compareTo(BigDecimal.ZERO) > 0) {
-                return BigDecimal.valueOf(100.00).setScale(2, RoundingMode.HALF_UP);
-            }
-            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        if (previous == null || previous.compareTo(BigDecimal.ZERO) <= 0) {
+            return null;
         }
         return current.subtract(previous)
                 .multiply(BigDecimal.valueOf(100))
@@ -459,6 +456,9 @@ public class AnalyticsService {
     }
 
     private TrendDirection determineDirection(BigDecimal current, BigDecimal previous) {
+        if (previous == null || previous.compareTo(BigDecimal.ZERO) <= 0) {
+            return TrendDirection.UNCHANGED;
+        }
         int cmp = current.compareTo(previous);
         if (cmp > 0) return TrendDirection.INCREASED;
         if (cmp < 0) return TrendDirection.DECREASED;

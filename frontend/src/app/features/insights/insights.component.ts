@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
   AggregationPeriod,
+  CategoryAnalysis,
   FinancialInsight,
   InsightsOverview,
   SpendingAnomaly,
@@ -96,13 +97,19 @@ export class InsightsComponent implements OnInit {
       : null;
   }
 
-  get topCategoryShift() {
+  get topCategoryShift(): CategoryAnalysis | null {
     if (!this.overview?.categories?.categories?.length) return null;
-    // Find category with highest percentage increase or highest change
-    const sorted = [...this.overview.categories.categories].sort(
-      (a, b) => Math.abs(b.percentageChange) - Math.abs(a.percentageChange)
+    const catsWithPrior = this.overview.categories.categories.filter(
+      (c) => c.percentageChange != null && (c.previousAmount ?? 0) > 0
     );
-    return sorted[0] || null;
+    if (catsWithPrior.length > 0) {
+      return [...catsWithPrior].sort(
+        (a, b) => Math.abs(b.percentageChange ?? 0) - Math.abs(a.percentageChange ?? 0)
+      )[0];
+    }
+    return [...this.overview.categories.categories].sort(
+      (a, b) => (b.amount ?? 0) - (a.amount ?? 0)
+    )[0] || null;
   }
 
   toggleDetailedBreakdown(): void {

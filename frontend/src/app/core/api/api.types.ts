@@ -307,7 +307,7 @@ export interface TrendMetric {
   currentAmount: number;
   previousAmount: number;
   changeAmount: number;
-  percentageChange: number;
+  percentageChange?: number | null;
   direction: TrendDirection;
 }
 
@@ -322,6 +322,7 @@ export interface PeriodComparison {
   currentSavingsRate: number;
   previousSavingsRate: number;
   savingsRateChange: number;
+  hasPriorPeriodData?: boolean;
 }
 
 export interface CategoryAnalysis {
@@ -330,7 +331,7 @@ export interface CategoryAnalysis {
   percentage: number;
   previousAmount: number;
   changeAmount: number;
-  percentageChange: number;
+  percentageChange?: number | null;
   direction: TrendDirection;
   transactionCount: number;
   requiresReviewCount?: number;
