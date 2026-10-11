@@ -67,8 +67,8 @@ describe('DashboardComponent', () => {
 
   beforeEach(async () => {
     dashboardServiceSpy = jasmine.createSpyObj('DashboardService', ['getDashboard']);
-    dashboardServiceSpy.getDashboard.and.returnValue(
-      of({ data: mockDashboardData, error: null, meta: null })
+    dashboardServiceSpy.getDashboard.and.callFake(() =>
+      of({ data: JSON.parse(JSON.stringify(mockDashboardData)), error: null, meta: null })
     );
 
     insightsServiceSpy = jasmine.createSpyObj('InsightsService', ['getOverview']);
@@ -204,6 +204,19 @@ describe('DashboardComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.dash-insights-content')?.textContent).toContain('Strong Savings Rate');
     expect(compiled.querySelector('.dash-anomaly-alert')?.textContent).toContain('High Transaction');
+  });
+
+  it('shows fallback "No spending activity yet this month" when topInsight is null and total expenses is zero', () => {
+    component.topInsight = null;
+    if (component.dashboardData) {
+      component.dashboardData.summary.totalExpenses = 0;
+    }
+    fixture.detectChanges();
+
+    expect(component.displayInsightTitle).toBe('No spending activity yet this month');
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.insight-headline')?.textContent).toContain('No spending activity yet this month');
+    expect(compiled.querySelector('.insight-desc')?.textContent).toContain('Once you record transactions or import statements');
   });
 
   it('builds dynamic cashflow chart matching calendar days and daily spending', () => {

@@ -64,6 +64,20 @@
       </div>
     }
 
+    @if (dashboardData.summary.hasOnboardingBaseline === false && !dashboardData.summary.declaredIncome && !dismissedOnboardingBanner) {
+      <div class="onboarding-welcome-banner" role="banner">
+        <div class="onboarding-banner-icon">🚀</div>
+        <div class="onboarding-banner-content">
+          <strong>Calibrate your financial baseline</strong>
+          <p>Declare your expected income and set your monthly targets to unlock accurate savings rates and salary tracking.</p>
+        </div>
+        <div class="onboarding-banner-actions">
+          <a routerLink="/app/onboarding" class="btn-start-onboarding">Complete Setup &rarr;</a>
+          <button type="button" class="btn-dismiss-onboarding" (click)="dismissedOnboardingBanner = true" aria-label="Dismiss banner">✕</button>
+        </div>
+      </div>
+    }
+
     <!-- Section 2: ONE Primary Financial Hero Card -->
     <section class="hero-financial-section" aria-label="Primary Financial Summary">
       <div class="hero-card">
@@ -227,10 +241,10 @@
 
         <div class="insight-body">
           <h3 class="insight-headline">
-            {{ topInsight?.title || "You're spending 10% less this month" }}
+            {{ displayInsightTitle }}
           </h3>
           <p class="insight-desc">
-            {{ topInsight?.description || "Your expenses are down compared with the previous period. You're on track with your goals." }}
+            {{ displayInsightDescription }}
           </p>
         </div>
 
@@ -405,17 +419,32 @@
           <div class="guardrail-card goal-guardrail">
             <div class="g-header">
               <span class="g-type-label">Savings Target</span>
-              <span class="g-status-badge on-track">On Track</span>
+              @if (dashboardData.summary.savingsTarget && dashboardData.summary.savingsTarget > 0) {
+                <span class="g-status-badge on-track">
+                  {{ (dashboardData.summary.netSavings >= dashboardData.summary.savingsTarget) ? 'Achieved' : 'On Track' }}
+                </span>
+              }
             </div>
-            <div class="g-body">
-              <strong class="g-title">Emergency Fund</strong>
-              <p class="g-numbers">
-                ₹42,000 <span class="g-muted">of ₹1,00,000 &middot; 42%</span>
-              </p>
-              <div class="progress-bar-track">
-                <div class="progress-bar-fill" style="width: 42%;"></div>
+            @if (dashboardData.summary.savingsTarget && dashboardData.summary.savingsTarget > 0) {
+              <div class="g-body">
+                <strong class="g-title">Monthly Target</strong>
+                <p class="g-numbers">
+                  {{ (dashboardData.summary.netSavings > 0 ? dashboardData.summary.netSavings : 0) | currency:'INR':'symbol-narrow':'1.0-0' }}
+                  <span class="g-muted">of {{ dashboardData.summary.savingsTarget | currency:'INR':'symbol-narrow':'1.0-0' }} &middot; {{ Math.min(100, Math.round((Math.max(0, dashboardData.summary.netSavings) / dashboardData.summary.savingsTarget) * 100)) }}%</span>
+                </p>
+                <div class="progress-bar-track">
+                  <div
+                    class="progress-bar-fill"
+                    [style.width.%]="Math.min(100, Math.round((Math.max(0, dashboardData.summary.netSavings) / dashboardData.summary.savingsTarget) * 100))"
+                  ></div>
+                </div>
               </div>
-            </div>
+            } @else {
+              <div class="g-body">
+                <p class="g-empty">No savings target configured yet.</p>
+                <a routerLink="/app/onboarding" class="btn-text-link">+ Set savings target</a>
+              </div>
+            }
           </div>
         </div>
       </section>

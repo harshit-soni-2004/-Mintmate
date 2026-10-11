@@ -105,6 +105,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   topInsight: FinancialInsight | null = null;
   recentAnomaly: SpendingAnomaly | null = null;
   activeProactiveInsight: ProactiveInsightDto | null = null;
+  dismissedOnboardingBanner = false;
 
   // Selected period: "YYYY-MM"
   currentYearMonth = new Date().toISOString().slice(0, 7);
@@ -206,6 +207,30 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (hour < 12) return 'Good morning';
     if (hour < 18) return 'Good afternoon';
     return 'Good evening';
+  }
+
+  readonly Math = Math;
+
+  get displayInsightTitle(): string {
+    if (this.topInsight?.title) {
+      return this.topInsight.title;
+    }
+    const hasSpending = (this.dashboardData?.summary.totalExpenses || 0) > 0;
+    if (!hasSpending) {
+      return 'No spending activity yet this month';
+    }
+    return 'Spending is on track';
+  }
+
+  get displayInsightDescription(): string {
+    if (this.topInsight?.description) {
+      return this.topInsight.description;
+    }
+    const hasSpending = (this.dashboardData?.summary.totalExpenses || 0) > 0;
+    if (!hasSpending) {
+      return 'Once you record transactions or import statements, Spending Insights will automatically surface your trends and category comparisons.';
+    }
+    return 'Your spending is within your usual patterns with no budget alerts or anomalies detected for this period.';
   }
 
   get topBudget() {
