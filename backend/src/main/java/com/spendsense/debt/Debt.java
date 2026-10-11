@@ -8,12 +8,16 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 @Entity
 @Table(name = "debts")
 public class Debt {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(length = 36)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -56,6 +60,7 @@ public class Debt {
     public Debt() {}
 
     public Debt(User user, String counterpartyName, DebtType debtType, BigDecimal amount, LocalDate dueDate, String notes) {
+        this.id = UUID.randomUUID();
         this.user = user;
         this.counterpartyName = counterpartyName;
         this.debtType = debtType;
@@ -69,6 +74,9 @@ public class Debt {
 
     @PrePersist
     protected void onCreate() {
+        if (id == null) {
+            id = UUID.randomUUID();
+        }
         if (createdAt == null) {
             createdAt = Instant.now();
         }
