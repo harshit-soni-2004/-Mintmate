@@ -277,7 +277,28 @@ textarea {
     outline: none;
     box-shadow: var(--shadow-focus);
   }
+
+  &.is-invalid,
+  &.has-error,
+  &.ng-invalid.ng-touched {
+    border-color: var(--input-border-error) !important;
+    background-color: var(--input-bg-error) !important;
+
+    &:focus {
+      border-color: var(--input-border-error) !important;
+      box-shadow: var(--input-focus-error-shadow) !important;
+    }
+  }
 }
+
+.form-error-msg {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--danger);
+  margin-top: 0.35rem;
+  font-weight: 500;
+}
+
 
 /* Native select & option elements */
 select,

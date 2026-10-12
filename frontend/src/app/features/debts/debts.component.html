@@ -1,0 +1,550 @@
+<section class="page debts-page">
+  <!-- Page Header -->
+  <header class="page-header">
+    <div class="header-titles">
+      <div class="eyebrow-row">
+        <span class="live-badge"><i class="live-dot"></i> Personal IOUs</span>
+        <span class="range-tag">Single-User Tracker</span>
+      </div>
+      <h1>IOUs &amp; Debts</h1>
+      <p class="lede">Track money you owe or are owed with personal reminders and zero social notifications.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn-primary add-debt-btn"
+        id="btn-open-log-debt"
+        (click)="openCreateModal()"
+      >
+        <span class="plus-icon">+</span> Log New Debt
+      </button>
+    </div>
+  </header>
+
+  <!-- Error Banner -->
+  @if (error) {
+    <div class="notice error-banner" role="alert" id="debts-error-banner">
+      <span class="alert-icon">⚠</span>
+      <div class="notice-text">
+        <strong>Error</strong>
+        <p>{{ error }}</p>
+      </div>
+      <button type="button" class="retry-btn" (click)="loadData()">Retry</button>
+    </div>
+  }
+
+  <!-- Summary KPI Cards -->
+  @if (summary) {
+    <section class="summary-cards" aria-label="Debts Summary Metrics">
+      <!-- Total Receivable -->
+      <article class="metric-card receivable-card" id="summary-card-receivable">
+        <div class="card-top">
+          <div class="metric-info">
+            <span class="metric-label">Owed to You (Receivable)</span>
+            <strong class="metric-value positive" id="summary-total-receivable">
+              {{ summary.totalReceivable | currency:'INR':'symbol-narrow':'1.0-0' }}
+            </strong>
+          </div>
+          <div class="metric-icon-wrap icon-green" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 19V5M5 12l7-7 7 7"/>
+            </svg>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="comparison-note">Money to collect from others</span>
+        </div>
+      </article>
+
+      <!-- Total Payable -->
+      <article class="metric-card payable-card" id="summary-card-payable">
+        <div class="card-top">
+          <div class="metric-info">
+            <span class="metric-label">You Owe (Payable)</span>
+            <strong class="metric-value negative" id="summary-total-payable">
+              {{ summary.totalPayable | currency:'INR':'symbol-narrow':'1.0-0' }}
+            </strong>
+          </div>
+          <div class="metric-icon-wrap icon-red" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5v14M5 12l7 7 7-7"/>
+            </svg>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="comparison-note">Money you need to pay back</span>
+        </div>
+      </article>
+
+      <!-- Net Position -->
+      <article class="metric-card net-card" id="summary-card-net">
+        <div class="card-top">
+          <div class="metric-info">
+            <span class="metric-label">Net Debt Position</span>
+            <strong
+              class="metric-value"
+              [ngClass]="{ 'positive': summary.netDebtPosition > 0, 'negative': summary.netDebtPosition < 0 }"
+              id="summary-net-position"
+            >
+              {{ summary.netDebtPosition > 0 ? '+' : '' }}{{ summary.netDebtPosition | currency:'INR':'symbol-narrow':'1.0-0' }}
+            </strong>
+          </div>
+          <div class="metric-icon-wrap icon-net" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <path d="M8 12h8"/>
+            </svg>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="comparison-note">{{ summary.netDebtPosition >= 0 ? 'Net surplus receivable' : 'Net deficit payable' }}</span>
+        </div>
+      </article>
+
+      <!-- Reminders & Overdue -->
+      <article class="metric-card reminders-card" id="summary-card-reminders">
+        <div class="card-top">
+          <div class="metric-info">
+            <span class="metric-label">Active Reminders</span>
+            <strong class="metric-value" id="summary-reminders-count">
+              {{ summary.activeCount }}
+            </strong>
+          </div>
+          <div class="metric-icon-wrap icon-bell" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+          </div>
+        </div>
+        <div class="card-footer">
+          @if (summary.overdueCount > 0) {
+            <span class="pill overdue-pill" id="summary-overdue-pill">⚠ {{ summary.overdueCount }} Overdue</span>
+          } @else {
+            <span class="pill positive-pill">All on track</span>
+          }
+        </div>
+      </article>
+    </section>
+  }
+
+  <!-- Controls & Filters Strip -->
+  <section class="controls-bar" aria-label="Filters and controls">
+    <!-- Status Segmented Controls -->
+    <div class="status-tabs" role="tablist" aria-label="Status filters">
+      <button
+        type="button"
+        class="tab-btn"
+        id="filter-status-active"
+        [class.active]="statusFilter === 'ACTIVE'"
+        (click)="setStatusFilter('ACTIVE')"
+      >
+        Active
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        id="filter-status-all"
+        [class.active]="statusFilter === 'ALL'"
+        (click)="setStatusFilter('ALL')"
+      >
+        All Debts
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        id="filter-status-settled"
+        [class.active]="statusFilter === 'SETTLED'"
+        (click)="setStatusFilter('SETTLED')"
+      >
+        Settled
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        id="filter-status-cancelled"
+        [class.active]="statusFilter === 'CANCELLED'"
+        (click)="setStatusFilter('CANCELLED')"
+      >
+        Cancelled
+      </button>
+    </div>
+
+    <!-- Secondary Controls: Type Filter & Search -->
+    <div class="filter-inputs">
+      <div class="type-filter-wrap">
+        <select
+          id="filter-type-select"
+          class="form-input filter-select"
+          [(ngModel)]="typeFilter"
+          [ngModelOptions]="{ standalone: true }"
+          aria-label="Filter by debt type"
+        >
+          <option value="ALL">All Types</option>
+          <option value="OWED_TO_ME">Owed to Me</option>
+          <option value="I_OWE">I Owe</option>
+        </select>
+      </div>
+
+      <div class="search-wrap">
+        <input
+          type="text"
+          id="debt-search-input"
+          class="form-input search-input"
+          placeholder="Search counterparty or notes..."
+          [(ngModel)]="searchQuery"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- Debts List / Grid -->
+  @if (loading && !debts.length) {
+    <div class="state loading-state">
+      <div class="fintech-spinner"></div>
+      <p>Loading personal debts and IOUs...</p>
+    </div>
+  } @else if (!filteredDebts.length) {
+    <div class="empty-state-box" id="debts-empty-state">
+      <div class="empty-icon" aria-hidden="true">🤝</div>
+      <h3>No {{ statusFilter === 'ALL' ? '' : statusFilter.toLowerCase() }} debts found</h3>
+      <p>You have no records matching the selected status or search filter.</p>
+      <button type="button" class="btn-secondary" (click)="openCreateModal()">
+        Log a new IOU
+      </button>
+    </div>
+  } @else {
+    <div class="debts-grid" id="debts-grid">
+      @for (debt of filteredDebts; track debt.id) {
+        <article
+          class="debt-card"
+          [class.is-settled]="debt.status === 'SETTLED'"
+          [class.is-cancelled]="debt.status === 'CANCELLED'"
+          [class.is-overdue]="debt.overdue"
+          [attr.data-debt-id]="debt.id"
+        >
+          <!-- Card Header -->
+          <div class="debt-card-header">
+            <div class="counterparty-group">
+              <div
+                class="debt-direction-badge"
+                [class.receivable]="debt.debtType === 'OWED_TO_ME'"
+                [class.payable]="debt.debtType === 'I_OWE'"
+              >
+                {{ debt.debtType === 'OWED_TO_ME' ? 'Owed to Me' : 'I Owe' }}
+              </div>
+              <h3 class="counterparty-name">{{ debt.counterpartyName }}</h3>
+            </div>
+
+            <div class="status-badge-wrap">
+              @if (debt.status === 'ACTIVE') {
+                @if (debt.overdue) {
+                  <span class="badge badge-overdue">⚠ Overdue</span>
+                } @else {
+                  <span class="badge badge-active">Active</span>
+                }
+              } @else if (debt.status === 'SETTLED') {
+                <span class="badge badge-settled">✓ Settled</span>
+              } @else {
+                <span class="badge badge-cancelled">Cancelled</span>
+              }
+            </div>
+          </div>
+
+          <!-- Card Body -->
+          <div class="debt-card-body">
+            <div class="debt-amount-row">
+              <span class="amount-label">Amount</span>
+              <strong
+                class="debt-amount"
+                [class.text-green]="debt.debtType === 'OWED_TO_ME'"
+                [class.text-red]="debt.debtType === 'I_OWE'"
+              >
+                {{ debt.amount | currency:'INR':'symbol-narrow':'1.0-0' }}
+              </strong>
+            </div>
+
+            @if (debt.dueDate) {
+              <div class="debt-meta-row">
+                <span class="meta-label">Due Date:</span>
+                <span class="meta-val" [class.text-overdue]="debt.overdue">
+                  {{ debt.dueDate | date:'mediumDate' }}
+                </span>
+              </div>
+            }
+
+            @if (debt.notes) {
+              <p class="debt-notes">{{ debt.notes }}</p>
+            }
+
+            @if (debt.settledAt) {
+              <div class="settled-info">
+                <span>Settled on {{ debt.settledAt | date:'mediumDate' }}</span>
+                @if (debt.linkedTransactionId) {
+                  <span class="linked-tx-badge" [title]="'Linked Transaction: ' + debt.linkedTransactionId">
+                    🔗 Tx Linked
+                  </span>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Card Actions (Active Debts Only) -->
+          @if (debt.status === 'ACTIVE') {
+            <div class="debt-card-actions">
+              <button
+                type="button"
+                class="btn-action-settle"
+                [id]="'btn-settle-debt-' + debt.id"
+                (click)="openSettleModal(debt)"
+              >
+                Mark Settled
+              </button>
+              <button
+                type="button"
+                class="btn-action-cancel"
+                [id]="'btn-cancel-debt-' + debt.id"
+                (click)="cancelDebt(debt)"
+              >
+                Cancel
+              </button>
+            </div>
+          }
+        </article>
+      }
+    </div>
+  }
+
+  <!-- Log New Debt Modal Dialog -->
+  @if (showCreateModal) {
+    <div class="modal-backdrop" (click)="closeCreateModal()">
+      <div
+        class="modal-dialog"
+        id="create-debt-modal"
+        (click)="$event.stopPropagation()"
+        role="dialog"
+        aria-labelledby="modal-create-debt-title"
+        aria-modal="true"
+      >
+        <header class="modal-header">
+          <div>
+            <h3 id="modal-create-debt-title">Log New Debt / IOU</h3>
+            <p class="modal-sub">Create a personal reminder. No notifications or messages will be sent to the counterparty.</p>
+          </div>
+          <button
+            type="button"
+            class="modal-close"
+            id="btn-close-create-modal"
+            (click)="closeCreateModal()"
+            aria-label="Close modal"
+          >
+            ×
+          </button>
+        </header>
+
+        <form [formGroup]="debtForm" (ngSubmit)="submitCreateDebt()" class="dialog-form" novalidate>
+          @if (createFormError) {
+            <div class="form-error-banner" role="alert" id="create-debt-error-banner">
+              {{ createFormError }}
+            </div>
+          }
+
+          <!-- Counterparty Name -->
+          <div class="form-group">
+            <label for="debt-counterparty" class="field-label">Counterparty Name *</label>
+            <input
+              id="debt-counterparty"
+              type="text"
+              formControlName="counterpartyName"
+              placeholder="e.g. Ramesh, Priya, Landlord"
+              class="form-input"
+              [class.is-invalid]="isFieldInvalid('counterpartyName')"
+              maxlength="100"
+              autofocus
+            />
+            @if (isFieldInvalid('counterpartyName')) {
+              <span class="form-error-msg" id="error-debt-counterparty">
+                Counterparty name is required.
+              </span>
+            }
+          </div>
+
+          <!-- Direction & Amount Grid -->
+          <div class="form-row-2">
+            <!-- Debt Type / Direction -->
+            <div class="form-group">
+              <label for="debt-type" class="field-label">Direction *</label>
+              <select
+                id="debt-type"
+                formControlName="debtType"
+                class="form-input"
+                [class.is-invalid]="isFieldInvalid('debtType')"
+              >
+                <option value="OWED_TO_ME">Someone owes me (Receivable)</option>
+                <option value="I_OWE">I owe someone (Payable)</option>
+              </select>
+            </div>
+
+            <!-- Amount -->
+            <div class="form-group">
+              <label for="debt-amount" class="field-label">Amount (₹) *</label>
+              <input
+                id="debt-amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                formControlName="amount"
+                placeholder="0.00"
+                class="form-input"
+                [class.is-invalid]="isFieldInvalid('amount')"
+              />
+              @if (isFieldInvalid('amount')) {
+                <span class="form-error-msg" id="error-debt-amount">
+                  Valid amount greater than ₹0 is required.
+                </span>
+              }
+            </div>
+          </div>
+
+          <!-- Due Date -->
+          <div class="form-group">
+            <label for="debt-due-date" class="field-label">Due Date (Optional)</label>
+            <input
+              id="debt-due-date"
+              type="date"
+              formControlName="dueDate"
+              class="form-input"
+            />
+          </div>
+
+          <!-- Notes -->
+          <div class="form-group">
+            <label for="debt-notes" class="field-label">Notes (Optional)</label>
+            <textarea
+              id="debt-notes"
+              rows="3"
+              formControlName="notes"
+              placeholder="e.g. Split for dinner at Toit, repaid half via cash"
+              class="form-input form-textarea"
+              maxlength="500"
+            ></textarea>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn-secondary"
+              id="btn-cancel-create-debt"
+              (click)="closeCreateModal()"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="btn-primary"
+              id="btn-save-debt"
+              [disabled]="submitting"
+            >
+              {{ submitting ? 'Saving...' : 'Save Debt Reminder' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Settle Debt Modal Dialog -->
+  @if (showSettleModal && settlingDebt) {
+    <div class="modal-backdrop" (click)="closeSettleModal()">
+      <div
+        class="modal-dialog"
+        id="settle-debt-modal"
+        (click)="$event.stopPropagation()"
+        role="dialog"
+        aria-labelledby="modal-settle-debt-title"
+        aria-modal="true"
+      >
+        <header class="modal-header">
+          <div>
+            <h3 id="modal-settle-debt-title">Settle Debt</h3>
+            <p class="modal-sub">Mark this record as completed. You can optionally link a transaction as proof.</p>
+          </div>
+          <button
+            type="button"
+            class="modal-close"
+            id="btn-close-settle-modal"
+            (click)="closeSettleModal()"
+            aria-label="Close modal"
+          >
+            ×
+          </button>
+        </header>
+
+        <form [formGroup]="settleForm" (ngSubmit)="submitSettleDebt()" class="dialog-form">
+          @if (settleFormError) {
+            <div class="form-error-banner" role="alert" id="settle-debt-error-banner">
+              {{ settleFormError }}
+            </div>
+          }
+
+          <!-- Debt Summary Box -->
+          <div class="settle-summary-box">
+            <div class="box-row">
+              <span class="box-label">Counterparty:</span>
+              <strong class="box-val">{{ settlingDebt.counterpartyName }}</strong>
+            </div>
+            <div class="box-row">
+              <span class="box-label">Direction:</span>
+              <span class="box-val">{{ settlingDebt.debtType === 'OWED_TO_ME' ? 'Owed to you' : 'You owe' }}</span>
+            </div>
+            <div class="box-row">
+              <span class="box-label">Amount:</span>
+              <strong class="box-val highlight">{{ settlingDebt.amount | currency:'INR':'symbol-narrow':'1.0-0' }}</strong>
+            </div>
+          </div>
+
+          <!-- Optional Linked Transaction -->
+          <div class="form-group">
+            <label for="settle-linked-tx" class="field-label">Link Transaction (Optional)</label>
+            <select
+              id="settle-linked-tx"
+              formControlName="linkedTransactionId"
+              class="form-input"
+            >
+              <option value="">-- No linked transaction --</option>
+              @for (tx of recentTransactions; track tx.id) {
+                <option [value]="tx.id">
+                  {{ tx.transactionDate | date:'shortDate' }} &middot; {{ tx.merchant || 'Tx' }} &middot; ₹{{ tx.amount }}
+                </option>
+              }
+            </select>
+            <small class="field-hint">Optional: Associates a real statement transaction with this settlement.</small>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn-secondary"
+              id="btn-cancel-settle"
+              (click)="closeSettleModal()"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="btn-primary"
+              id="btn-confirm-settle"
+              [disabled]="settleSubmitting"
+            >
+              {{ settleSubmitting ? 'Settling...' : 'Confirm Settlement' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</section>

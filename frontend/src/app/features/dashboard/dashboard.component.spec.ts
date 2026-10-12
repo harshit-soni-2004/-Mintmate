@@ -365,4 +365,27 @@ describe('DashboardComponent', () => {
     expect(component.activeProactiveInsight).toBeNull();
     expect(fixture.nativeElement.querySelector('.proactive-insight-banner')).toBeNull();
   });
+
+  it('renders debt card metrics and active reminders on dashboard', () => {
+    if (component.dashboardData) {
+      component.dashboardData.summary.debtOwedToUser = 6000;
+      component.dashboardData.summary.debtOwedByUser = 2500;
+      component.dashboardData.summary.netDebtPosition = 3500;
+      component.dashboardData.summary.activeDebtRemindersCount = 2;
+    }
+    fixture.detectChanges();
+
+    expect(component.debtOwedToUser).toBe(6000);
+    expect(component.debtOwedByUser).toBe(2500);
+    expect(component.netDebtPosition).toBe(3500);
+    expect(component.activeDebtRemindersCount).toBe(2);
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('#dash-debt-owed-to-user')?.textContent).toContain('6,000');
+    expect(compiled.querySelector('#dash-debt-owed-by-user')?.textContent).toContain('2,500');
+    expect(compiled.querySelector('#dash-debt-net-position')?.textContent).toContain('3,500');
+    expect(compiled.querySelector('#dash-debt-reminder-badge')?.textContent).toContain('2 items');
+    expect(compiled.querySelector('#dash-view-debts-link')).toBeTruthy();
+  });
 });
+

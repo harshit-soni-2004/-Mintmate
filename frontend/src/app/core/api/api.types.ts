@@ -505,4 +505,44 @@ export interface OnboardingResponse {
   categoryAllocations: CategoryAllocationDto[];
 }
 
+export type DebtType = 'OWED_TO_ME' | 'I_OWE';
+export type DebtStatus = 'ACTIVE' | 'SETTLED' | 'CANCELLED';
+
+export interface DebtDto {
+  id: string;
+  counterpartyName: string;
+  debtType: DebtType;
+  amount: number;
+  dueDate?: string | null;
+  status: DebtStatus;
+  settledAt?: string | null;
+  linkedTransactionId?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  overdue: boolean;
+}
+
+export interface DebtSummaryDto {
+  totalReceivable: number;
+  totalPayable: number;
+  netDebtPosition: number;
+  activeCount: number;
+  overdueCount: number;
+  upcomingDebts: DebtDto[];
+  overdueDebts: DebtDto[];
+}
+
+export interface CreateDebtRequest {
+  counterpartyName: string;
+  debtType: DebtType;
+  amount: number;
+  dueDate?: string | null;
+  notes?: string | null;
+}
+
+export interface SettleDebtRequest {
+  linkedTransactionId?: string | null;
+}
+
+
 

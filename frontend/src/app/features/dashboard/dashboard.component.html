@@ -474,6 +474,54 @@
               </div>
             </div>
           }
+
+          <!-- Debt / IOU Guardrail Card -->
+          <div class="guardrail-card debt-guardrail" id="dashboard-debt-card">
+            <div class="g-header">
+              <span class="g-type-label">IOUs &amp; Debts</span>
+              @if (activeDebtRemindersCount > 0) {
+                <span class="g-status-badge debt-reminder-badge" id="dash-debt-reminder-badge">
+                  🔔 {{ activeDebtRemindersCount }} {{ activeDebtRemindersCount === 1 ? 'item' : 'items' }}
+                </span>
+              } @else {
+                <span class="g-status-badge settled-badge">Clear</span>
+              }
+            </div>
+
+            <div class="g-body">
+              <div class="debt-metrics-row">
+                <div class="debt-metric-col">
+                  <span class="debt-col-label">Owed to you</span>
+                  <strong class="debt-col-val owed-to-me" id="dash-debt-owed-to-user">
+                    {{ debtOwedToUser | currency:'INR':'symbol-narrow':'1.0-0' }}
+                  </strong>
+                </div>
+                <div class="debt-metric-divider" aria-hidden="true"></div>
+                <div class="debt-metric-col">
+                  <span class="debt-col-label">You owe</span>
+                  <strong class="debt-col-val i-owe" id="dash-debt-owed-by-user">
+                    {{ debtOwedByUser | currency:'INR':'symbol-narrow':'1.0-0' }}
+                  </strong>
+                </div>
+              </div>
+
+              <div class="debt-net-row">
+                <span class="debt-net-label">Net balance</span>
+                <span
+                  class="debt-net-val"
+                  [class.is-positive]="netDebtPosition > 0"
+                  [class.is-negative]="netDebtPosition < 0"
+                  id="dash-debt-net-position"
+                >
+                  {{ netDebtPosition > 0 ? '+' : '' }}{{ netDebtPosition | currency:'INR':'symbol-narrow':'1.0-0' }}
+                </span>
+              </div>
+
+              <div class="debt-card-action">
+                <a routerLink="/app/debts" class="btn-text-link" id="dash-view-debts-link">Manage IOUs →</a>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>

@@ -18,6 +18,7 @@ import {
   TransactionType,
 } from '../../core/api/api.types';
 import { AuthService } from '../../core/auth/auth.service';
+import { DebtService } from '../../core/api/debt.service';
 import { BudgetService } from '../budgets/budget.service';
 import { InsightsService } from '../insights/insights.service';
 import { AssistantService } from '../assistant/assistant.service';
@@ -89,6 +90,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly budgetService = inject(BudgetService);
   private readonly insightsService = inject(InsightsService);
   private readonly assistantService = inject(AssistantService);
+  private readonly debtService = inject(DebtService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
 
@@ -267,6 +269,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return this.dashboardData?.summary.investTarget ?? this.dashboardData?.summary.monthlyInvestmentTarget ?? null;
   }
 
+  get debtOwedToUser(): number {
+    return this.dashboardData?.summary.debtOwedToUser ?? 0;
+  }
+
+  get debtOwedByUser(): number {
+    return this.dashboardData?.summary.debtOwedByUser ?? 0;
+  }
+
+  get netDebtPosition(): number {
+    return this.dashboardData?.summary.netDebtPosition ?? 0;
+  }
+
+  get activeDebtRemindersCount(): number {
+    return this.dashboardData?.summary.activeDebtRemindersCount ?? 0;
+  }
+
   ngOnInit(): void {
     this.loadDashboard();
     this.loadBudgets();
@@ -287,9 +305,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.loadProactiveInsights();
     });
 
+    const sub3 = this.debtService.onDebtMutated$.subscribe(() => {
+      this.loadDashboard(false);
+    });
+
     this.mutationSub = new Subscription();
     this.mutationSub.add(sub1);
     this.mutationSub.add(sub2);
+    this.mutationSub.add(sub3);
   }
 
   loadProactiveInsights(): void {
