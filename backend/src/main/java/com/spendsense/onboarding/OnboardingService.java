@@ -114,13 +114,14 @@ public class OnboardingService {
                     // Seed draft monthly budget if user doesn't already have a budget for this category
                     boolean hasBudget = budgetRepository.existsByUser_IdAndCategory(userId, allocDto.category());
                     if (!hasBudget) {
+                        java.time.YearMonth currentMonth = java.time.YearMonth.now();
                         Budget budget = new Budget(
                                 user,
                                 allocDto.category(),
                                 allocDto.estimatedAmount(),
                                 BudgetPeriod.MONTHLY,
-                                LocalDate.now().withDayOfMonth(1),
-                                null
+                                currentMonth.atDay(1),
+                                currentMonth.atEndOfMonth()
                         );
                         budgetRepository.save(budget);
                     }

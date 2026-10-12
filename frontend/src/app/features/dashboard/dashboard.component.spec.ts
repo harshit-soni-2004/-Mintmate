@@ -219,6 +219,28 @@ describe('DashboardComponent', () => {
     expect(compiled.querySelector('.insight-desc')?.textContent).toContain('Once you record transactions or import statements');
   });
 
+  it('displays declared baseline income and targets when zero transaction inflow', () => {
+    if (component.dashboardData) {
+      component.dashboardData.summary.totalIncome = 0;
+      component.dashboardData.summary.declaredIncome = 95000;
+      component.dashboardData.summary.monthlySavingsTarget = 30000;
+      component.dashboardData.summary.monthlyInvestmentTarget = 20000;
+      component.dashboardData.summary.hasOnboardingBaseline = true;
+    }
+    fixture.detectChanges();
+
+    expect(component.effectiveIncome).toBe(95000);
+    expect(component.isDeclaredBaselineIncome).toBeTrue();
+    expect(component.savingsTarget).toBe(30000);
+    expect(component.investTarget).toBe(20000);
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.income-card .submetric-val')?.textContent).toContain('95,000');
+    expect(compiled.querySelector('.income-card .baseline-subtext')?.textContent).toContain('Declared baseline');
+    expect(compiled.querySelector('.goal-guardrail .g-numbers')?.textContent).toContain('30,000');
+    expect(compiled.querySelector('.invest-guardrail .g-numbers')?.textContent).toContain('20,000');
+  });
+
   it('builds dynamic cashflow chart matching calendar days and daily spending', () => {
     expect(component.cashflowPoints.length).toBe(30); // September 2026 has 30 days
     expect(component.isCashflowEmpty).toBeFalse();

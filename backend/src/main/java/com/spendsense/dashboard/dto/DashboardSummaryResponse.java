@@ -77,4 +77,14 @@ public record DashboardSummaryResponse(
                 null, null, null, false,
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0);
     }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("savingsTarget")
+    public BigDecimal savingsTarget() {
+        return monthlySavingsTarget;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("investTarget")
+    public BigDecimal investTarget() {
+        return monthlyInvestmentTarget;
+    }
 }

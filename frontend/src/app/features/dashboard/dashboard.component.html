@@ -208,8 +208,11 @@
           <div class="submetric-item income-card">
             <span class="submetric-label">Income Inflow</span>
             <strong class="metric-value submetric-val income">
-              {{ dashboardData.summary.totalIncome | currency:'INR':'symbol-narrow':'1.0-0' }}
+              {{ effectiveIncome | currency:'INR':'symbol-narrow':'1.0-0' }}
             </strong>
+            @if (isDeclaredBaselineIncome) {
+              <span class="baseline-subtext">Declared baseline</span>
+            }
           </div>
           <div class="submetric-divider"></div>
           <div class="submetric-item expense-card">
@@ -419,23 +422,23 @@
           <div class="guardrail-card goal-guardrail">
             <div class="g-header">
               <span class="g-type-label">Savings Target</span>
-              @if (dashboardData.summary.savingsTarget && dashboardData.summary.savingsTarget > 0) {
+              @if (savingsTarget && savingsTarget > 0) {
                 <span class="g-status-badge on-track">
-                  {{ (dashboardData.summary.netSavings >= dashboardData.summary.savingsTarget) ? 'Achieved' : 'On Track' }}
+                  {{ (dashboardData.summary.netSavings >= savingsTarget) ? 'Achieved' : 'On Track' }}
                 </span>
               }
             </div>
-            @if (dashboardData.summary.savingsTarget && dashboardData.summary.savingsTarget > 0) {
+            @if (savingsTarget && savingsTarget > 0) {
               <div class="g-body">
                 <strong class="g-title">Monthly Target</strong>
                 <p class="g-numbers">
                   {{ (dashboardData.summary.netSavings > 0 ? dashboardData.summary.netSavings : 0) | currency:'INR':'symbol-narrow':'1.0-0' }}
-                  <span class="g-muted">of {{ dashboardData.summary.savingsTarget | currency:'INR':'symbol-narrow':'1.0-0' }} &middot; {{ Math.min(100, Math.round((Math.max(0, dashboardData.summary.netSavings) / dashboardData.summary.savingsTarget) * 100)) }}%</span>
+                  <span class="g-muted">of {{ savingsTarget | currency:'INR':'symbol-narrow':'1.0-0' }} &middot; {{ Math.min(100, Math.round((Math.max(0, dashboardData.summary.netSavings) / savingsTarget) * 100)) }}%</span>
                 </p>
                 <div class="progress-bar-track">
                   <div
                     class="progress-bar-fill"
-                    [style.width.%]="Math.min(100, Math.round((Math.max(0, dashboardData.summary.netSavings) / dashboardData.summary.savingsTarget) * 100))"
+                    [style.width.%]="Math.min(100, Math.round((Math.max(0, dashboardData.summary.netSavings) / savingsTarget) * 100))"
                   ></div>
                 </div>
               </div>
@@ -446,6 +449,31 @@
               </div>
             }
           </div>
+
+          <!-- Investment Target Card (if declared in onboarding) -->
+          @if (investTarget && investTarget > 0) {
+            <div class="guardrail-card invest-guardrail">
+              <div class="g-header">
+                <span class="g-type-label">Investment Target</span>
+                <span class="g-status-badge on-track">
+                  {{ ((dashboardData.summary.investmentContributions || 0) >= investTarget) ? 'Achieved' : 'Active' }}
+                </span>
+              </div>
+              <div class="g-body">
+                <strong class="g-title">Monthly Allocation</strong>
+                <p class="g-numbers">
+                  {{ (dashboardData.summary.investmentContributions || 0) | currency:'INR':'symbol-narrow':'1.0-0' }}
+                  <span class="g-muted">of {{ investTarget | currency:'INR':'symbol-narrow':'1.0-0' }} &middot; {{ Math.min(100, Math.round(((dashboardData.summary.investmentContributions || 0) / investTarget) * 100)) }}%</span>
+                </p>
+                <div class="progress-bar-track">
+                  <div
+                    class="progress-bar-fill invest-fill"
+                    [style.width.%]="Math.min(100, Math.round(((dashboardData.summary.investmentContributions || 0) / investTarget) * 100))"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          }
         </div>
       </section>
     </div>

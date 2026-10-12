@@ -564,6 +564,15 @@
           color: var(--color-primary);
         }
       }
+
+      .baseline-subtext {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-top: 0.1rem;
+      }
     }
   }
 }
@@ -888,6 +897,7 @@
         &.fill-on-track { background: var(--success); }
         &.fill-warning { background: var(--warning); }
         &.fill-exceeded { background: var(--danger); }
+        &.invest-fill { background: #3b9c94; }
       }
     }
   }

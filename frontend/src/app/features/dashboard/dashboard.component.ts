@@ -238,6 +238,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return this.budgetSummary.budgets.slice().sort((a, b) => b.percentageUsed - a.percentageUsed)[0];
   }
 
+  get declaredIncome(): number | null {
+    return this.dashboardData?.summary.declaredIncome ?? null;
+  }
+
+  get effectiveIncome(): number {
+    if (!this.dashboardData) return 0;
+    if (this.dashboardData.summary.totalIncome > 0) {
+      return this.dashboardData.summary.totalIncome;
+    }
+    return this.dashboardData.summary.declaredIncome || 0;
+  }
+
+  get isDeclaredBaselineIncome(): boolean {
+    return !!(
+      this.dashboardData &&
+      this.dashboardData.summary.totalIncome === 0 &&
+      this.dashboardData.summary.declaredIncome &&
+      this.dashboardData.summary.declaredIncome > 0
+    );
+  }
+
+  get savingsTarget(): number | null {
+    return this.dashboardData?.summary.savingsTarget ?? this.dashboardData?.summary.monthlySavingsTarget ?? null;
+  }
+
+  get investTarget(): number | null {
+    return this.dashboardData?.summary.investTarget ?? this.dashboardData?.summary.monthlyInvestmentTarget ?? null;
+  }
+
   ngOnInit(): void {
     this.loadDashboard();
     this.loadBudgets();

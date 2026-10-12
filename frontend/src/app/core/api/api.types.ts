@@ -188,6 +188,8 @@ export interface DashboardSummary {
   declaredIncome?: number | null;
   savingsTarget?: number | null;
   investTarget?: number | null;
+  monthlySavingsTarget?: number | null;
+  monthlyInvestmentTarget?: number | null;
   hasOnboardingBaseline?: boolean;
   debtOwedToUser?: number;
   debtOwedByUser?: number;
