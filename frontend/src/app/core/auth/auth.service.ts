@@ -40,6 +40,12 @@ export class AuthService {
       .pipe(tap((response) => this.persist(response.data)));
   }
 
+  loginWithGoogle(idToken: string): Observable<ApiResponse<AuthResponse>> {
+    return this.http
+      .post<ApiResponse<AuthResponse>>(`${environment.apiUrl}/auth/google`, { idToken })
+      .pipe(tap((response) => this.persist(response.data)));
+  }
+
   logout(): void {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);

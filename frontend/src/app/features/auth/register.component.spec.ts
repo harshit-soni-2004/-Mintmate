@@ -11,7 +11,7 @@ describe('RegisterComponent', () => {
   let router: Router;
 
   beforeEach(async () => {
-    authServiceSpy = jasmine.createSpyObj('AuthService', ['register']);
+    authServiceSpy = jasmine.createSpyObj('AuthService', ['register', 'loginWithGoogle']);
 
     await TestBed.configureTestingModule({
       imports: [RegisterComponent],
@@ -91,6 +91,34 @@ describe('RegisterComponent', () => {
       email: 'alex@example.com',
       password: 'Password123',
     });
+    expect(router.navigate).toHaveBeenCalledWith(['/app/onboarding']);
+  });
+
+  it('renders Google registration button and triggers loginWithGoogle on credential', () => {
+    const googleBtn = fixture.nativeElement.querySelector('#btn-google-register');
+    expect(googleBtn).toBeTruthy();
+
+    authServiceSpy.loginWithGoogle.and.returnValue(
+      of({
+        data: {
+          accessToken: 'jwt-google-reg',
+          tokenType: 'Bearer',
+          user: {
+            id: 'google-reg-1',
+            email: 'googlereg@example.com',
+            displayName: 'Google Reg',
+            timezone: 'Asia/Kolkata',
+            createdAt: '2026-10-17T00:00:00Z',
+          },
+        },
+        error: null,
+        meta: null,
+      }),
+    );
+
+    component.handleGoogleCredential('google-id-token-abc');
+
+    expect(authServiceSpy.loginWithGoogle).toHaveBeenCalledWith('google-id-token-abc');
     expect(router.navigate).toHaveBeenCalledWith(['/app/onboarding']);
   });
 });

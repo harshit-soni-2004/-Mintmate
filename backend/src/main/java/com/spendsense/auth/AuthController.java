@@ -1,6 +1,7 @@
 package com.spendsense.auth;
 
 import com.spendsense.auth.dto.AuthResponse;
+import com.spendsense.auth.dto.GoogleLoginRequest;
 import com.spendsense.auth.dto.LoginRequest;
 import com.spendsense.auth.dto.RegisterRequest;
 import com.spendsense.common.api.ApiResponse;
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping({"/api/v1/auth", "/api/auth"})
 public class AuthController {
 
     private final AuthService authService;
@@ -31,5 +32,10 @@ public class AuthController {
     @PostMapping("/login")
     public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.of(authService.login(request));
+    }
+
+    @PostMapping("/google")
+    public ApiResponse<AuthResponse> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
+        return ApiResponse.of(authService.loginWithGoogle(request));
     }
 }

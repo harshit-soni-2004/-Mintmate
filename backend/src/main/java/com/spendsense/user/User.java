@@ -23,7 +23,7 @@ public class User {
     @Column(nullable = false, unique = true, length = 320)
     private String email;
 
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password_hash", nullable = true)
     private String passwordHash;
 
     @Column(name = "display_name", nullable = false, length = 80)
@@ -31,6 +31,12 @@ public class User {
 
     @Column(nullable = false, length = 64)
     private String timezone;
+
+    @Column(name = "google_sub", unique = true, length = 255)
+    private String googleSub;
+
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = false;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -42,11 +48,17 @@ public class User {
     }
 
     public User(String email, String passwordHash, String displayName, String timezone) {
+        this(email, passwordHash, displayName, timezone, null, false);
+    }
+
+    public User(String email, String passwordHash, String displayName, String timezone, String googleSub, boolean emailVerified) {
         this.id = UUID.randomUUID();
         this.email = email;
         this.passwordHash = passwordHash;
         this.displayName = displayName;
         this.timezone = timezone;
+        this.googleSub = googleSub;
+        this.emailVerified = emailVerified;
     }
 
     @PrePersist
@@ -76,12 +88,44 @@ public class User {
         return passwordHash;
     }
 
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public void invalidatePassword() {
+        this.passwordHash = null;
+    }
+
     public String getDisplayName() {
         return displayName;
     }
 
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
     public String getTimezone() {
         return timezone;
+    }
+
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
+    }
+
+    public String getGoogleSub() {
+        return googleSub;
+    }
+
+    public void setGoogleSub(String googleSub) {
+        this.googleSub = googleSub;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 
     public Instant getCreatedAt() {

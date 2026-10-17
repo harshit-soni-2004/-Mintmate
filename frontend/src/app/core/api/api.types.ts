@@ -543,6 +543,6 @@ export interface CreateDebtRequest {
 export interface SettleDebtRequest {
   linkedTransactionId?: string | null;
 }
-
-
-
+export interface GoogleLoginRequest {
+  idToken: string;
+}

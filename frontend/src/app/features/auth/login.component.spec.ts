@@ -11,7 +11,7 @@ describe('LoginComponent', () => {
   let router: Router;
 
   beforeEach(async () => {
-    authServiceSpy = jasmine.createSpyObj('AuthService', ['login']);
+    authServiceSpy = jasmine.createSpyObj('AuthService', ['login', 'loginWithGoogle']);
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
@@ -88,6 +88,34 @@ describe('LoginComponent', () => {
       email: 'user@example.com',
       password: 'ValidPass123',
     });
+    expect(router.navigate).toHaveBeenCalledWith(['/app/dashboard']);
+  });
+
+  it('renders Google sign-in button and triggers loginWithGoogle on credential', () => {
+    const googleBtn = fixture.nativeElement.querySelector('#btn-google-login');
+    expect(googleBtn).toBeTruthy();
+
+    authServiceSpy.loginWithGoogle.and.returnValue(
+      of({
+        data: {
+          accessToken: 'jwt-google-xyz',
+          tokenType: 'Bearer',
+          user: {
+            id: 'google-user-1',
+            email: 'google@example.com',
+            displayName: 'Google User',
+            timezone: 'Asia/Kolkata',
+            createdAt: '2026-10-17T00:00:00Z',
+          },
+        },
+        error: null,
+        meta: null,
+      }),
+    );
+
+    component.handleGoogleCredential('test-id-token-xyz');
+
+    expect(authServiceSpy.loginWithGoogle).toHaveBeenCalledWith('test-id-token-xyz');
     expect(router.navigate).toHaveBeenCalledWith(['/app/dashboard']);
   });
 });
