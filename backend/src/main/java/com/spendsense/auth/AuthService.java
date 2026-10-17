@@ -27,9 +27,19 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final GoogleTokenVerifier googleTokenVerifier;
+    private final com.spendsense.auth.otp.OtpService otpService;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
-        this(userRepository, passwordEncoder, jwtService, null);
+        this(userRepository, passwordEncoder, jwtService, null, null);
+    }
+
+    public AuthService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            GoogleTokenVerifier googleTokenVerifier
+    ) {
+        this(userRepository, passwordEncoder, jwtService, googleTokenVerifier, null);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -37,12 +47,14 @@ public class AuthService {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) GoogleTokenVerifier googleTokenVerifier
+            @org.springframework.beans.factory.annotation.Autowired(required = false) GoogleTokenVerifier googleTokenVerifier,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) com.spendsense.auth.otp.OtpService otpService
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.googleTokenVerifier = googleTokenVerifier;
+        this.otpService = otpService;
     }
 
     @Transactional
@@ -63,7 +75,17 @@ public class AuthService {
                 false
         );
         userRepository.save(user);
-        return toAuthResponse(user);
+
+        if (otpService != null) {
+            try {
+                otpService.sendVerificationOtp(email, "EMAIL_VERIFICATION", null);
+            } catch (Exception ignored) {
+                // Ignore initial dispatch failure so user record is created and user can resend code
+            }
+        }
+
+        // Unverified signups must verify via OTP before a session/JWT is issued
+        return AuthResponse.pendingVerification(UserResponse.from(user));
     }
 
     @Transactional(readOnly = true)
@@ -74,7 +96,39 @@ public class AuthService {
         if (user.getPasswordHash() == null || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw invalidCredentials();
         }
+        if (!user.isEmailVerified()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "EMAIL_NOT_VERIFIED", "Please verify your email address before logging in.");
+        }
         return toAuthResponse(user);
+    }
+
+    @Transactional
+    public com.spendsense.auth.dto.OtpResponse requestPasswordReset(String emailInput, String clientIp) {
+        String email = normalizeEmail(emailInput);
+        if (otpService == null) {
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "OTP_UNAVAILABLE", "OTP service is not available");
+        }
+        return otpService.sendVerificationOtp(email, "PASSWORD_RESET", clientIp);
+    }
+
+    @Transactional
+    public com.spendsense.auth.dto.OtpResponse resetPassword(com.spendsense.auth.dto.ResetPasswordRequest request) {
+        String email = normalizeEmail(request.email());
+        if (otpService == null) {
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "OTP_UNAVAILABLE", "OTP service is not available");
+        }
+
+        // Verify and consume OTP for PASSWORD_RESET (single use, validates expiry, attempts, rate limits)
+        otpService.verifyOtp(email, request.code(), "PASSWORD_RESET");
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "INVALID_USER", "Account not found"));
+
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        user.setEmailVerified(true);
+        userRepository.save(user);
+
+        return new com.spendsense.auth.dto.OtpResponse(true, "Password has been successfully reset. You can now log in.", 0);
     }
 
     @Transactional

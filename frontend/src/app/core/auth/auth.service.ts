@@ -54,6 +54,14 @@ export class AuthService {
     return this.http.post<ApiResponse<OtpResponse>>(`${environment.apiUrl}/auth/otp/verify`, { email, code, purpose });
   }
 
+  forgotPassword(email: string): Observable<ApiResponse<OtpResponse>> {
+    return this.http.post<ApiResponse<OtpResponse>>(`${environment.apiUrl}/auth/password/forgot`, { email });
+  }
+
+  resetPassword(payload: { email: string; code: string; newPassword: string }): Observable<ApiResponse<OtpResponse>> {
+    return this.http.post<ApiResponse<OtpResponse>>(`${environment.apiUrl}/auth/password/reset`, payload);
+  }
+
   logout(): void {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
@@ -65,7 +73,7 @@ export class AuthService {
   }
 
   private persist(data: AuthResponse | null): void {
-    if (!data) {
+    if (!data || !data.accessToken) {
       return;
     }
     localStorage.setItem(TOKEN_KEY, data.accessToken);

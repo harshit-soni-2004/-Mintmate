@@ -7,5 +7,6 @@ spring:
   flyway:
     enabled: true
 app:
+  trust-forwarded-headers: ${APP_TRUST_FORWARDED_HEADERS:false}
   jwt:
     secret: test-only-spendsense-jwt-hs256-secret-key-32b

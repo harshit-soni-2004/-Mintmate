@@ -32,6 +32,9 @@ class AuthServiceTest {
     @Mock
     private com.spendsense.auth.google.GoogleTokenVerifier googleTokenVerifier;
 
+    @Mock
+    private com.spendsense.auth.otp.OtpService otpService;
+
     private PasswordEncoder passwordEncoder;
     private AuthService authService;
 
@@ -41,11 +44,11 @@ class AuthServiceTest {
         JwtProperties properties = new JwtProperties();
         properties.setSecret("local-dev-only-change-me-spendsense-jwt-hs256-key-32b");
         properties.setExpirationMs(3_600_000L);
-        authService = new AuthService(userRepository, passwordEncoder, new JwtService(properties), googleTokenVerifier);
+        authService = new AuthService(userRepository, passwordEncoder, new JwtService(properties), googleTokenVerifier, otpService);
     }
 
     @Test
-    void registerPersistsNormalizedEmailAndReturnsToken() {
+    void registerPersistsNormalizedEmailAsUnverifiedWithoutToken() {
         when(userRepository.existsByEmail("ada@example.com")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -56,10 +59,13 @@ class AuthServiceTest {
         User saved = captor.getValue();
         assertThat(saved.getEmail()).isEqualTo("ada@example.com");
         assertThat(saved.getTimezone()).isEqualTo("Asia/Kolkata");
+        assertThat(saved.isEmailVerified()).isFalse();
         assertThat(passwordEncoder.matches("password1", saved.getPasswordHash())).isTrue();
-        assertThat(response.accessToken()).isNotBlank();
+        assertThat(response.accessToken()).isNull();
+        assertThat(response.tokenType()).isNull();
         assertThat(response.user().email()).isEqualTo("ada@example.com");
         assertThat(response.user().displayName()).isEqualTo("Ada");
+        verify(otpService).sendVerificationOtp("ada@example.com", "EMAIL_VERIFICATION", null);
     }
 
     @Test
@@ -181,5 +187,82 @@ class AuthServiceTest {
         assertThat(existingUnverified.getGoogleSub()).isEqualTo("sub-victim");
         assertThat(existingUnverified.isEmailVerified()).isTrue();
         assertThat(response.user().email()).isEqualTo("victim@example.com");
+    }
+
+    @Test
+    void loginAllowsVerifiedUserWithCorrectPassword() {
+        User verifiedUser = new User("verified@example.com", passwordEncoder.encode("correctPass1"), "Verified", "Asia/Kolkata", null, true);
+        when(userRepository.findByEmail("verified@example.com")).thenReturn(java.util.Optional.of(verifiedUser));
+
+        var response = authService.login(new LoginRequest("verified@example.com", "correctPass1"));
+
+        assertThat(response.accessToken()).isNotBlank();
+        assertThat(response.user().email()).isEqualTo("verified@example.com");
+    }
+
+    @Test
+    void loginBlocksUnverifiedUserWithCorrectPassword() {
+        User unverifiedUser = new User("unverified@example.com", passwordEncoder.encode("correctPass1"), "Unverified", "Asia/Kolkata", null, false);
+        when(userRepository.findByEmail("unverified@example.com")).thenReturn(java.util.Optional.of(unverifiedUser));
+
+        assertThatThrownBy(() -> authService.login(new LoginRequest("unverified@example.com", "correctPass1")))
+                .isInstanceOf(ApiException.class)
+                .extracting("status", "code")
+                .containsExactly(HttpStatus.FORBIDDEN, "EMAIL_NOT_VERIFIED");
+    }
+
+    @Test
+    void loginRejectsUnverifiedUserWithWrongPasswordAsGenericInvalidCredentials() {
+        User unverifiedUser = new User("unverified@example.com", passwordEncoder.encode("correctPass1"), "Unverified", "Asia/Kolkata", null, false);
+        when(userRepository.findByEmail("unverified@example.com")).thenReturn(java.util.Optional.of(unverifiedUser));
+
+        assertThatThrownBy(() -> authService.login(new LoginRequest("unverified@example.com", "wrongPass")))
+                .isInstanceOf(ApiException.class)
+                .extracting("status", "code")
+                .containsExactly(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS");
+    }
+
+    @Test
+    void requestPasswordResetDelegatesToOtpService() {
+        when(otpService.sendVerificationOtp("user@example.com", "PASSWORD_RESET", "127.0.0.1"))
+                .thenReturn(new com.spendsense.auth.dto.OtpResponse(true, "Sent", 60));
+
+        var response = authService.requestPasswordReset("user@example.com", "127.0.0.1");
+
+        assertThat(response.isSuccess()).isTrue();
+        verify(otpService).sendVerificationOtp("user@example.com", "PASSWORD_RESET", "127.0.0.1");
+    }
+
+    @Test
+    void resetPasswordUpdatesPasswordAndMarksEmailVerified() {
+        User user = new User("user@example.com", passwordEncoder.encode("oldPassword1"), "User", "Asia/Kolkata", null, false);
+        when(userRepository.findByEmail("user@example.com")).thenReturn(java.util.Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = authService.resetPassword(new com.spendsense.auth.dto.ResetPasswordRequest(
+                "user@example.com", "654321", "NewValidPassword2"
+        ));
+
+        assertThat(response.isSuccess()).isTrue();
+        verify(otpService).verifyOtp("user@example.com", "654321", "PASSWORD_RESET");
+        assertThat(user.isEmailVerified()).isTrue();
+        assertThat(passwordEncoder.matches("NewValidPassword2", user.getPasswordHash())).isTrue();
+        assertThat(passwordEncoder.matches("oldPassword1", user.getPasswordHash())).isFalse();
+    }
+
+    @Test
+    void nullPasswordAccountCanSetPasswordViaReset() {
+        // User created via Google with password_hash = null
+        User googleUser = new User("googleonly@example.com", null, "Google Only", "Asia/Kolkata", "sub-999", true);
+        when(userRepository.findByEmail("googleonly@example.com")).thenReturn(java.util.Optional.of(googleUser));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = authService.resetPassword(new com.spendsense.auth.dto.ResetPasswordRequest(
+                "googleonly@example.com", "654321", "NewlySetPassword3"
+        ));
+
+        assertThat(response.isSuccess()).isTrue();
+        assertThat(googleUser.getPasswordHash()).isNotNull();
+        assertThat(passwordEncoder.matches("NewlySetPassword3", googleUser.getPasswordHash())).isTrue();
     }
 }

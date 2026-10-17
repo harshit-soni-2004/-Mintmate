@@ -91,7 +91,9 @@ describe('RegisterComponent', () => {
       email: 'alex@example.com',
       password: 'Password123',
     });
-    expect(router.navigate).toHaveBeenCalledWith(['/app/onboarding']);
+    expect(router.navigate).toHaveBeenCalledWith(['/verify-otp'], {
+      queryParams: { email: 'alex@example.com' },
+    });
   });
 
   it('renders Google registration button and triggers loginWithGoogle on credential', () => {

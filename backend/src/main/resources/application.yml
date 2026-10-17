@@ -28,6 +28,9 @@ spring:
     enabled: true
 
 app:
+  # When false (default), client IP is read from servlet remote address.
+  # Set to true only behind a proxy that overwrites the header.
+  trust-forwarded-headers: ${APP_TRUST_FORWARDED_HEADERS:false}
   jwt:
     secret: ${JWT_SECRET}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}

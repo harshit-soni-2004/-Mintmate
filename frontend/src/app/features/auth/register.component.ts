@@ -78,7 +78,9 @@ export class RegisterComponent implements OnInit {
     const { confirmPassword, ...payload } = this.form.getRawValue();
     this.auth.register(payload).subscribe({
       next: () => {
-        void this.router.navigate(['/app/onboarding']);
+        void this.router.navigate(['/verify-otp'], {
+          queryParams: { email: payload.email },
+        });
       },
       error: (err: HttpErrorResponse) => {
         this.submitting = false;

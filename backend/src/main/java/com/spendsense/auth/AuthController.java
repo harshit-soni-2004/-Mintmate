@@ -19,15 +19,25 @@ public class AuthController {
 
     private final AuthService authService;
     private final com.spendsense.auth.otp.OtpService otpService;
+    private final boolean trustForwardedHeaders;
 
     public AuthController(AuthService authService) {
-        this(authService, null);
+        this(authService, null, false);
+    }
+
+    public AuthController(AuthService authService, com.spendsense.auth.otp.OtpService otpService) {
+        this(authService, otpService, false);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
-    public AuthController(AuthService authService, com.spendsense.auth.otp.OtpService otpService) {
+    public AuthController(
+            AuthService authService,
+            com.spendsense.auth.otp.OtpService otpService,
+            @org.springframework.beans.factory.annotation.Value("${app.trust-forwarded-headers:false}") boolean trustForwardedHeaders
+    ) {
         this.authService = authService;
         this.otpService = otpService;
+        this.trustForwardedHeaders = trustForwardedHeaders;
     }
 
     @PostMapping("/register")
@@ -51,12 +61,7 @@ public class AuthController {
             @Valid @RequestBody com.spendsense.auth.dto.SendOtpRequest request,
             jakarta.servlet.http.HttpServletRequest httpRequest
     ) {
-        String clientIp = httpRequest.getHeader("X-Forwarded-For");
-        if (clientIp == null || clientIp.isBlank()) {
-            clientIp = httpRequest.getRemoteAddr();
-        } else {
-            clientIp = clientIp.split(",")[0].trim();
-        }
+        String clientIp = resolveClientIp(httpRequest);
         return ApiResponse.of(otpService.sendVerificationOtp(request.getEmail(), request.getPurpose(), clientIp));
     }
 
@@ -65,5 +70,31 @@ public class AuthController {
             @Valid @RequestBody com.spendsense.auth.dto.VerifyOtpRequest request
     ) {
         return ApiResponse.of(otpService.verifyOtp(request.getEmail(), request.getCode(), request.getPurpose()));
+    }
+
+    @PostMapping("/password/forgot")
+    public ApiResponse<com.spendsense.auth.dto.OtpResponse> forgotPassword(
+            @Valid @RequestBody com.spendsense.auth.dto.ForgotPasswordRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest
+    ) {
+        String clientIp = resolveClientIp(httpRequest);
+        return ApiResponse.of(authService.requestPasswordReset(request.email(), clientIp));
+    }
+
+    @PostMapping("/password/reset")
+    public ApiResponse<com.spendsense.auth.dto.OtpResponse> resetPassword(
+            @Valid @RequestBody com.spendsense.auth.dto.ResetPasswordRequest request
+    ) {
+        return ApiResponse.of(authService.resetPassword(request));
+    }
+
+    private String resolveClientIp(jakarta.servlet.http.HttpServletRequest httpRequest) {
+        if (trustForwardedHeaders) {
+            String forwarded = httpRequest.getHeader("X-Forwarded-For");
+            if (forwarded != null && !forwarded.isBlank()) {
+                return forwarded.split(",")[0].trim();
+            }
+        }
+        return httpRequest.getRemoteAddr();
     }
 }
