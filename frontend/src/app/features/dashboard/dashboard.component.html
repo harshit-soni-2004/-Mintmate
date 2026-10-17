@@ -83,15 +83,25 @@
       <div class="hero-card">
         <div class="hero-header">
           <span class="hero-label">Available Balance &amp; Cashflow</span>
-          @if (dashboardData.summary.incomeChangePercentage !== null) {
-            <span class="fintech-pill delta-pill" [class.positive]="dashboardData.summary.incomeChangePercentage >= 0">
-              {{ dashboardData.summary.incomeChangePercentage >= 0 ? '↑ +' : '↓ ' }}{{ dashboardData.summary.incomeChangePercentage }}% this month
+          @if (cashflowDelta; as delta) {
+            <span
+              class="fintech-pill delta-pill"
+              [class.positive]="delta.isPositive"
+              [class.negative]="delta.isNegative"
+              [class.neutral]="delta.isNeutral"
+            >
+              {{ delta.formatted }}
             </span>
           }
         </div>
 
         <div class="hero-number-wrap">
-          <strong class="financial-hero-number">
+          <strong
+            class="financial-hero-number"
+            [class.positive]="dashboardData.summary.netSavings > 0"
+            [class.negative]="dashboardData.summary.netSavings < 0"
+            [class.neutral]="dashboardData.summary.netSavings === 0"
+          >
             {{ dashboardData.summary.netSavings | currency:'INR':'symbol-narrow':'1.0-0' }}
           </strong>
         </div>
@@ -200,7 +210,12 @@
         <div class="hero-submetrics">
           <div class="submetric-item savings-card">
             <span class="submetric-label">Net Savings</span>
-            <strong class="metric-value submetric-val" [class.positive]="dashboardData.summary.netSavings >= 0">
+            <strong
+              class="metric-value submetric-val"
+              [class.positive]="dashboardData.summary.netSavings > 0"
+              [class.negative]="dashboardData.summary.netSavings < 0"
+              [class.neutral]="dashboardData.summary.netSavings === 0"
+            >
               {{ dashboardData.summary.netSavings | currency:'INR':'symbol-narrow':'1.0-0' }}
             </strong>
           </div>

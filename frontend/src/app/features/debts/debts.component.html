@@ -211,8 +211,8 @@
       <div class="empty-icon" aria-hidden="true">🤝</div>
       <h3>No {{ statusFilter === 'ALL' ? '' : statusFilter.toLowerCase() }} debts found</h3>
       <p>You have no records matching the selected status or search filter.</p>
-      <button type="button" class="btn-secondary" (click)="openCreateModal()">
-        Log a new IOU
+      <button type="button" class="btn-primary" id="btn-empty-log-debt" (click)="openCreateModal()">
+        <span class="plus-icon">+</span> Log a new IOU
       </button>
     </div>
   } @else {

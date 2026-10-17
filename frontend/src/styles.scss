@@ -2,31 +2,44 @@
 [data-theme="light"] {
   color-scheme: light;
   /* ========================================================================
-     Mintmate Apple-Inspired Fintech Design System - Light (Default)
+     Mintmate Unified Liquid Glass Design System - Light
      ======================================================================== */
   --color-primary: #073b35;          /* Deep forest green */
   --color-primary-hover: #042723;
-  --color-secondary: #2d8c7d;        /* Muted emerald */
+  --color-primary-contrast: #ffffff; /* High contrast text for primary buttons in light mode */
+  --color-secondary: #168575;        /* Target Brand accent */
   --color-accent: #8be35a;           /* Soft lime-green */
   --color-accent-soft: rgba(139, 227, 90, 0.18);
   --color-accent-contrast: #073b35;
-  --color-background: #f7f5ef;       /* Warm off-white / stone */
-  --color-surface: #ffffff;
+  --color-background: #eaf2ee;       /* Pale mint-grey base canvas */
+  --color-surface: #ffffff;          /* Target Card surfaces */
   --color-surface-elevated: #ffffff;
-  --color-surface-muted: #efece3;
-  --color-surface-subtle: #f4f2ea;
-  --color-text: #111815;             /* Deep charcoal */
-  --color-text-secondary: #66736f;   /* Calm muted gray */
-  --color-text-muted: #8e9b97;
-  --color-border: #e2ddd1;
-  --color-border-subtle: #ece7dc;
+  --color-surface-muted: #edf2ee;
+  --color-surface-subtle: #f2f6f3;
+  --color-text: #14251f;             /* Target Primary text */
+  --color-text-secondary: #64736d;   /* Target Secondary text */
+  --color-text-muted: #64736d;       /* Enhanced contrast for muted details */
+  --color-border: #e4ece7;           /* Target Borders and dividers */
+  --color-border-subtle: #edf3ef;
+
+  /* Liquid Glass System Tokens - Light Mode */
+  --glass-surface: rgba(255, 255, 255, 0.68);
+  --glass-surface-elevated: rgba(255, 255, 255, 0.74);
+  --glass-surface-subtle: rgba(255, 255, 255, 0.58);
+  --glass-border: rgba(255, 255, 255, 0.85);
+  --glass-border-subtle: rgba(255, 255, 255, 0.60);
+  --glass-highlight: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 100%);
+  --glass-blur: blur(20px) saturate(180%);
+  --glass-shadow: 0 10px 30px rgba(20, 37, 31, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+  --glass-shadow-elevated: 0 16px 40px rgba(20, 37, 31, 0.08), inset 0 1px 1.5px rgba(255, 255, 255, 1);
+  --ambient-gradient: radial-gradient(1200px circle at 15% 10%, rgba(22, 133, 117, 0.14), transparent 50%), radial-gradient(1300px circle at 88% 25%, rgba(139, 227, 90, 0.12), transparent 45%), radial-gradient(1000px circle at 45% 90%, rgba(45, 140, 125, 0.09), transparent 50%);
 
   /* Semantic State Colors */
-  --success: #1b8a5a;
+  --success: #16845b;                /* Target Positive financial values */
   --success-soft: #e5f6ee;
   --warning: #b7791f;
   --warning-soft: #fef3c7;
-  --danger: #cf3a3a;
+  --danger: #d1495b;                 /* Target Negative financial values */
   --danger-soft: #fde8e8;
 
   /* Aliases for Components */
@@ -50,22 +63,22 @@
   --accent: var(--color-primary);
   --accent-hover: var(--color-primary-hover);
   --accent-soft: rgba(7, 59, 53, 0.08);
-  --brand: var(--color-primary);
-  --brand-hover: var(--color-primary-hover);
-  --brand-soft: rgba(7, 59, 53, 0.08);
-  --brand-dark: #042723;
+  --brand: var(--color-secondary);
+  --brand-hover: #11685c;
+  --brand-soft: rgba(22, 133, 117, 0.12);
+  --brand-dark: #073b35;
   --lime-accent: var(--color-accent);
   --lime-soft: var(--color-accent-soft);
 
-  --input-bg: #ffffff;
+  --input-bg: rgba(255, 255, 255, 0.95);
   --input-border: #dcd6c8;
   --input-border-hover: #073b35;
   --input-bg-error: #fff5f5;
   --input-border-error: var(--danger);
-  --input-focus-error-shadow: 0 0 0 3px rgba(207, 58, 58, 0.18);
-  --income: #1b8a5a;
+  --input-focus-error-shadow: 0 0 0 3px rgba(209, 73, 91, 0.18);
+  --income: #16845b;
   --income-soft: #e5f6ee;
-  --expense: #cf3a3a;
+  --expense: #d1495b;
   --expense-soft: #fde8e8;
 
   /* Minimal Category Colors */
@@ -84,12 +97,12 @@
   --radius-xl: 2rem;
   --radius-full: 9999px;
 
-  /* Apple-like Calm Ambient Shadows */
-  --shadow-xs: 0 1px 2px rgba(7, 59, 53, 0.03);
-  --shadow-sm: 0 2px 8px rgba(7, 59, 53, 0.04);
-  --shadow: 0 8px 24px rgba(7, 59, 53, 0.06);
-  --shadow-lg: 0 18px 40px rgba(7, 59, 53, 0.08);
-  --shadow-focus: 0 0 0 3px rgba(7, 59, 53, 0.15);
+  /* Apple-like Calm Ambient Shadows with Subtle Card Depth */
+  --shadow-xs: 0 1px 2px rgba(21, 36, 30, 0.04);
+  --shadow-sm: 0 2px 8px rgba(21, 36, 30, 0.06);
+  --shadow: 0 8px 24px rgba(21, 36, 30, 0.08);
+  --shadow-lg: 0 18px 40px rgba(21, 36, 30, 0.12);
+  --shadow-focus: 0 0 0 3px rgba(45, 140, 125, 0.25);
 
   /* Typography */
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
@@ -98,12 +111,12 @@
 }
 
 /* ========================================================================
-   Mintmate Dark Mode - Deep Forest Charcoal
+   Mintmate Dark Mode - Liquid Glass Forest Charcoal
    ======================================================================== */
 [data-theme="dark"] {
   color-scheme: dark;
-  --color-background: #0a1210;       /* Very dark green-black charcoal */
-  --color-surface: #121e1b;          /* Slightly lighter charcoal */
+  --color-background: #09110f;       /* Deep dark green-black */
+  --color-surface: #121e1b;          /* Solid dark surface */
   --color-surface-elevated: #182824;
   --color-surface-muted: #152420;
   --color-surface-subtle: #162622;
@@ -115,10 +128,23 @@
 
   --color-primary: #8be35a;          /* Soft lime highlight in dark mode */
   --color-primary-hover: #a3eb7a;
+  --color-primary-contrast: #073b35; /* Readable dark forest text on lime in dark mode */
   --color-secondary: #2d8c7d;
   --color-accent: #8be35a;
   --color-accent-soft: rgba(139, 227, 90, 0.14);
   --color-accent-contrast: #073b35;
+
+  /* Liquid Glass System Tokens - Dark Mode */
+  --glass-surface: rgba(18, 35, 30, 0.68);
+  --glass-surface-elevated: rgba(24, 42, 36, 0.76);
+  --glass-surface-subtle: rgba(15, 28, 25, 0.58);
+  --glass-border: rgba(190, 235, 215, 0.15);
+  --glass-border-subtle: rgba(190, 235, 215, 0.08);
+  --glass-highlight: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 100%);
+  --glass-blur: blur(20px) saturate(170%);
+  --glass-shadow: 0 10px 32px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.18), inset 0 0 20px rgba(22, 133, 117, 0.05);
+  --glass-shadow-elevated: 0 20px 48px rgba(0, 0, 0, 0.55), inset 0 1px 1.5px rgba(255, 255, 255, 0.24), inset 0 0 28px rgba(22, 133, 117, 0.08);
+  --ambient-gradient: radial-gradient(1200px circle at 15% 12%, rgba(22, 133, 117, 0.24), transparent 50%), radial-gradient(1300px circle at 85% 25%, rgba(139, 227, 90, 0.12), transparent 45%), radial-gradient(1100px circle at 40% 85%, rgba(17, 104, 92, 0.18), transparent 50%);
 
   --background: var(--color-background);
   --canvas: var(--color-background);
@@ -145,7 +171,7 @@
   --brand-soft: rgba(45, 140, 125, 0.18);
   --brand-dark: #073b35;
 
-  --input-bg: #152420;
+  --input-bg: rgba(21, 36, 32, 0.95);
   --input-border: rgba(255, 255, 255, 0.12);
   --input-border-hover: #8be35a;
   --input-bg-error: rgba(248, 113, 113, 0.12);
@@ -177,7 +203,9 @@ html, body {
   max-width: 100%;
   height: 100%;
   min-height: 100%;
-  background: var(--canvas);
+  background-color: var(--canvas);
+  background-image: var(--ambient-gradient);
+  background-attachment: fixed;
   color: var(--ink);
   overflow-x: hidden;
   box-sizing: border-box;
@@ -468,20 +496,43 @@ p {
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1.05;
-  color: var(--color-primary);
+  color: var(--color-text);
   font-variant-numeric: tabular-nums;
+
+  &.positive {
+    color: var(--success);
+  }
+
+  &.negative {
+    color: var(--danger);
+  }
+
+  &.neutral {
+    color: var(--color-text-secondary);
+  }
 }
 
+.glass-panel,
 .apple-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 1.75rem;
-  box-shadow: var(--shadow-sm);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  box-shadow: var(--glass-shadow);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
 
   &:hover {
-    box-shadow: var(--shadow);
+    box-shadow: var(--glass-shadow-elevated);
+    border-color: var(--glass-border);
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-panel,
+  .apple-card {
+    background: var(--surface);
   }
 }
 

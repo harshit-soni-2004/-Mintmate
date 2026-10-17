@@ -387,5 +387,135 @@ describe('DashboardComponent', () => {
     expect(compiled.querySelector('#dash-debt-reminder-badge')?.textContent).toContain('2 items');
     expect(compiled.querySelector('#dash-view-debts-link')).toBeTruthy();
   });
+
+  describe('Net Savings Semantic Styling & Cashflow Delta Calculations', () => {
+    it('applies positive class when net savings is greater than zero', () => {
+      if (component.dashboardData) {
+        component.dashboardData.summary.netSavings = 55000;
+      }
+      fixture.detectChanges();
+
+      const heroNum = fixture.nativeElement.querySelector('.financial-hero-number');
+      const submetricVal = fixture.nativeElement.querySelector('.savings-card .metric-value');
+
+      expect(heroNum?.classList.contains('positive')).toBeTrue();
+      expect(heroNum?.classList.contains('negative')).toBeFalse();
+      expect(heroNum?.classList.contains('neutral')).toBeFalse();
+
+      expect(submetricVal?.classList.contains('positive')).toBeTrue();
+      expect(submetricVal?.classList.contains('negative')).toBeFalse();
+    });
+
+    it('applies negative class when net savings is less than zero', () => {
+      if (component.dashboardData) {
+        component.dashboardData.summary.netSavings = -1580;
+      }
+      fixture.detectChanges();
+
+      const heroNum = fixture.nativeElement.querySelector('.financial-hero-number');
+      const submetricVal = fixture.nativeElement.querySelector('.savings-card .metric-value');
+
+      expect(heroNum?.classList.contains('negative')).toBeTrue();
+      expect(heroNum?.classList.contains('positive')).toBeFalse();
+      expect(heroNum?.classList.contains('neutral')).toBeFalse();
+
+      expect(submetricVal?.classList.contains('negative')).toBeTrue();
+      expect(submetricVal?.classList.contains('positive')).toBeFalse();
+    });
+
+    it('applies neutral class when net savings is exactly zero', () => {
+      if (component.dashboardData) {
+        component.dashboardData.summary.netSavings = 0;
+      }
+      fixture.detectChanges();
+
+      const heroNum = fixture.nativeElement.querySelector('.financial-hero-number');
+      const submetricVal = fixture.nativeElement.querySelector('.savings-card .metric-value');
+
+      expect(heroNum?.classList.contains('neutral')).toBeTrue();
+      expect(heroNum?.classList.contains('positive')).toBeFalse();
+      expect(heroNum?.classList.contains('negative')).toBeFalse();
+
+      expect(submetricVal?.classList.contains('neutral')).toBeTrue();
+    });
+
+    it('displays positive cashflow percentage badge with up arrow and positive class', () => {
+      if (component.dashboardData) {
+        component.dashboardData.summary.incomeChangePercentage = 11.1;
+      }
+      fixture.detectChanges();
+
+      expect(component.cashflowDelta).toEqual(jasmine.objectContaining({
+        percentage: 11.1,
+        formatted: '↑ +11.1% this month',
+        isPositive: true,
+        isNegative: false,
+        isNeutral: false,
+      }));
+
+      const pill = fixture.nativeElement.querySelector('.delta-pill');
+      expect(pill).toBeTruthy();
+      expect(pill?.textContent).toContain('↑ +11.1% this month');
+      expect(pill?.classList.contains('positive')).toBeTrue();
+    });
+
+    it('displays negative cashflow percentage badge with down arrow and negative class', () => {
+      if (component.dashboardData) {
+        component.dashboardData.summary.incomeChangePercentage = -8.5;
+      }
+      fixture.detectChanges();
+
+      expect(component.cashflowDelta).toEqual(jasmine.objectContaining({
+        percentage: -8.5,
+        formatted: '↓ -8.5% this month',
+        isPositive: false,
+        isNegative: true,
+        isNeutral: false,
+      }));
+
+      const pill = fixture.nativeElement.querySelector('.delta-pill');
+      expect(pill).toBeTruthy();
+      expect(pill?.textContent).toContain('↓ -8.5% this month');
+      expect(pill?.classList.contains('negative')).toBeTrue();
+    });
+
+    it('displays neutral cashflow percentage badge when change is zero', () => {
+      if (component.dashboardData) {
+        component.dashboardData.summary.incomeChangePercentage = 0;
+      }
+      fixture.detectChanges();
+
+      expect(component.cashflowDelta).toEqual(jasmine.objectContaining({
+        percentage: 0,
+        formatted: '→ 0% this month',
+        isPositive: false,
+        isNegative: false,
+        isNeutral: true,
+      }));
+
+      const pill = fixture.nativeElement.querySelector('.delta-pill');
+      expect(pill).toBeTruthy();
+      expect(pill?.textContent).toContain('→ 0% this month');
+      expect(pill?.classList.contains('neutral')).toBeTrue();
+    });
+
+    it('omits badge and does not display NaN or empty percentage when comparison data is missing', () => {
+      if (component.dashboardData) {
+        component.dashboardData.summary.incomeChangePercentage = null as any;
+        component.dashboardData.summary.previousPeriodIncome = 0;
+      }
+      fixture.detectChanges();
+
+      expect(component.cashflowDelta).toBeNull();
+      const pill = fixture.nativeElement.querySelector('.delta-pill');
+      expect(pill).toBeNull();
+
+      const heroHeader = fixture.nativeElement.querySelector('.hero-header');
+      expect(heroHeader?.textContent).not.toContain('NaN');
+      expect(heroHeader?.textContent).not.toContain('undefined');
+      expect(heroHeader?.textContent).not.toContain('null');
+      expect(heroHeader?.textContent).not.toContain('% this month');
+    });
+  });
 });
 

@@ -193,4 +193,49 @@ describe('DebtsComponent', () => {
     component.cancelDebt(mockDebts[0]);
     expect(mockDebtService.cancel).toHaveBeenCalledWith('debt-1');
   });
+
+  describe('IOUs & Debts Button Rendering & Action Verification', () => {
+    it('renders header "+ Log New Debt" primary button and opens modal when clicked', () => {
+      const headerBtn = fixture.nativeElement.querySelector('#btn-open-log-debt');
+      expect(headerBtn).toBeTruthy();
+      expect(headerBtn.classList.contains('btn-primary')).toBeTrue();
+      expect(headerBtn.classList.contains('add-debt-btn')).toBeTrue();
+      expect(headerBtn.textContent).toContain('Log New Debt');
+
+      headerBtn.click();
+      fixture.detectChanges();
+      expect(component.showCreateModal).toBeTrue();
+    });
+
+    it('renders card primary "Mark Settled" and secondary "Cancel" buttons with proper action classes', () => {
+      const settleBtn = fixture.nativeElement.querySelector('#btn-settle-debt-debt-1');
+      const cancelBtn = fixture.nativeElement.querySelector('#btn-cancel-debt-debt-1');
+
+      expect(settleBtn).toBeTruthy();
+      expect(settleBtn.classList.contains('btn-action-settle')).toBeTrue();
+      expect(settleBtn.textContent.trim()).toBe('Mark Settled');
+
+      expect(cancelBtn).toBeTruthy();
+      expect(cancelBtn.classList.contains('btn-action-cancel')).toBeTrue();
+      expect(cancelBtn.textContent.trim()).toBe('Cancel');
+    });
+
+    it('renders styled primary button in empty state and opens modal on click', () => {
+      component.debts = [];
+      component.loading = false;
+      fixture.detectChanges();
+
+      const emptyBox = fixture.nativeElement.querySelector('#debts-empty-state');
+      expect(emptyBox).toBeTruthy();
+
+      const emptyBtn = emptyBox.querySelector('#btn-empty-log-debt');
+      expect(emptyBtn).toBeTruthy();
+      expect(emptyBtn.classList.contains('btn-primary')).toBeTrue();
+      expect(emptyBtn.textContent).toContain('Log a new IOU');
+
+      emptyBtn.click();
+      fixture.detectChanges();
+      expect(component.showCreateModal).toBeTrue();
+    });
+  });
 });

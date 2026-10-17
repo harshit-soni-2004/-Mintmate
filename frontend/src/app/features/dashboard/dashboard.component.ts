@@ -285,6 +285,66 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return this.dashboardData?.summary.activeDebtRemindersCount ?? 0;
   }
 
+  get cashflowDelta(): {
+    percentage: number;
+    formatted: string;
+    isPositive: boolean;
+    isNegative: boolean;
+    isNeutral: boolean;
+  } | null {
+    if (!this.dashboardData?.summary) return null;
+    const summary = this.dashboardData.summary;
+
+    let changePct: number | null = null;
+    if (
+      typeof summary.incomeChangePercentage === 'number' &&
+      !isNaN(summary.incomeChangePercentage) &&
+      isFinite(summary.incomeChangePercentage)
+    ) {
+      changePct = summary.incomeChangePercentage;
+    } else if (
+      summary.previousPeriodIncome != null &&
+      summary.previousPeriodIncome > 0 &&
+      typeof summary.totalIncome === 'number' &&
+      !isNaN(summary.totalIncome)
+    ) {
+      changePct = Math.round(((summary.totalIncome - summary.previousPeriodIncome) / summary.previousPeriodIncome) * 1000) / 10;
+    }
+
+    if (changePct === null) {
+      return null;
+    }
+
+    const absVal = Math.abs(changePct);
+    const formattedVal = `${absVal % 1 === 0 ? absVal : absVal.toFixed(1)}%`;
+
+    if (changePct > 0) {
+      return {
+        percentage: changePct,
+        formatted: `↑ +${formattedVal} this month`,
+        isPositive: true,
+        isNegative: false,
+        isNeutral: false,
+      };
+    } else if (changePct < 0) {
+      return {
+        percentage: changePct,
+        formatted: `↓ -${formattedVal} this month`,
+        isPositive: false,
+        isNegative: true,
+        isNeutral: false,
+      };
+    } else {
+      return {
+        percentage: 0,
+        formatted: `→ 0% this month`,
+        isPositive: false,
+        isNegative: false,
+        isNeutral: true,
+      };
+    }
+  }
+
   ngOnInit(): void {
     this.loadDashboard();
     this.loadBudgets();

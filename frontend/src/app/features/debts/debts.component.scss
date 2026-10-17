@@ -65,7 +65,7 @@
   padding: 0.72rem 1.25rem;
   border-radius: var(--radius-sm);
   background: var(--color-primary);
-  color: var(--color-accent-contrast, #ffffff);
+  color: var(--color-primary-contrast, #ffffff);
   border: 0;
   font-weight: 650;
   font-size: 0.9rem;
@@ -78,6 +78,11 @@
     background: var(--color-primary-hover);
     transform: translateY(-1px);
     box-shadow: var(--shadow);
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(45, 140, 125, 0.45);
+    outline-offset: 2px;
   }
 }
 
@@ -133,16 +138,31 @@
 }
 
 .metric-card {
-  background: var(--color-surface);
-  border: 1px solid var(--border);
+  position: relative;
+  background: var(--glass-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   padding: 1.25rem 1.35rem;
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 0.85rem;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--glass-highlight);
+    pointer-events: none;
+  }
 
   &:hover {
     transform: translateY(-2px);
@@ -340,8 +360,10 @@
 }
 
 .empty-state-box {
-  background: var(--color-surface);
-  border: 1px dashed var(--border);
+  background: var(--glass-surface-subtle);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px dashed var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 3.5rem 1.5rem;
   text-align: center;
@@ -368,8 +390,54 @@
     max-width: 380px;
   }
 
+  .btn-primary,
+  .btn-secondary,
   button {
     margin-top: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.72rem 1.25rem;
+    border-radius: var(--radius-sm);
+    font-weight: 650;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--color-primary);
+    color: var(--color-primary-contrast, #ffffff);
+    border: 0;
+    box-shadow: var(--shadow-sm);
+
+    &:hover:not(:disabled) {
+      background: var(--color-primary-hover);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
+    }
+
+    &:focus-visible {
+      outline: 3px solid rgba(45, 140, 125, 0.45);
+      outline-offset: 2px;
+    }
+  }
+
+  .btn-secondary {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--border);
+
+    &:hover:not(:disabled) {
+      background: var(--color-surface-subtle);
+      border-color: var(--color-text-secondary);
+    }
+
+    &:focus-visible {
+      outline: 3px solid rgba(45, 140, 125, 0.45);
+      outline-offset: 2px;
+    }
   }
 }
 
@@ -381,16 +449,31 @@
 }
 
 .debt-card {
-  background: var(--color-surface);
-  border: 1px solid var(--border);
+  position: relative;
+  background: var(--glass-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   padding: 1.35rem;
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 1rem;
   transition: all 0.2s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--glass-highlight);
+    pointer-events: none;
+  }
 
   &:hover {
     box-shadow: var(--shadow-sm);
@@ -579,11 +662,16 @@
 
     .btn-action-settle {
       background: var(--color-primary);
-      color: var(--color-accent-contrast, #ffffff);
+      color: var(--color-primary-contrast, #ffffff);
       border: none;
 
       &:hover {
         background: var(--color-primary-hover);
+      }
+
+      &:focus-visible {
+        outline: 3px solid rgba(45, 140, 125, 0.45);
+        outline-offset: 2px;
       }
     }
 
@@ -615,14 +703,16 @@
 }
 
 .modal-dialog {
-  background: var(--color-surface);
+  background: var(--glass-surface-elevated);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   color: var(--color-text);
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 1.75rem;
   width: 100%;
   max-width: 500px;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--glass-shadow-elevated);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -733,11 +823,16 @@
 
     .btn-primary {
       background: var(--color-primary);
-      color: var(--color-accent-contrast, #ffffff);
+      color: var(--color-primary-contrast, #ffffff);
       border: none;
 
       &:hover:not(:disabled) {
         background: var(--color-primary-hover);
+      }
+
+      &:focus-visible {
+        outline: 3px solid rgba(45, 140, 125, 0.45);
+        outline-offset: 2px;
       }
 
       &:disabled {

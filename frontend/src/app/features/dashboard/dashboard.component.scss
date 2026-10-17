@@ -323,15 +323,28 @@
 
 .hero-card {
   position: relative;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-surface-elevated);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 2rem clamp(1.25rem, 3vw, 2.5rem);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--glass-shadow-elevated);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--glass-highlight);
+    pointer-events: none;
+  }
 
   .hero-header {
     display: flex;
@@ -351,9 +364,24 @@
       font-size: 0.76rem;
       padding: 0.25rem 0.7rem;
       border-radius: var(--radius-full);
-      background: var(--color-accent-soft);
-      color: var(--color-primary);
+      background: var(--color-surface-subtle);
+      color: var(--color-text-secondary);
       font-weight: 600;
+
+      &.positive {
+        background: var(--success-soft);
+        color: var(--success);
+      }
+
+      &.negative {
+        background: var(--danger-soft);
+        color: var(--danger);
+      }
+
+      &.neutral {
+        background: var(--color-surface-subtle);
+        color: var(--color-text-secondary);
+      }
     }
   }
 
@@ -365,10 +393,22 @@
     .financial-hero-number {
       font-size: clamp(2.4rem, 5vw, 3.8rem);
       font-weight: 800;
-      color: var(--color-primary);
+      color: var(--color-text);
       letter-spacing: -0.04em;
       line-height: 1.05;
       font-variant-numeric: tabular-nums;
+
+      &.positive {
+        color: var(--success);
+      }
+
+      &.negative {
+        color: var(--danger);
+      }
+
+      &.neutral {
+        color: var(--color-text-secondary);
+      }
     }
   }
 
@@ -554,6 +594,18 @@
         letter-spacing: -0.02em;
         font-variant-numeric: tabular-nums;
 
+        &.positive {
+          color: var(--success);
+        }
+
+        &.negative {
+          color: var(--danger);
+        }
+
+        &.neutral {
+          color: var(--color-text-secondary);
+        }
+
         &.income {
           color: var(--success);
         }
@@ -585,13 +637,29 @@
 }
 
 .key-insight-box {
-  background: linear-gradient(135deg, rgba(7, 59, 53, 0.05) 0%, rgba(139, 227, 90, 0.06) 100%);
-  border: 1px solid rgba(7, 59, 53, 0.12);
+  position: relative;
+  background: var(--glass-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 1.5rem clamp(1.25rem, 2.5vw, 2rem);
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--glass-highlight);
+    pointer-events: none;
+  }
 
   .insight-badge-row {
     display: flex;
@@ -692,14 +760,29 @@
 }
 
 .dash-column {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  position: relative;
+  background: var(--glass-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 1.5rem clamp(1.25rem, 2.5vw, 1.75rem);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--glass-shadow);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--glass-highlight);
+    pointer-events: none;
+  }
 
   .section-header-row {
     display: flex;
@@ -821,13 +904,22 @@
   gap: 1rem;
 
   .guardrail-card {
-    background: var(--color-surface-subtle);
-    border: 1px solid var(--border-subtle);
+    background: var(--glass-surface-subtle);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border-subtle);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
     border-radius: var(--radius-md);
     padding: 1.15rem 1.25rem;
     display: flex;
     flex-direction: column;
     gap: 0.65rem;
+    transition: background 0.16s ease, border-color 0.16s ease;
+
+    &:hover {
+      background: var(--glass-surface);
+      border-color: var(--glass-border);
+    }
 
     .g-header {
       display: flex;
@@ -998,15 +1090,30 @@
    Section 5: Progressive Deep Dive
    ========================================================================== */
 .progressive-deep-dive {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  position: relative;
+  background: var(--glass-surface-elevated);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 1.75rem clamp(1.25rem, 3vw, 2.25rem);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--glass-shadow-elevated);
   display: flex;
   flex-direction: column;
   gap: 1.75rem;
+  overflow: hidden;
   animation: slideFadeDown 0.25s ease-out;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--glass-highlight);
+    pointer-events: none;
+  }
 
   .deep-dive-header {
     display: flex;
@@ -1182,14 +1289,28 @@
    Monthly Spending Calendar (Apple Health Activity Style)
    ========================================================================== */
 .dash-calendar-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  position: relative;
+  background: var(--glass-surface-elevated);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 1.5rem 1.75rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--glass-shadow-elevated);
   margin-bottom: 2rem;
-  position: relative;
+  overflow: hidden;
   transition: all 0.2s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--glass-highlight);
+    pointer-events: none;
+  }
 
   .calendar-card-header {
     display: flex;
@@ -1283,8 +1404,8 @@
   box-sizing: border-box;
 
   .cal-day-cell {
-    border: 1px solid var(--border);
-    background: var(--surface);
+    border: 1px solid var(--glass-border-subtle);
+    background: var(--glass-surface-subtle);
     border-radius: var(--radius-md);
     padding: 0.65rem 0.35rem 0.55rem;
     min-height: 64px;
@@ -1324,8 +1445,8 @@
 
     /* Subtle Green Palette Intensities (Apple Health Style) */
     &.intensity-none {
-      background: var(--surface);
-      opacity: 0.85;
+      background: var(--glass-surface-subtle);
+      opacity: 0.88;
     }
 
     &.intensity-low {
@@ -1399,8 +1520,10 @@
 .cal-popover-banner {
   margin-top: 1rem;
   padding: 0.85rem 1.15rem;
-  background: var(--surface-muted);
-  border: 1px solid var(--border);
+  background: var(--glass-surface-elevated);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   display: flex;
   justify-content: space-between;
@@ -1692,17 +1815,29 @@
    ========================================================================== */
 :host-context([data-theme="dark"]) {
   .hero-card {
-    background: var(--surface);
-    border-color: rgba(255, 255, 255, 0.08);
+    background: var(--glass-surface-elevated);
+    border-color: var(--glass-border);
 
     .financial-hero-number {
-      color: #8be35a;
+      color: var(--color-text);
+
+      &.positive {
+        color: var(--success);
+      }
+
+      &.negative {
+        color: var(--danger);
+      }
+
+      &.neutral {
+        color: var(--color-text-secondary);
+      }
     }
   }
 
   .key-insight-box {
-    background: linear-gradient(135deg, rgba(139, 227, 90, 0.08) 0%, rgba(45, 140, 125, 0.06) 100%);
-    border-color: rgba(139, 227, 90, 0.2);
+    background: var(--glass-surface);
+    border-color: var(--glass-border);
 
     .insight-sparkle-pill,
     .insight-cta-btn {
@@ -1710,9 +1845,24 @@
     }
   }
 
+  .dash-calendar-card {
+    background: var(--glass-surface-elevated);
+    border-color: var(--glass-border);
+  }
+
   .guardrail-card {
-    background: #162622;
-    border-color: rgba(255, 255, 255, 0.06);
+    background: var(--glass-surface-subtle);
+    border-color: var(--glass-border-subtle);
+  }
+
+  .dash-column {
+    background: var(--glass-surface);
+    border-color: var(--glass-border);
+  }
+
+  .progressive-deep-dive {
+    background: var(--glass-surface-elevated);
+    border-color: var(--glass-border);
   }
 
   .clean-transactions-list .tx-row:hover {

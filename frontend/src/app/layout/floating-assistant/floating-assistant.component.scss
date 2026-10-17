@@ -33,10 +33,12 @@
   right: 0;
   width: 220px;
   padding: 0.85rem 1rem;
-  background: var(--surface-elevated, #ffffff);
+  background: var(--glass-surface-elevated);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border: 1.5px solid var(--accent, #127457);
   border-radius: var(--radius-md, 0.95rem);
-  box-shadow: 0 12px 30px rgba(18, 38, 29, 0.16);
+  box-shadow: var(--glass-shadow);
   pointer-events: auto;
   animation: bubblePop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
   display: flex;
@@ -104,10 +106,12 @@
   max-width: calc(100vw - 2.5rem);
   height: 510px;
   max-height: calc(100vh - 130px);
-  background: var(--surface-elevated, #ffffff);
-  border: 1px solid var(--border, #d2ded7);
+  background: var(--glass-surface-elevated);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg, 1.35rem);
-  box-shadow: 0 20px 48px rgba(18, 38, 29, 0.18), 0 0 0 1px rgba(18, 116, 87, 0.08);
+  box-shadow: var(--glass-shadow-elevated);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -115,6 +119,18 @@
   z-index: 50;
   transform-origin: bottom right;
   animation: flyoutSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--glass-highlight);
+    pointer-events: none;
+    z-index: 10;
+  }
 
   @media (max-width: 840px) {
     width: calc(100vw - 2rem);
@@ -140,8 +156,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border, #d2ded7);
-  background: var(--surface, #ffffff);
+  border-bottom: 1px solid var(--glass-border-subtle);
+  background: var(--glass-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 
   .header-branding {
     display: flex;
@@ -286,8 +304,8 @@
       font-size: 0.77rem;
       font-weight: 500;
       color: var(--text-primary);
-      background: var(--surface, #ffffff);
-      border: 1px solid var(--border, #d2ded7);
+      background: var(--glass-surface-subtle);
+      border: 1px solid var(--glass-border);
       border-radius: var(--radius-sm, 0.65rem);
       cursor: pointer;
       display: flex;
@@ -452,8 +470,10 @@
 /* Footer / Input Bar */
 .flyout-footer {
   padding: 0.7rem 0.85rem;
-  background: var(--surface, #ffffff);
-  border-top: 1px solid var(--border, #d2ded7);
+  background: var(--glass-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-top: 1px solid var(--glass-border-subtle);
 
   .query-form {
     display: flex;
