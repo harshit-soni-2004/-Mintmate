@@ -777,6 +777,46 @@
     margin-bottom: 0.35rem;
   }
 
+  .field-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.35rem;
+
+    .field-label {
+      margin-bottom: 0;
+    }
+
+    .loading-candidates-text {
+      font-size: 0.75rem;
+      color: var(--color-primary);
+      font-weight: 550;
+    }
+  }
+
+  .top-match-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.45rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-accent-soft);
+    border: 1px solid rgba(45, 140, 125, 0.25);
+    font-size: 0.78rem;
+    color: var(--color-text);
+
+    .top-match-star {
+      color: #f59e0b;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    strong {
+      color: var(--color-primary);
+    }
+  }
+
   .field-hint {
     display: block;
     font-size: 0.75rem;

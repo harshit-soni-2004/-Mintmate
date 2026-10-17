@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 
 import com.spendsense.common.exception.ApiException;
 import com.spendsense.debt.dto.CreateDebtRequest;
+import com.spendsense.debt.dto.DebtCandidateTransactionDto;
 import com.spendsense.debt.dto.DebtDto;
 import com.spendsense.debt.dto.DebtSummaryDto;
 import com.spendsense.debt.dto.SettleDebtRequest;
@@ -29,7 +30,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -216,5 +219,168 @@ class DebtServiceTest {
 
         assertThat(result.status()).isEqualTo(DebtStatus.CANCELLED);
         verify(debtRepository).save(debt);
+    }
+
+    @Test
+    @DisplayName("Candidate transactions: reference date is strictly createdAt in IST with 7-day lookback, ignoring dueDate")
+    void testCandidateTransactions_LookbackBoundary_CreatedAtReference() {
+        UUID debtId = UUID.randomUUID();
+        LocalDate refDate = LocalDate.of(2026, 10, 15);
+        Instant createdAtInstant = refDate.atStartOfDay(ZoneId.of("Asia/Kolkata")).toInstant();
+
+        // Due date is set 30 days in future; should NOT affect the lookback reference date
+        Debt debt = new Debt(testUser, "Rohan", DebtType.OWED_TO_ME, new BigDecimal("1000.00"),
+                LocalDate.of(2026, 11, 15), "Lunch loan");
+        debt.setId(debtId);
+        debt.setCreatedAt(createdAtInstant);
+
+        LocalDate exactly7DaysBefore = refDate.minusDays(7); // 2026-10-08
+        LocalDate eightDaysBefore = refDate.minusDays(8);    // 2026-10-07
+        LocalDate sameDay = refDate;                         // 2026-10-15
+
+        Transaction tx7Days = new Transaction(testUser, new BigDecimal("1000.00"), "Repayment exactly 7d before",
+                TransactionCategory.OTHER, TransactionType.INCOME, exactly7DaysBefore, "");
+        Transaction tx8Days = new Transaction(testUser, new BigDecimal("1000.00"), "Repayment 8d before",
+                TransactionCategory.OTHER, TransactionType.INCOME, eightDaysBefore, "");
+        Transaction txSameDay = new Transaction(testUser, new BigDecimal("1000.00"), "Repayment same day",
+                TransactionCategory.OTHER, TransactionType.INCOME, sameDay, "");
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(debtRepository.findLinkedTransactionIdsByUserId(userId)).thenReturn(List.of());
+        when(transactionRepository.findCandidateCreditsForDebt(eq(userId), eq(exactly7DaysBefore)))
+                .thenReturn(List.of(txSameDay, tx7Days, tx8Days));
+
+        List<DebtCandidateTransactionDto> candidates = debtService.getCandidateTransactions(debtId);
+
+        // Verify repository query used refDate.minusDays(7) and NOT dueDate
+        verify(transactionRepository).findCandidateCreditsForDebt(userId, exactly7DaysBefore);
+        verify(transactionRepository, never()).findCandidateDebitsForDebt(any(), any());
+
+        // Boundary assertion: exactly 7 days before and same day qualify; 8 days before does not qualify
+        List<UUID> candidateIds = candidates.stream().map(DebtCandidateTransactionDto::id).toList();
+        assertThat(candidateIds)
+                .contains(txSameDay.getId(), tx7Days.getId())
+                .doesNotContain(tx8Days.getId());
+    }
+
+    @Test
+    @DisplayName("Candidate transactions: OWED_TO_ME queries credits and I_OWE queries debits")
+    void testCandidateTransactions_DirectionFilters() {
+        UUID owedDebtId = UUID.randomUUID();
+        Debt owedDebt = new Debt(testUser, "Rohan", DebtType.OWED_TO_ME, new BigDecimal("1000.00"), null, null);
+        owedDebt.setId(owedDebtId);
+
+        when(debtRepository.findByIdAndUserId(owedDebtId, userId)).thenReturn(Optional.of(owedDebt));
+        when(debtRepository.findLinkedTransactionIdsByUserId(userId)).thenReturn(List.of());
+        when(transactionRepository.findCandidateCreditsForDebt(eq(userId), any())).thenReturn(List.of());
+
+        debtService.getCandidateTransactions(owedDebtId);
+        verify(transactionRepository).findCandidateCreditsForDebt(eq(userId), any());
+        verify(transactionRepository, never()).findCandidateDebitsForDebt(eq(userId), any());
+
+        UUID iOweDebtId = UUID.randomUUID();
+        Debt iOweDebt = new Debt(testUser, "Neha", DebtType.I_OWE, new BigDecimal("500.00"), null, null);
+        iOweDebt.setId(iOweDebtId);
+
+        when(debtRepository.findByIdAndUserId(iOweDebtId, userId)).thenReturn(Optional.of(iOweDebt));
+        when(transactionRepository.findCandidateDebitsForDebt(eq(userId), any())).thenReturn(List.of());
+
+        debtService.getCandidateTransactions(iOweDebtId);
+        verify(transactionRepository).findCandidateDebitsForDebt(eq(userId), any());
+    }
+
+    @Test
+    @DisplayName("Candidate transactions: transactions already linked to any debt are excluded")
+    void testCandidateTransactions_ExcludesAlreadyLinkedTransactions() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Rohan", DebtType.OWED_TO_ME, new BigDecimal("1000.00"), null, null);
+        debt.setId(debtId);
+
+        Transaction txLinked = new Transaction(testUser, new BigDecimal("1000.00"), "Already linked tx",
+                TransactionCategory.OTHER, TransactionType.INCOME, LocalDate.now(), "");
+        Transaction txAvailable = new Transaction(testUser, new BigDecimal("1000.00"), "Available tx",
+                TransactionCategory.OTHER, TransactionType.INCOME, LocalDate.now(), "");
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(debtRepository.findLinkedTransactionIdsByUserId(userId)).thenReturn(List.of(txLinked.getId()));
+        when(transactionRepository.findCandidateCreditsForDebt(eq(userId), any()))
+                .thenReturn(List.of(txLinked, txAvailable));
+
+        List<DebtCandidateTransactionDto> candidates = debtService.getCandidateTransactions(debtId);
+
+        assertThat(candidates).hasSize(1);
+        assertThat(candidates.get(0).id()).isEqualTo(txAvailable.getId());
+    }
+
+    @Test
+    @DisplayName("Candidate transactions: ranking orders by match confidence and marks top match")
+    void testCandidateTransactions_RankingAndTopMatch() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Rohan Sharma", DebtType.OWED_TO_ME, new BigDecimal("1000.00"), null, null);
+        debt.setId(debtId);
+
+        Transaction txExactAndName = new Transaction(testUser, new BigDecimal("1000.00"), "Rohan lunch refund",
+                TransactionCategory.OTHER, TransactionType.INCOME, LocalDate.now(), "");
+        Transaction txExactAmount = new Transaction(testUser, new BigDecimal("1000.00"), "Unknown sender credit",
+                TransactionCategory.OTHER, TransactionType.INCOME, LocalDate.now(), "");
+        Transaction txCloseAmount = new Transaction(testUser, new BigDecimal("980.00"), "Rohan dinner share",
+                TransactionCategory.OTHER, TransactionType.INCOME, LocalDate.now(), "");
+        Transaction txGeneric = new Transaction(testUser, new BigDecimal("150.00"), "Grocery refund",
+                TransactionCategory.OTHER, TransactionType.INCOME, LocalDate.now(), "");
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(debtRepository.findLinkedTransactionIdsByUserId(userId)).thenReturn(List.of());
+        when(transactionRepository.findCandidateCreditsForDebt(eq(userId), any()))
+                .thenReturn(List.of(txGeneric, txCloseAmount, txExactAmount, txExactAndName));
+
+        List<DebtCandidateTransactionDto> candidates = debtService.getCandidateTransactions(debtId);
+
+        assertThat(candidates).hasSize(4);
+        // Top ranked should be exact amount + counterparty match
+        assertThat(candidates.get(0).id()).isEqualTo(txExactAndName.getId());
+        assertThat(candidates.get(0).isTopMatch()).isTrue();
+        assertThat(candidates.get(0).matchReason()).contains("Exact amount and counterparty match");
+
+        // Second should be exact amount
+        assertThat(candidates.get(1).id()).isEqualTo(txExactAmount.getId());
+        assertThat(candidates.get(1).isTopMatch()).isFalse();
+
+        // Third should be close amount + counterparty
+        assertThat(candidates.get(2).id()).isEqualTo(txCloseAmount.getId());
+        assertThat(candidates.get(2).isTopMatch()).isFalse();
+
+        // Fourth should be generic candidate
+        assertThat(candidates.get(3).id()).isEqualTo(txGeneric.getId());
+        assertThat(candidates.get(3).isTopMatch()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Candidate transactions: foreign or non-existent debt ID returns 404 NOT_FOUND")
+    void testCandidateTransactions_ForeignDebtIdReturnsNotFound() {
+        UUID foreignDebtId = UUID.randomUUID();
+        when(debtRepository.findByIdAndUserId(foreignDebtId, userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> debtService.getCandidateTransactions(foreignDebtId))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> assertThat(((ApiException) ex).getStatus()).isEqualTo(HttpStatus.NOT_FOUND));
+
+        verify(transactionRepository, never()).findCandidateCreditsForDebt(any(), any());
+        verify(transactionRepository, never()).findCandidateDebitsForDebt(any(), any());
+    }
+
+    @Test
+    @DisplayName("Settle debt: non-existent transaction returns 404 NOT_FOUND")
+    void testSettleDebt_NonExistentTransactionReturnsNotFound() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Rahul", DebtType.OWED_TO_ME, new BigDecimal("1000.00"), null, null);
+        debt.setId(debtId);
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+
+        UUID missingTxId = UUID.randomUUID();
+        when(transactionRepository.findById(missingTxId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> debtService.settleDebt(debtId, new SettleDebtRequest(missingTxId)))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> assertThat(((ApiException) ex).getStatus()).isEqualTo(HttpStatus.NOT_FOUND));
     }
 }

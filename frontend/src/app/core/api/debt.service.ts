@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   ApiResponse,
   CreateDebtRequest,
+  DebtCandidateTransactionDto,
   DebtDto,
   DebtStatus,
   DebtSummaryDto,
@@ -34,6 +35,10 @@ export class DebtService {
 
   getById(id: string): Observable<ApiResponse<DebtDto>> {
     return this.http.get<ApiResponse<DebtDto>>(`${this.url}/${id}`);
+  }
+
+  getCandidates(id: string): Observable<ApiResponse<DebtCandidateTransactionDto[]>> {
+    return this.http.get<ApiResponse<DebtCandidateTransactionDto[]>>(`${this.url}/${id}/candidates`);
   }
 
   create(payload: CreateDebtRequest): Observable<ApiResponse<DebtDto>> {

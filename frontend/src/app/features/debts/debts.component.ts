@@ -4,15 +4,14 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { Subscription } from 'rxjs';
 import {
   CreateDebtRequest,
+  DebtCandidateTransactionDto,
   DebtDto,
   DebtStatus,
   DebtSummaryDto,
   DebtType,
   SettleDebtRequest,
-  Transaction,
 } from '../../core/api/api.types';
 import { DebtService } from '../../core/api/debt.service';
-import { TransactionService } from '../transactions/transaction.service';
 
 @Component({
   selector: 'app-debts',
@@ -23,14 +22,18 @@ import { TransactionService } from '../transactions/transaction.service';
 })
 export class DebtsComponent implements OnInit, OnDestroy {
   private readonly debtService = inject(DebtService);
-  private readonly transactionService = inject(TransactionService);
   private readonly fb = inject(FormBuilder);
 
   private sub = new Subscription();
 
   debts: DebtDto[] = [];
   summary: DebtSummaryDto | null = null;
-  recentTransactions: Transaction[] = [];
+  candidateTransactions: DebtCandidateTransactionDto[] = [];
+  loadingCandidates = false;
+
+  get topMatchCandidate(): DebtCandidateTransactionDto | undefined {
+    return this.candidateTransactions.find((c) => c.isTopMatch);
+  }
 
   loading = true;
   error = '';
@@ -101,16 +104,6 @@ export class DebtsComponent implements OnInit, OnDestroy {
     this.debtService.getSummary().subscribe({
       next: (res) => {
         this.summary = res.data ?? null;
-      },
-    });
-
-    // Load recent transactions for settle picker
-    this.transactionService.list({ page: 0, size: 10 }).subscribe({
-      next: (res) => {
-        this.recentTransactions = res.data ?? [];
-      },
-      error: () => {
-        this.recentTransactions = [];
       },
     });
   }
@@ -197,13 +190,32 @@ export class DebtsComponent implements OnInit, OnDestroy {
     this.settlingDebt = debt;
     this.settleForm.reset({ linkedTransactionId: '' });
     this.settleFormError = '';
+    this.candidateTransactions = [];
+    this.loadingCandidates = true;
     this.showSettleModal = true;
+
+    this.debtService.getCandidates(debt.id).subscribe({
+      next: (res) => {
+        this.candidateTransactions = res.data ?? [];
+        this.loadingCandidates = false;
+        const topMatch = this.candidateTransactions.find((c) => c.isTopMatch);
+        if (topMatch) {
+          this.settleForm.patchValue({ linkedTransactionId: topMatch.id });
+        }
+      },
+      error: () => {
+        this.candidateTransactions = [];
+        this.loadingCandidates = false;
+      },
+    });
   }
 
   closeSettleModal(): void {
     this.showSettleModal = false;
     this.settlingDebt = null;
     this.settleFormError = '';
+    this.candidateTransactions = [];
+    this.loadingCandidates = false;
   }
 
   submitSettleDebt(): void {

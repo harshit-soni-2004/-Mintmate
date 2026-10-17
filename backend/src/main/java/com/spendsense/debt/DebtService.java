@@ -2,6 +2,7 @@ package com.spendsense.debt;
 
 import com.spendsense.common.exception.ApiException;
 import com.spendsense.debt.dto.CreateDebtRequest;
+import com.spendsense.debt.dto.DebtCandidateTransactionDto;
 import com.spendsense.debt.dto.DebtDto;
 import com.spendsense.debt.dto.DebtSummaryDto;
 import com.spendsense.debt.dto.SettleDebtRequest;
@@ -22,13 +23,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 @Service
 public class DebtService {
 
     private static final Logger log = LoggerFactory.getLogger(DebtService.class);
+
+    public static final int CREATED_AT_LOOKBACK_DAYS = 7;
+    public static final ZoneId IST_ZONE = ZoneId.of("Asia/Kolkata");
 
     private final DebtRepository debtRepository;
     private final TransactionRepository transactionRepository;
@@ -108,6 +113,146 @@ public class DebtService {
     }
 
     /**
+     * Finds and ranks candidate transactions for linking to a debt.
+     * All matching and ranking rules live here:
+     * - Scoped strictly to authenticated user
+     * - Lookback: transactionDate >= createdAt date minus CREATED_AT_LOOKBACK_DAYS (never uses dueDate)
+     * - Direction: OWED_TO_ME requires incoming credits (INCOME or TRANSFER IN); I_OWE requires outgoing debits (EXPENSE or TRANSFER OUT)
+     * - Excludes transactions already linked to any debt
+     * - Ranked by exact amount + counterparty > exact amount > close amount > recent date
+     */
+    @Transactional(readOnly = true)
+    public List<DebtCandidateTransactionDto> getCandidateTransactions(UUID debtId) {
+        User user = requireUser();
+        Debt debt = debtRepository.findByIdAndUserId(debtId, user.getId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "DEBT_NOT_FOUND", "Debt entry not found"));
+
+        LocalDate refDate = debt.getCreatedAt() != null
+                ? debt.getCreatedAt().atZone(IST_ZONE).toLocalDate()
+                : LocalDate.now(IST_ZONE);
+        LocalDate earliestDate = refDate.minusDays(CREATED_AT_LOOKBACK_DAYS);
+
+        List<UUID> linkedIdsList = debtRepository.findLinkedTransactionIdsByUserId(user.getId());
+        Set<UUID> linkedIds = new HashSet<>(linkedIdsList != null ? linkedIdsList : List.of());
+        if (debt.getLinkedTransaction() != null) {
+            linkedIds.remove(debt.getLinkedTransaction().getId());
+        }
+
+        List<Transaction> rawCandidates;
+        if (debt.getDebtType() == DebtType.OWED_TO_ME) {
+            rawCandidates = transactionRepository.findCandidateCreditsForDebt(user.getId(), earliestDate);
+        } else {
+            rawCandidates = transactionRepository.findCandidateDebitsForDebt(user.getId(), earliestDate);
+        }
+
+        List<Transaction> eligible = rawCandidates.stream()
+                .filter(t -> t.getTransactionDate() != null && !t.getTransactionDate().isBefore(earliestDate))
+                .filter(t -> !linkedIds.contains(t.getId()))
+                .toList();
+
+        List<DebtCandidateTransactionDto> scoredCandidates = new ArrayList<>();
+        BigDecimal targetAmount = debt.getAmount();
+
+        for (Transaction t : eligible) {
+            int baseScore;
+            String reason;
+
+            boolean exactAmount = targetAmount != null && t.getAmount() != null && targetAmount.compareTo(t.getAmount()) == 0;
+            boolean counterpartyMatch = matchesCounterparty(debt.getCounterpartyName(), t.getMerchant(), t.getDescription());
+            boolean closeAmount = !exactAmount && isCloseAmount(targetAmount, t.getAmount());
+
+            if (exactAmount && counterpartyMatch) {
+                baseScore = 100;
+                reason = "Exact amount and counterparty match";
+            } else if (exactAmount) {
+                baseScore = 75;
+                reason = "Exact amount match";
+            } else if (closeAmount && counterpartyMatch) {
+                baseScore = 55;
+                reason = "Close amount and counterparty match";
+            } else if (closeAmount) {
+                baseScore = 40;
+                reason = "Close amount match";
+            } else if (counterpartyMatch) {
+                baseScore = 30;
+                reason = "Counterparty name match";
+            } else {
+                baseScore = 10;
+                reason = "Recent candidate";
+            }
+
+            long daysDiff = Math.abs(ChronoUnit.DAYS.between(refDate, t.getTransactionDate()));
+            int recencyBonus = (int) Math.max(0, 10 - Math.min(10, daysDiff));
+            int totalScore = (baseScore * 100) + recencyBonus;
+
+            scoredCandidates.add(new DebtCandidateTransactionDto(
+                    t.getId(),
+                    t.getAmount(),
+                    t.getDescription(),
+                    t.getMerchant(),
+                    t.getTransactionDate(),
+                    t.getTransactionType(),
+                    t.getTransferDirection(),
+                    false,
+                    reason,
+                    totalScore
+            ));
+        }
+
+        scoredCandidates.sort(Comparator
+                .comparingInt(DebtCandidateTransactionDto::score)
+                .reversed()
+                .thenComparing(DebtCandidateTransactionDto::transactionDate, Comparator.reverseOrder()));
+
+        if (!scoredCandidates.isEmpty() && scoredCandidates.get(0).score() >= 3000) {
+            DebtCandidateTransactionDto top = scoredCandidates.get(0);
+            scoredCandidates.set(0, new DebtCandidateTransactionDto(
+                    top.id(),
+                    top.amount(),
+                    top.description(),
+                    top.merchant(),
+                    top.transactionDate(),
+                    top.transactionType(),
+                    top.transferDirection(),
+                    true,
+                    top.matchReason(),
+                    top.score()
+            ));
+        }
+
+        return scoredCandidates;
+    }
+
+    private boolean isCloseAmount(BigDecimal target, BigDecimal candidate) {
+        if (target == null || candidate == null) return false;
+        BigDecimal diff = target.subtract(candidate).abs();
+        BigDecimal tenPercent = target.multiply(BigDecimal.valueOf(0.10));
+        if (diff.compareTo(tenPercent) <= 0) {
+            return true;
+        }
+        return diff.compareTo(BigDecimal.valueOf(100)) <= 0;
+    }
+
+    private boolean matchesCounterparty(String counterparty, String merchant, String description) {
+        if (counterparty == null || counterparty.isBlank()) return false;
+        String cp = counterparty.trim().toLowerCase();
+
+        String m = merchant != null ? merchant.toLowerCase() : "";
+        String d = description != null ? description.toLowerCase() : "";
+
+        if (m.contains(cp) || d.contains(cp)) {
+            return true;
+        }
+        String[] tokens = cp.split("\\s+");
+        for (String token : tokens) {
+            if (token.length() >= 3 && (m.contains(token) || d.contains(token))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Settles a debt entry.
      * When linked to a transaction, reconciles without double-counting:
      * - If OWED_TO_ME: Repayment credit is excluded from Income metrics (reclassified as refund/settlement)
@@ -120,7 +265,10 @@ public class DebtService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "DEBT_NOT_FOUND", "Debt entry not found"));
 
         if (debt.getStatus() == DebtStatus.SETTLED) {
-            return DebtDto.fromEntity(debt);
+            if (debt.getLinkedTransaction() != null || settleRequest == null || settleRequest.linkedTransactionId() == null) {
+                return DebtDto.fromEntity(debt);
+            }
+            // Allow linking a settlement transaction to a debt that was previously settled without a link
         }
 
         Transaction settlementTx = null;
@@ -153,9 +301,13 @@ public class DebtService {
             transactionRepository.save(settlementTx);
         }
 
-        debt.settle(settlementTx);
+        if (debt.getStatus() != DebtStatus.SETTLED) {
+            debt.settle(settlementTx);
+        } else {
+            debt.setLinkedTransaction(settlementTx);
+        }
         Debt updated = debtRepository.save(debt);
-        log.info("Settled debt {} for user {}, linked tx: {}", debtId, user.getId(),
+        log.info("Settled/linked debt {} for user {}, linked tx: {}", debtId, user.getId(),
                 settlementTx != null ? settlementTx.getId() : "none");
         return DebtDto.fromEntity(updated);
     }

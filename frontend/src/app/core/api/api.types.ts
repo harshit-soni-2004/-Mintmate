@@ -544,5 +544,18 @@ export interface SettleDebtRequest {
   linkedTransactionId?: string | null;
 }
 
+export interface DebtCandidateTransactionDto {
+  id: string;
+  amount: number;
+  description?: string | null;
+  merchant?: string | null;
+  transactionDate: string;
+  transactionType: TransactionType;
+  transferDirection?: TransferDirection | null;
+  isTopMatch: boolean;
+  matchReason?: string | null;
+  score: number;
+}
+
 
 

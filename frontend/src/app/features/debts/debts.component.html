@@ -508,20 +508,37 @@
 
           <!-- Optional Linked Transaction -->
           <div class="form-group">
-            <label for="settle-linked-tx" class="field-label">Link Transaction (Optional)</label>
+            <div class="field-label-row">
+              <label for="settle-linked-tx" class="field-label">Link Transaction (Optional)</label>
+              @if (loadingCandidates) {
+                <span class="loading-candidates-text" id="loading-candidates-indicator">Finding matches...</span>
+              }
+            </div>
             <select
               id="settle-linked-tx"
               formControlName="linkedTransactionId"
               class="form-input"
             >
               <option value="">-- No linked transaction --</option>
-              @for (tx of recentTransactions; track tx.id) {
+              @for (tx of candidateTransactions; track tx.id) {
                 <option [value]="tx.id">
-                  {{ tx.transactionDate | date:'shortDate' }} &middot; {{ tx.merchant || 'Tx' }} &middot; ₹{{ tx.amount }}
+                  {{ tx.isTopMatch ? '⭐ [Top Match] ' : '' }}{{ tx.transactionDate | date:'mediumDate' }} · {{ tx.merchant || tx.description || 'Transaction' }} · {{ tx.amount | currency:'INR':'symbol-narrow':'1.0-0' }}{{ tx.matchReason ? ' (' + tx.matchReason + ')' : '' }}
                 </option>
               }
             </select>
-            <small class="field-hint">Optional: Associates a real statement transaction with this settlement.</small>
+            @if (topMatchCandidate) {
+              <div class="top-match-indicator" id="top-match-badge">
+                <span class="top-match-star">★</span>
+                <span>Top match suggested: <strong>{{ topMatchCandidate.merchant || topMatchCandidate.description || 'Transaction' }}</strong> ({{ topMatchCandidate.amount | currency:'INR':'symbol-narrow':'1.0-0' }}) · {{ topMatchCandidate.matchReason }}</span>
+              </div>
+            }
+            <small class="field-hint">
+              @if (settlingDebt.debtType === 'OWED_TO_ME') {
+                Showing candidate incoming credits from the week of debt creation onwards, ranked by match confidence.
+              } @else {
+                Showing candidate outgoing debits from the week of debt creation onwards, ranked by match confidence.
+              }
+            </small>
           </div>
 
           <!-- Modal Footer -->

@@ -2,6 +2,7 @@ package com.spendsense.debt;
 
 import com.spendsense.common.api.ApiResponse;
 import com.spendsense.debt.dto.CreateDebtRequest;
+import com.spendsense.debt.dto.DebtCandidateTransactionDto;
 import com.spendsense.debt.dto.DebtDto;
 import com.spendsense.debt.dto.DebtSummaryDto;
 import com.spendsense.debt.dto.SettleDebtRequest;
@@ -46,6 +47,13 @@ public class DebtController {
     public ResponseEntity<ApiResponse<DebtDto>> getDebt(@PathVariable("id") UUID id) {
         DebtDto debt = debtService.getDebt(id);
         return ResponseEntity.ok(ApiResponse.of(debt));
+    }
+
+    @GetMapping("/{id}/candidates")
+    public ResponseEntity<ApiResponse<List<DebtCandidateTransactionDto>>> getCandidateTransactions(
+            @PathVariable("id") UUID id) {
+        List<DebtCandidateTransactionDto> candidates = debtService.getCandidateTransactions(id);
+        return ResponseEntity.ok(ApiResponse.of(candidates));
     }
 
     @PostMapping("/{id}/settle")

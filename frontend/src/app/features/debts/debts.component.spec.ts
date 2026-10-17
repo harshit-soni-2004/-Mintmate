@@ -1,15 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of, Subject } from 'rxjs';
-import { DebtDto, DebtSummaryDto, Transaction } from '../../core/api/api.types';
+import { of, Subject, throwError } from 'rxjs';
+import { DebtCandidateTransactionDto, DebtDto, DebtSummaryDto } from '../../core/api/api.types';
 import { DebtService } from '../../core/api/debt.service';
-import { TransactionService } from '../transactions/transaction.service';
 import { DebtsComponent } from './debts.component';
 
 describe('DebtsComponent', () => {
   let component: DebtsComponent;
   let fixture: ComponentFixture<DebtsComponent>;
   let mockDebtService: jasmine.SpyObj<DebtService>;
-  let mockTxService: jasmine.SpyObj<TransactionService>;
   let mutationSubject: Subject<void>;
 
   const mockDebts: DebtDto[] = [
@@ -59,25 +57,19 @@ describe('DebtsComponent', () => {
       'create',
       'settle',
       'cancel',
+      'getCandidates',
     ], {
       onDebtMutated$: mutationSubject.asObservable(),
     });
 
-    mockTxService = jasmine.createSpyObj('TransactionService', ['list']);
-
     mockDebtService.list.and.returnValue(of({ data: mockDebts, error: null, meta: null }));
     mockDebtService.getSummary.and.returnValue(of({ data: mockSummary, error: null, meta: null }));
-    mockTxService.list.and.returnValue(of({
-      data: [],
-      error: null,
-      meta: null as any,
-    }));
+    mockDebtService.getCandidates.and.returnValue(of({ data: [], error: null, meta: null }));
 
     await TestBed.configureTestingModule({
       imports: [DebtsComponent],
       providers: [
         { provide: DebtService, useValue: mockDebtService },
-        { provide: TransactionService, useValue: mockTxService },
       ],
     }).compileComponents();
 
@@ -174,12 +166,74 @@ describe('DebtsComponent', () => {
     component.openSettleModal(mockDebts[0]);
     expect(component.showSettleModal).toBeTrue();
     expect(component.settlingDebt?.counterpartyName).toBe('Alice Sharma');
+    expect(mockDebtService.getCandidates).toHaveBeenCalledWith('debt-1');
 
     component.settleForm.setValue({ linkedTransactionId: 'tx-123' });
     component.submitSettleDebt();
 
     expect(mockDebtService.settle).toHaveBeenCalledWith('debt-1', { linkedTransactionId: 'tx-123' });
     expect(component.showSettleModal).toBeFalse();
+  });
+
+  it('fetches candidate transactions and automatically pre-selects top match candidate', () => {
+    const mockCandidates: DebtCandidateTransactionDto[] = [
+      {
+        id: 'candidate-top',
+        amount: 4500,
+        description: 'Alice repayment',
+        merchant: 'UPI-Alice',
+        transactionDate: '2026-10-14',
+        transactionType: 'INCOME',
+        transferDirection: null,
+        isTopMatch: true,
+        matchReason: 'Exact amount and counterparty match',
+        score: 10010,
+      },
+      {
+        id: 'candidate-other',
+        amount: 4000,
+        description: 'Transfer in',
+        merchant: 'NEFT',
+        transactionDate: '2026-10-12',
+        transactionType: 'INCOME',
+        transferDirection: null,
+        isTopMatch: false,
+        matchReason: 'Close amount match',
+        score: 4008,
+      },
+    ];
+
+    mockDebtService.getCandidates.and.returnValue(of({
+      data: mockCandidates,
+      error: null,
+      meta: null,
+    }));
+
+    component.openSettleModal(mockDebts[0]);
+    fixture.detectChanges();
+
+    expect(mockDebtService.getCandidates).toHaveBeenCalledWith('debt-1');
+    expect(component.candidateTransactions.length).toBe(2);
+    expect(component.topMatchCandidate).toEqual(mockCandidates[0]);
+    // Verifies top match was automatically patched into form
+    expect(component.settleForm.value.linkedTransactionId).toBe('candidate-top');
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const topBadge = compiled.querySelector('#top-match-badge');
+    expect(topBadge).toBeTruthy();
+    expect(topBadge?.textContent).toContain('UPI-Alice');
+    expect(topBadge?.textContent).toContain('Exact amount and counterparty match');
+  });
+
+  it('handles candidate loading error gracefully without breaking modal', () => {
+    mockDebtService.getCandidates.and.returnValue(throwError(() => new Error('Server error')));
+
+    component.openSettleModal(mockDebts[0]);
+
+    expect(component.showSettleModal).toBeTrue();
+    expect(component.candidateTransactions).toEqual([]);
+    expect(component.loadingCandidates).toBeFalse();
+    expect(component.settleForm.value.linkedTransactionId).toBe('');
   });
 
   it('cancels debt after user confirmation', () => {
