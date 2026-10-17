@@ -1,6 +1,22 @@
 # Unattended Decisions: Debt Reminders & Repayment Matching
 
-## 1. Candidate Search & Filtering Rules
+## Resume Inspection Status Note (Part 3 & A1 State)
+- **Inspection Findings on Resume**:
+  - Part 1 banner committed: `1eae20f`
+  - Part 2 candidates endpoint and dropdown committed: `29cd46c`, `1245df5`
+  - Part 3 statement repayment matching, dismissal persistence, and dedicated link-only path committed: `820886b`
+  - A1 record-payment flow with statement duplicate guard committed: `c02d7f6`
+  - Workstream B (Google auth & Email OTP) committed on its own branch: `feat/auth-google-email-otp` (`8cd87ae`, `e5848c8`, `2d3804d`).
+  - **What Was Missing/Broken on Resume**:
+    - The local MySQL test database had previously executed migrations V17 and V18 from `feat/auth-google-email-otp`. On `feat/debt-reminders-and-matching`, Flyway reported checksum mismatch for V17 (`V17__create_debt_match_dismissals.sql` vs `V17__add_google_auth_and_email_verification_to_users.sql`), and schema validation failed due to missing table `debt_match_dismissals`.
+    - Resolved by creating `debt_match_dismissals` table and running Flyway repair.
+    - Verified test execution: all 461 backend tests pass, all 169 frontend tests pass, and frontend production build succeeds with zero errors.
+  - **Flyway Migration Collision Warning**:
+    - Debt branch uses `V17__create_debt_match_dismissals.sql`.
+    - Auth branch uses `V17__add_google_auth_and_email_verification_to_users.sql` and `V18__create_email_otps.sql`.
+    - When merging the branches, one branch's migrations will need sequential renumbering (e.g. debt dismissals to V19).
+
+## 1. Candidate Search & Exact Matching Rules
 
 All candidate transactions for a debt are evaluated on-read via `GET /api/v1/debts/{id}/candidates` according to the following canonical criteria:
 
