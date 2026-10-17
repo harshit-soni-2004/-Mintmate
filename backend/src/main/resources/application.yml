@@ -11,7 +11,7 @@ spring:
     serialization:
       write-dates-as-timestamps: false
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/spendsense?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/${DB_NAME:spendsense}?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8}
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD}
