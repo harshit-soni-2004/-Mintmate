@@ -11,28 +11,28 @@
   --color-accent: #8be35a;           /* Soft lime-green */
   --color-accent-soft: rgba(139, 227, 90, 0.18);
   --color-accent-contrast: #073b35;
-  --color-background: #eaf2ee;       /* Pale mint-grey base canvas */
+  --color-background: #dceae4;       /* Deeper pale mint-grey base canvas */
   --color-surface: #ffffff;          /* Target Card surfaces */
   --color-surface-elevated: #ffffff;
-  --color-surface-muted: #edf2ee;
-  --color-surface-subtle: #f2f6f3;
+  --color-surface-muted: #d5e5dd;
+  --color-surface-subtle: #e5f0ea;
   --color-text: #14251f;             /* Target Primary text */
-  --color-text-secondary: #64736d;   /* Target Secondary text */
-  --color-text-muted: #64736d;       /* Enhanced contrast for muted details */
-  --color-border: #e4ece7;           /* Target Borders and dividers */
-  --color-border-subtle: #edf3ef;
+  --color-text-secondary: #475852;   /* WCAG AA (5.4:1) high contrast secondary text */
+  --color-text-muted: #4e5f59;       /* WCAG AA (4.8:1) contrast for subtitles & baseline labels */
+  --color-border: rgba(20, 80, 65, 0.12); /* Subtle green-tinted hairline outer edge */
+  --color-border-subtle: rgba(20, 80, 65, 0.08);
 
   /* Liquid Glass System Tokens - Light Mode */
-  --glass-surface: rgba(255, 255, 255, 0.68);
-  --glass-surface-elevated: rgba(255, 255, 255, 0.74);
-  --glass-surface-subtle: rgba(255, 255, 255, 0.58);
-  --glass-border: rgba(255, 255, 255, 0.85);
-  --glass-border-subtle: rgba(255, 255, 255, 0.60);
-  --glass-highlight: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 100%);
-  --glass-blur: blur(20px) saturate(180%);
-  --glass-shadow: 0 10px 30px rgba(20, 37, 31, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.95);
-  --glass-shadow-elevated: 0 16px 40px rgba(20, 37, 31, 0.08), inset 0 1px 1.5px rgba(255, 255, 255, 1);
-  --ambient-gradient: radial-gradient(1200px circle at 15% 10%, rgba(22, 133, 117, 0.14), transparent 50%), radial-gradient(1300px circle at 88% 25%, rgba(139, 227, 90, 0.12), transparent 45%), radial-gradient(1000px circle at 45% 90%, rgba(45, 140, 125, 0.09), transparent 50%);
+  --glass-surface: rgba(255, 255, 255, 0.58);
+  --glass-surface-elevated: rgba(255, 255, 255, 0.66);
+  --glass-surface-subtle: rgba(255, 255, 255, 0.45);
+  --glass-border: rgba(20, 80, 65, 0.12);
+  --glass-border-subtle: rgba(20, 80, 65, 0.08);
+  --glass-highlight: linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.85) 50%, rgba(255, 255, 255, 0.15) 100%);
+  --glass-blur: blur(20px) saturate(145%);
+  --glass-shadow: 0 8px 28px rgba(16, 70, 58, 0.10), 0 1px 2px rgba(16, 70, 58, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.90);
+  --glass-shadow-elevated: 0 12px 36px rgba(16, 70, 58, 0.12), 0 2px 4px rgba(16, 70, 58, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
+  --ambient-gradient: radial-gradient(1300px circle at 15% 15%, rgba(22, 133, 117, 0.28) 0%, rgba(22, 133, 117, 0.08) 55%, transparent 75%), radial-gradient(1400px circle at 85% 20%, rgba(139, 227, 90, 0.24) 0%, rgba(139, 227, 90, 0.06) 50%, transparent 75%), radial-gradient(1100px circle at 50% 85%, rgba(45, 140, 125, 0.22) 0%, transparent 70%);
 
   /* Semantic State Colors */
   --success: #16845b;                /* Target Positive financial values */
@@ -98,10 +98,10 @@
   --radius-full: 9999px;
 
   /* Apple-like Calm Ambient Shadows with Subtle Card Depth */
-  --shadow-xs: 0 1px 2px rgba(21, 36, 30, 0.04);
-  --shadow-sm: 0 2px 8px rgba(21, 36, 30, 0.06);
-  --shadow: 0 8px 24px rgba(21, 36, 30, 0.08);
-  --shadow-lg: 0 18px 40px rgba(21, 36, 30, 0.12);
+  --shadow-xs: 0 1px 2px rgba(16, 70, 58, 0.05);
+  --shadow-sm: 0 2px 8px rgba(16, 70, 58, 0.07);
+  --shadow: 0 8px 28px rgba(16, 70, 58, 0.10), 0 1px 2px rgba(16, 70, 58, 0.08);
+  --shadow-lg: 0 18px 40px rgba(16, 70, 58, 0.14);
   --shadow-focus: 0 0 0 3px rgba(45, 140, 125, 0.25);
 
   /* Typography */
