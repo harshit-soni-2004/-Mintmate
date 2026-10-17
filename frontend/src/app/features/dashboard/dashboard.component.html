@@ -326,32 +326,97 @@
       </div>
 
       <!-- Hover / Selected Day Popover Banner -->
-      @if (hoveredDateSummary || (selectedDateSummary && selectedDateSummary.transactionCount > 0)) {
+      @if (hoveredDateSummary || selectedDateSummary) {
         <div class="cal-popover-banner" role="status" aria-live="polite">
           <div class="popover-lead">
             <span class="popover-date">{{ (hoveredDateSummary?.date || selectedDateSummary.date) | date:'EEEE, MMMM d' }}</span>
-            <div class="popover-spent-badge">
-              <span class="popover-label">Spent</span>
-              <strong class="popover-amount">
-                {{ (hoveredDateSummary?.totalExpense ?? selectedDateSummary.totalExpense) | currency:'INR':'symbol-narrow':'1.0-0' }}
-              </strong>
-              <span class="popover-tx-count">
-                &middot; {{ (hoveredDateSummary?.transactionCount ?? selectedDateSummary.transactionCount) }} transactions
-              </span>
-            </div>
+            @if ((hoveredDateSummary?.totalExpense ?? selectedDateSummary.totalExpense) > 0) {
+              <div class="popover-spent-badge">
+                <span class="popover-label">Spent</span>
+                <strong class="popover-amount">
+                  {{ (hoveredDateSummary?.totalExpense ?? selectedDateSummary.totalExpense) | currency:'INR':'symbol-narrow':'1.0-0' }}
+                </strong>
+                <span class="popover-tx-count">
+                  &middot; {{ (hoveredDateSummary?.transactionCount ?? selectedDateSummary.transactionCount) }} {{ (hoveredDateSummary?.transactionCount ?? selectedDateSummary.transactionCount) === 1 ? 'transaction' : 'transactions' }}
+                </span>
+              </div>
+            } @else {
+              <div class="popover-empty-notice">
+                <span>No spending on this day</span>
+              </div>
+            }
           </div>
 
-          @if ((hoveredDateSummary?.topCategories || selectedDateSummary.categoryBreakdown).length > 0) {
-            <div class="popover-categories">
-              @for (cat of (hoveredDateSummary?.topCategories || selectedDateSummary.categoryBreakdown).slice(0, 3); track cat.category) {
-                <span class="popover-cat-chip">
-                  {{ categoryLabel(cat.category) }}
-                  <strong>{{ cat.amount | currency:'INR':'symbol-narrow':'1.0-0' }}</strong>
-                </span>
-              }
-            </div>
-          }
+          <div class="popover-actions-wrap">
+            @if ((hoveredDateSummary?.topCategories || selectedDateSummary.categoryBreakdown).length > 0) {
+              <div class="popover-categories">
+                @for (cat of (hoveredDateSummary?.topCategories || selectedDateSummary.categoryBreakdown).slice(0, 3); track cat.category) {
+                  <span class="popover-cat-chip">
+                    {{ categoryLabel(cat.category) }}
+                    <strong>{{ cat.amount | currency:'INR':'symbol-narrow':'1.0-0' }}</strong>
+                  </span>
+                }
+              </div>
+            }
+
+            @if (!hoveredDateSummary && selectedDateSummary && selectedDateSummary.totalExpense > 0) {
+              <button
+                type="button"
+                class="btn-toggle-daily-tx"
+                id="btn-toggle-daily-tx"
+                [attr.aria-expanded]="isDailyTxExpanded"
+                aria-controls="daily-tx-card"
+                (click)="toggleDailyTransactions()"
+                title="{{ isDailyTxExpanded ? 'Hide transactions' : 'View transactions' }}"
+              >
+                <span>{{ isDailyTxExpanded ? 'Hide transactions' : 'View transactions' }}</span>
+                <span class="chevron" [class.expanded]="isDailyTxExpanded" aria-hidden="true">▾</span>
+              </button>
+            }
+          </div>
         </div>
+
+        @if (!hoveredDateSummary && isDailyTxExpanded && selectedDateSummary && selectedDateSummary.totalExpense > 0) {
+          <div id="daily-tx-card" class="daily-tx-expanded-card" role="region" aria-label="Transactions for selected day">
+            @if (dailyTxLoading) {
+              <div class="daily-tx-loading" role="status">
+                <span class="daily-spinner" aria-hidden="true"></span>
+                <span>Loading transactions…</span>
+              </div>
+            } @else if (dailyTxError) {
+              <div class="daily-tx-error" role="alert">
+                <span>{{ dailyTxError }}</span>
+                <button type="button" class="btn-retry-daily-tx" (click)="loadDailyTransactions(selectedDate)">Try again</button>
+              </div>
+            } @else if (!dailyTransactions.length) {
+              <div class="daily-tx-empty">
+                <span>No transactions found for this day.</span>
+              </div>
+            } @else {
+              <div class="daily-tx-list-scroll">
+                @for (tx of dailyTransactions; track tx.id) {
+                  <div
+                    class="daily-tx-row"
+                    (click)="openEdit(tx)"
+                    role="button"
+                    tabindex="0"
+                    (keydown.enter)="openEdit(tx)"
+                    (keydown.space)="$event.preventDefault(); openEdit(tx)"
+                    [attr.aria-label]="(tx.description || tx.merchant || 'Expense') + ', ' + (tx.amount | currency:'INR':'symbol-narrow':'1.0-0')"
+                  >
+                    <div class="tx-item-lead">
+                      <span class="popover-cat-chip" [style.borderColor]="getCategoryColor(tx.category)">
+                        {{ categoryLabel(tx.category) }}
+                      </span>
+                      <span class="tx-item-title">{{ tx.description || tx.merchant || 'Expense' }}</span>
+                    </div>
+                    <strong class="tx-item-amount">{{ tx.amount | currency:'INR':'symbol-narrow':'1.0-0' }}</strong>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
       }
     </section>
 

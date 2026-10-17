@@ -140,6 +140,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     transactions: [] as Transaction[],
   };
 
+  // Expandable Daily Transactions in Spending Calendar
+  isDailyTxExpanded = false;
+  dailyTransactions: Transaction[] = [];
+  dailyTxLoading = false;
+  dailyTxError = '';
+
   hoveredDate: string | null = null;
   hoveredDateSummary: {
     date: string;
@@ -357,6 +363,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.loadBudgets();
       this.loadInsights();
       this.loadProactiveInsights();
+      if (this.isDailyTxExpanded && this.selectedDate) {
+        this.loadDailyTransactions(this.selectedDate);
+      }
     });
 
     const sub2 = this.budgetService.onBudgetMutated$.subscribe(() => {
@@ -573,13 +582,58 @@ export class DashboardComponent implements OnInit, OnDestroy {
   selectDate(dateString: string): void {
     this.selectedDate = dateString;
     this.updateSelectedDateSummary();
+    if (this.isDailyTxExpanded) {
+      if (this.selectedDateSummary && this.selectedDateSummary.totalExpense > 0) {
+        this.loadDailyTransactions(dateString);
+      } else {
+        this.dailyTransactions = [];
+      }
+    }
+  }
+
+  toggleDailyTransactions(): void {
+    if (!this.selectedDateSummary || this.selectedDateSummary.totalExpense <= 0) {
+      return;
+    }
+    this.isDailyTxExpanded = !this.isDailyTxExpanded;
+    if (this.isDailyTxExpanded) {
+      this.loadDailyTransactions(this.selectedDate);
+    }
+  }
+
+  loadDailyTransactions(dateString: string): void {
+    if (!dateString) return;
+    this.dailyTxLoading = true;
+    this.dailyTxError = '';
+    this.transactionService
+      .list({
+        fromDate: dateString,
+        toDate: dateString,
+        type: 'EXPENSE',
+        page: 0,
+        size: 50,
+        sort: 'newest',
+      })
+      .subscribe({
+        next: (res) => {
+          const raw = res.data ?? [];
+          this.dailyTransactions = raw.filter(
+            (t) => t.transactionType === 'EXPENSE' && t.transactionDate === dateString
+          );
+          this.dailyTxLoading = false;
+        },
+        error: () => {
+          this.dailyTxError = "Couldn't load transactions. Try again.";
+          this.dailyTxLoading = false;
+        },
+      });
   }
 
   updateSelectedDateSummary(): void {
     if (!this.dashboardData) return;
 
     const dayTx = this.dashboardData.periodTransactions.filter(
-      (t) => t.transactionDate === this.selectedDate
+      (t) => t.transactionDate === this.selectedDate && t.transactionType === 'EXPENSE'
     );
 
     let expense = 0;
@@ -587,12 +641,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const catMap = new Map<TransactionCategory, number>();
 
     for (const t of dayTx) {
-      if (t.transactionType === 'EXPENSE') {
-        expense += t.amount;
-        catMap.set(t.category, (catMap.get(t.category) || 0) + t.amount);
-      } else if (t.transactionType === 'INCOME') {
-        income += t.amount;
-      }
+      expense += t.amount;
+      catMap.set(t.category, (catMap.get(t.category) || 0) + t.amount);
     }
 
     const catBreakdown = Array.from(catMap.entries())

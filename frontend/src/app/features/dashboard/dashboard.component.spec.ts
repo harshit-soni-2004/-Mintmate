@@ -2,8 +2,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
-import { DashboardData, InsightsOverview } from '../../core/api/api.types';
+import { Observable, of, throwError } from 'rxjs';
+import { DashboardData, InsightsOverview, Transaction } from '../../core/api/api.types';
 import { AuthService } from '../../core/auth/auth.service';
 import { InsightsService } from '../insights/insights.service';
 import { TransactionService } from '../transactions/transaction.service';
@@ -515,6 +515,297 @@ describe('DashboardComponent', () => {
       expect(heroHeader?.textContent).not.toContain('undefined');
       expect(heroHeader?.textContent).not.toContain('null');
       expect(heroHeader?.textContent).not.toContain('% this month');
+    });
+  });
+
+  describe('Spending Calendar - Expandable Daily Transactions', () => {
+    const sampleExpenses: Transaction[] = [
+      {
+        id: 'tx-1',
+        amount: 1450,
+        merchant: 'Swiggy',
+        description: 'Dinner delivery',
+        category: 'FOOD',
+        transactionType: 'EXPENSE',
+        transactionDate: '2026-09-08',
+        createdAt: '2026-09-08T20:30:00Z',
+        updatedAt: '2026-09-08T20:30:00Z',
+      },
+      {
+        id: 'tx-2',
+        amount: 1000,
+        merchant: 'Starbucks',
+        description: 'Coffee meeting',
+        category: 'FOOD',
+        transactionType: 'EXPENSE',
+        transactionDate: '2026-09-08',
+        createdAt: '2026-09-08T11:15:00Z',
+        updatedAt: '2026-09-08T11:15:00Z',
+      },
+    ];
+
+    const sampleDay2Expenses: Transaction[] = [
+      {
+        id: 'tx-3',
+        amount: 850,
+        merchant: 'Uber',
+        description: 'Ride to airport',
+        category: 'TRAVEL',
+        transactionType: 'EXPENSE',
+        transactionDate: '2026-09-12',
+        createdAt: '2026-09-12T06:45:00Z',
+        updatedAt: '2026-09-12T06:45:00Z',
+      },
+    ];
+
+    const sampleMixedTransactions: Transaction[] = [
+      ...sampleExpenses,
+      {
+        id: 'tx-inc-1',
+        amount: 50000,
+        merchant: 'Employer',
+        description: 'Monthly payroll',
+        category: 'OTHER',
+        transactionType: 'INCOME',
+        transactionDate: '2026-09-08',
+        createdAt: '2026-09-08T09:00:00Z',
+        updatedAt: '2026-09-08T09:00:00Z',
+      },
+    ];
+
+    it('shows "No spending on this day" notice and omits expand button on days with zero spending', () => {
+      component.selectDate('2026-09-20');
+      fixture.detectChanges();
+
+      const emptyNotice = fixture.nativeElement.querySelector('.popover-empty-notice');
+      expect(emptyNotice).toBeTruthy();
+      expect(emptyNotice?.textContent).toContain('No spending on this day');
+
+      const toggleBtn = fixture.nativeElement.querySelector('#btn-toggle-daily-tx');
+      expect(toggleBtn).toBeNull();
+      expect(component.isDailyTxExpanded).toBeFalse();
+    });
+
+    it('shows "View transactions" control with aria-expanded=false when a day with spending is selected', () => {
+      component.dashboardData!.periodTransactions = sampleExpenses;
+      component.selectDate('2026-09-08');
+      fixture.detectChanges();
+
+      const toggleBtn = fixture.nativeElement.querySelector('#btn-toggle-daily-tx');
+      expect(toggleBtn).toBeTruthy();
+      expect(toggleBtn.getAttribute('aria-expanded')).toBe('false');
+      expect(toggleBtn.getAttribute('aria-controls')).toBe('daily-tx-card');
+      expect(toggleBtn.textContent).toContain('View transactions');
+
+      const expandedCard = fixture.nativeElement.querySelector('#daily-tx-card');
+      expect(expandedCard).toBeNull();
+    });
+
+    it('expands card, fetches transactions via TransactionService.list with single-day filter, and updates aria-expanded to true', () => {
+      spyOn(transactionService, 'list').and.returnValue(
+        of({
+          data: sampleExpenses,
+          error: null,
+          meta: { page: 0, size: 50, totalElements: 2, totalPages: 1 },
+        })
+      );
+
+      component.dashboardData!.periodTransactions = sampleExpenses;
+      component.selectDate('2026-09-08');
+      fixture.detectChanges();
+
+      const toggleBtn = fixture.nativeElement.querySelector('#btn-toggle-daily-tx') as HTMLButtonElement;
+      toggleBtn.click();
+      fixture.detectChanges();
+
+      expect(component.isDailyTxExpanded).toBeTrue();
+      expect(transactionService.list).toHaveBeenCalledWith({
+        fromDate: '2026-09-08',
+        toDate: '2026-09-08',
+        type: 'EXPENSE',
+        page: 0,
+        size: 50,
+        sort: 'newest',
+      });
+
+      expect(toggleBtn.getAttribute('aria-expanded')).toBe('true');
+      expect(toggleBtn.textContent).toContain('Hide transactions');
+
+      const expandedCard = fixture.nativeElement.querySelector('#daily-tx-card');
+      expect(expandedCard).toBeTruthy();
+
+      const rows = fixture.nativeElement.querySelectorAll('.daily-tx-row');
+      expect(rows.length).toBe(2);
+      expect(rows[0].textContent).toContain('Dinner delivery');
+      expect(rows[1].textContent).toContain('Coffee meeting');
+    });
+
+    it('collapses card when clicking toggle button again', () => {
+      spyOn(transactionService, 'list').and.returnValue(
+        of({
+          data: sampleExpenses,
+          error: null,
+          meta: { page: 0, size: 50, totalElements: 2, totalPages: 1 },
+        })
+      );
+
+      component.dashboardData!.periodTransactions = sampleExpenses;
+      component.selectDate('2026-09-08');
+      fixture.detectChanges();
+
+      const toggleBtn = fixture.nativeElement.querySelector('#btn-toggle-daily-tx') as HTMLButtonElement;
+      toggleBtn.click();
+      fixture.detectChanges();
+      expect(component.isDailyTxExpanded).toBeTrue();
+
+      toggleBtn.click();
+      fixture.detectChanges();
+
+      expect(component.isDailyTxExpanded).toBeFalse();
+      expect(toggleBtn.getAttribute('aria-expanded')).toBe('false');
+      expect(toggleBtn.textContent).toContain('View transactions');
+      expect(fixture.nativeElement.querySelector('#daily-tx-card')).toBeNull();
+    });
+
+    it('persists expanded state when switching days and fetches new day transactions', () => {
+      const listSpy = spyOn(transactionService, 'list').and.callFake((filters) => {
+        if (filters.fromDate === '2026-09-08') {
+          return of({
+            data: sampleExpenses,
+            error: null,
+            meta: { page: 0, size: 50, totalElements: 2, totalPages: 1 },
+          });
+        }
+        return of({
+          data: sampleDay2Expenses,
+          error: null,
+          meta: { page: 0, size: 50, totalElements: 1, totalPages: 1 },
+        });
+      });
+
+      component.dashboardData!.periodTransactions = [...sampleExpenses, ...sampleDay2Expenses];
+      component.selectDate('2026-09-08');
+      component.toggleDailyTransactions();
+      fixture.detectChanges();
+
+      expect(component.isDailyTxExpanded).toBeTrue();
+      expect(listSpy).toHaveBeenCalledWith(jasmine.objectContaining({ fromDate: '2026-09-08' }));
+
+      // Switch to another day with spending
+      component.selectDate('2026-09-12');
+      fixture.detectChanges();
+
+      expect(component.isDailyTxExpanded).toBeTrue();
+      expect(listSpy).toHaveBeenCalledWith(jasmine.objectContaining({ fromDate: '2026-09-12' }));
+
+      const rows = fixture.nativeElement.querySelectorAll('.daily-tx-row');
+      expect(rows.length).toBe(1);
+      expect(rows[0].textContent).toContain('Ride to airport');
+    });
+
+    it('shows loading indicator while transactions are loading', () => {
+      spyOn(transactionService, 'list').and.returnValue(new Observable());
+
+      component.dashboardData!.periodTransactions = sampleExpenses;
+      component.selectDate('2026-09-08');
+      component.toggleDailyTransactions();
+      fixture.detectChanges();
+
+      expect(component.dailyTxLoading).toBeTrue();
+      const loadingEl = fixture.nativeElement.querySelector('.daily-tx-loading');
+      expect(loadingEl).toBeTruthy();
+      expect(loadingEl.textContent).toContain('Loading transactions…');
+    });
+
+    it('shows clean error state and allows retrying when API request fails', () => {
+      const listSpy = spyOn(transactionService, 'list').and.returnValue(
+        throwError(() => new Error('Server timeout 500'))
+      );
+
+      component.dashboardData!.periodTransactions = sampleExpenses;
+      component.selectDate('2026-09-08');
+      component.toggleDailyTransactions();
+      fixture.detectChanges();
+
+      expect(component.dailyTxLoading).toBeFalse();
+      expect(component.dailyTxError).toBe("Couldn't load transactions. Try again.");
+
+      const errorEl = fixture.nativeElement.querySelector('.daily-tx-error');
+      expect(errorEl).toBeTruthy();
+      expect(errorEl.textContent).toContain("Couldn't load transactions. Try again.");
+      expect(errorEl.textContent).not.toContain('500');
+      expect(errorEl.textContent).not.toContain('Server timeout');
+
+      const retryBtn = errorEl.querySelector('.btn-retry-daily-tx') as HTMLButtonElement;
+      expect(retryBtn).toBeTruthy();
+
+      // Setup successful response for retry
+      listSpy.and.returnValue(
+        of({
+          data: sampleExpenses,
+          error: null,
+          meta: { page: 0, size: 50, totalElements: 2, totalPages: 1 },
+        })
+      );
+
+      retryBtn.click();
+      fixture.detectChanges();
+
+      expect(component.dailyTxError).toBe('');
+      expect(fixture.nativeElement.querySelectorAll('.daily-tx-row').length).toBe(2);
+    });
+
+    it('maintains strict consistency: row count matches transactionCount and amounts sum to totalExpense', () => {
+      component.dashboardData!.periodTransactions = sampleMixedTransactions;
+      component.selectDate('2026-09-08');
+
+      spyOn(transactionService, 'list').and.returnValue(
+        of({
+          data: sampleMixedTransactions,
+          error: null,
+          meta: { page: 0, size: 50, totalElements: 3, totalPages: 1 },
+        })
+      );
+
+      component.toggleDailyTransactions();
+      fixture.detectChanges();
+
+      // Check summary bar figures
+      expect(component.selectedDateSummary.transactionCount).toBe(2);
+      expect(component.selectedDateSummary.totalExpense).toBe(2450);
+
+      // Check daily transactions in expanded list
+      expect(component.dailyTransactions.length).toBe(component.selectedDateSummary.transactionCount);
+      const rowSum = component.dailyTransactions.reduce((acc, tx) => acc + tx.amount, 0);
+      expect(rowSum).toBe(component.selectedDateSummary.totalExpense);
+
+      // Verify no income or transfers in daily list
+      const allExpenses = component.dailyTransactions.every((tx) => tx.transactionType === 'EXPENSE');
+      expect(allExpenses).toBeTrue();
+    });
+
+    it('opens existing edit modal when a transaction row is clicked', () => {
+      spyOn(transactionService, 'list').and.returnValue(
+        of({
+          data: sampleExpenses,
+          error: null,
+          meta: { page: 0, size: 50, totalElements: 2, totalPages: 1 },
+        })
+      );
+
+      component.dashboardData!.periodTransactions = sampleExpenses;
+      component.selectDate('2026-09-08');
+      component.toggleDailyTransactions();
+      fixture.detectChanges();
+
+      const spyOpenEdit = spyOn(component, 'openEdit').and.callThrough();
+      const firstRow = fixture.nativeElement.querySelector('.daily-tx-row') as HTMLElement;
+      firstRow.click();
+      fixture.detectChanges();
+
+      expect(spyOpenEdit).toHaveBeenCalledWith(sampleExpenses[0]);
+      expect(component.showForm).toBeTrue();
+      expect(component.editing).toEqual(sampleExpenses[0]);
     });
   });
 });
