@@ -701,12 +701,12 @@
 :host-context([data-theme="dark"]) {
   .mobile-header,
   .profile-drawer {
-    background: var(--surface);
+    background: var(--glass-surface-elevated);
   }
 
   .mobile-nav {
-    background: var(--surface);
-    border-top-color: var(--border);
+    background: var(--glass-surface);
+    border-top-color: var(--glass-border);
   }
 
   .nav-item.active,

@@ -4,10 +4,12 @@
   height: calc(100vh - 4.5rem);
   max-width: 1040px;
   margin: 0 auto;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  background: var(--glass-surface-elevated);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--glass-shadow-elevated);
   overflow: hidden;
   box-sizing: border-box;
   width: 100%;
@@ -28,8 +30,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 1.75rem;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
+  background: var(--glass-surface-subtle);
+  border-bottom: 1px solid var(--glass-border-subtle);
 
   .header-left {
     display: flex;
@@ -432,8 +434,8 @@
 /* Input Bar */
 .assistant-input-bar {
   padding: 1rem 1.75rem;
-  background: var(--surface);
-  border-top: 1px solid var(--line);
+  background: var(--glass-surface-subtle);
+  border-top: 1px solid var(--glass-border-subtle);
 
   .input-form {
     display: flex;
@@ -442,7 +444,7 @@
     input {
       flex: 1;
       padding: 0.75rem 1.15rem;
-      background: var(--canvas);
+      background: var(--input-bg);
       border: 1px solid var(--input-border);
       border-radius: var(--radius-full);
       font-size: 0.95rem;
@@ -451,7 +453,7 @@
       transition: all 0.15s ease-in-out;
 
       &:focus {
-        background: var(--surface);
+        background: var(--input-bg);
         border-color: var(--brand);
         box-shadow: var(--shadow-focus);
       }
@@ -505,14 +507,14 @@
 /* Dark Theme Polish */
 :host-context([data-theme="dark"]) {
   .assistant-container {
-    background: var(--surface);
-    border-color: var(--border);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+    background: var(--glass-surface-elevated);
+    border-color: var(--glass-border);
+    box-shadow: var(--glass-shadow-elevated);
   }
 
   .assistant-header {
-    background: var(--surface);
-    border-color: var(--border);
+    background: var(--glass-surface-subtle);
+    border-color: var(--glass-border-subtle);
 
     .header-badge {
       background: rgba(45, 140, 125, 0.2);

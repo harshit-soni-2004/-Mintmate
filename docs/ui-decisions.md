@@ -115,4 +115,47 @@ Per specification (alpha 0.85-0.92, tinted rather than pure white):
   - `@supports not (backdrop-filter: blur(1px))` provides opaque fallbacks with solid surface fills.
   - `@media (prefers-reduced-transparency: reduce)` turns off backdrop filters and provides solid surface backgrounds for users with sensitivity to transparency.
 
+---
+
+## 7. Elimination of Solid-White Surfaces (Stage 4)
+### Audit of Opaque Light Backgrounds
+1. **Budget Summary/Stat Cards & Badges** (`budgets.component.scss`):
+   - `.metric-card` (Total Allocated Budget, Total Spent In Budgets, Remaining Safe Spend, Health Overview): Replaced `background: var(--surface, #ffffff)` with `var(--glass-surface)`, `backdrop-filter: var(--glass-blur)`, and lit-edge box shadow.
+   - `.count-badge` ("0 budgets"): Replaced opaque `background: var(--surface)` with `var(--glass-surface-subtle)` and hairline `var(--glass-border-subtle)`.
+   - `.modal-dialog`: Replaced with `var(--modal-surface)` (tinted opaque glass, alpha 0.92) and `backdrop-filter: var(--glass-blur)`.
+2. **Goal Summary/Stat Cards & Badges** (`goals.component.scss`):
+   - `.metric-card` (Total Target Capital, Accumulated Savings, Milestones Achieved): Replaced `background: var(--surface, #ffffff)` with `var(--glass-surface)`, `backdrop-filter: var(--glass-blur)`, and `var(--glass-shadow)`.
+   - `.count-badge` ("2 goals"): Replaced with `var(--glass-surface-subtle)` and `var(--glass-border-subtle)`.
+   - `.modal-dialog`: Replaced with `var(--modal-surface)` and `var(--glass-border)`.
+3. **Dashboard Tooltips, Popovers & Modals** (`dashboard.component.scss`):
+   - `.cashflow-tooltip`: Replaced `background: var(--color-surface, #ffffff)` with `var(--tooltip-surface)`.
+   - `.popover-cat-pill, .popover-cat-chip`, `.daily-tx-item .popover-cat-chip`: Replaced `background: var(--surface)` with `var(--glass-surface-subtle)`.
+   - `.apple-modal-card`: Replaced `background: var(--surface)` with `var(--modal-surface)` and `backdrop-filter: var(--glass-blur)`.
+4. **Transactions Table, Sheets & Inputs** (`transactions.component.scss`):
+   - `.form-sheet`, `.picker-sheet`: Replaced `var(--surface)` with `var(--modal-surface)` and `backdrop-filter: var(--glass-blur)`.
+   - `.action-btn`, `.page-btn`, `.state`: Replaced `var(--surface)` with `var(--glass-surface-subtle)` and `var(--glass-border-subtle)`.
+   - `.type-switch label.selected`: Replaced `var(--surface)` with `var(--glass-surface)`.
+   - `.suggestion-btn`: Replaced hardcoded `#fffbeb` / `#fed7aa` with `var(--warning-soft)` and amber border.
+   - `.search-field input:focus`, `.filters-bar select:focus`: Replaced `var(--surface)` with `var(--input-bg)`.
+5. **Statements & Document Review** (`statements.component.scss`):
+   - `.card`: Replaced `background: var(--surface, #ffffff)` with `var(--glass-surface)` and `backdrop-filter: var(--glass-blur)`.
+   - `input, select`: Replaced with `var(--input-bg)` and `var(--input-border)`.
+   - `.warnings-box`: Replaced `#fffbeb` with `var(--warning-soft)` and amber border.
+   - `.modal-card`: Replaced `var(--surface, #ffffff)` with `var(--modal-surface)`.
+   - `.btn-secondary`: Replaced `var(--surface)` with `var(--glass-surface-subtle)`.
+6. **Assistant Chat Panel** (`assistant.component.scss`):
+   - `.assistant-container`: Replaced `background: var(--surface)` with `var(--glass-surface-elevated)` and `backdrop-filter: var(--glass-blur)`.
+   - `.assistant-header`, `.assistant-input-bar`: Replaced with `var(--glass-surface-subtle)` and `var(--glass-border-subtle)`.
+   - `input`: Replaced with `var(--input-bg)`.
+7. **Onboarding Wizard** (`onboarding-wizard.component.scss`):
+   - `.wizard-card`: Replaced `background: var(--surface)` with `var(--glass-surface-elevated)` and `backdrop-filter: var(--glass-blur)`.
+   - `.step-indicator`: Replaced with `var(--glass-surface-subtle)`.
+8. **Shell Layout** (`shell.component.scss`):
+   - `.mobile-header`, `.profile-drawer`, `.mobile-nav`: Replaced dark theme overrides to use `var(--glass-surface-elevated)` and `var(--glass-surface)`.
+9. **Tokens for Higher Opacity Legibility**:
+   - Modals & dialogs: `--modal-surface` at 0.92 alpha (tinted `#eef6f3` light / `#06302b` dark).
+   - Tooltips: `--tooltip-surface` at 0.94 alpha.
+   - Native inputs: `--input-bg` at 0.88-0.90 alpha.
+
+
 

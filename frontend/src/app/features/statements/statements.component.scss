@@ -39,12 +39,16 @@
 
 /* Cards */
 .card {
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--border, #e2e8f0);
+  position: relative;
+  background: var(--glass-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg, 12px);
   padding: 1.5rem;
   margin-bottom: 2rem;
-  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
 }
 
 .card-header {
@@ -200,9 +204,9 @@
     select {
       padding: 0.65rem 0.85rem;
       font-size: 0.9rem;
-      border: 1px solid var(--border, #cbd5e1);
+      border: 1px solid var(--input-border);
       border-radius: var(--radius-sm, 6px);
-      background: var(--surface, #ffffff);
+      background: var(--input-bg);
       color: var(--ink);
       transition: border-color 0.15s ease;
 
@@ -305,12 +309,12 @@
 
   .warnings-box {
     margin-top: 1.25rem;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
+    background: var(--warning-soft);
+    border: 1px solid rgba(245, 158, 11, 0.25);
     border-radius: var(--radius-sm, 6px);
     padding: 0.85rem 1.1rem;
     font-size: 0.85rem;
-    color: #92400e;
+    color: var(--warning);
 
     strong {
       display: block;
@@ -562,7 +566,10 @@
   right: 0;
   bottom: 0;
   width: min(640px, 92vw);
-  background: var(--surface, #ffffff);
+  background: var(--modal-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-left: 1px solid var(--glass-border);
   z-index: 1001;
   display: flex;
   flex-direction: column;
@@ -840,17 +847,19 @@
 }
 
 .btn-secondary {
-  background: var(--surface);
+  background: var(--glass-surface-subtle);
   color: var(--color-text);
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border-subtle);
   border-radius: var(--radius-sm, 6px);
   padding: 0.65rem 1.15rem;
   font-size: 0.875rem;
   font-weight: 650;
   cursor: pointer;
+  transition: all 0.15s ease;
 
   &:hover {
-    background: var(--surface-muted);
+    background: var(--glass-surface);
+    border-color: var(--color-primary);
   }
 }
 
