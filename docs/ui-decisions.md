@@ -84,3 +84,11 @@ Per specification (alpha 0.85-0.92, tinted rather than pure white):
 2. **Dropdown Menus & Popovers**: (`0.90` alpha) ensuring clean contrast over complex card content.
 3. **Form Inputs & Native Selects**: (`0.88-0.92` alpha) ensuring clear text entry contrast without white washout.
 4. **Tooltips & Calendar Hover Banners**: (`0.92` alpha) ensuring micro-data legibility.
+
+---
+
+## 5. Contrast Backdrop Architecture (Stage 2)
+- **Viewport Layer**: Fixed full-viewport pseudo-element on `body::before` (`position: fixed; inset: 0; z-index: -1; pointer-events: none;`).
+- **Dark Mode**: Rich Black (`#021B1A`) / Dark Green (`#032221`) base with large soft discs (520px - 700px) of Bangladesh Green (`#03624C`), Frog (`#17876D`), and Mint (`#2FA98C`) at 0.26 - 0.40 alpha. Center areas are kept darker to create natural optical refraction through top-level cards.
+- **Light Mode**: Medium-saturation mint/aqua gradient base (`#d8eae4` / linear blend) with large soft discs (540px - 700px) of Mint (`#2FA98C`), Mountain Meadow (`#2CC295`), and Pistachio (`#AACBC4`) at 0.32 - 0.50 alpha, providing high refractive depth without any flat near-white washout.
+

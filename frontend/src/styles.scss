@@ -56,7 +56,14 @@
   --glass-blur: blur(28px) saturate(155%);
   --glass-shadow: 0 10px 30px rgba(3, 98, 76, 0.08), 0 1px 3px rgba(3, 98, 76, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   --glass-shadow-elevated: 0 16px 40px rgba(3, 98, 76, 0.12), 0 2px 6px rgba(3, 98, 76, 0.06), inset 0 1px 0 rgba(255, 255, 255, 1);
-  --ambient-gradient: radial-gradient(1200px circle at 15% 15%, rgba(47, 169, 140, 0.45) 0%, rgba(47, 169, 140, 0.12) 55%, transparent 75%), radial-gradient(1300px circle at 85% 20%, rgba(44, 194, 149, 0.40) 0%, rgba(44, 194, 149, 0.10) 50%, transparent 75%), radial-gradient(1100px circle at 50% 85%, rgba(170, 203, 196, 0.50) 0%, transparent 70%);
+  --color-background: #d8eae4;       /* Saturated mint/aqua canvas base - no flat near-white canvas */
+  --ambient-gradient:
+    radial-gradient(650px circle at 8% 12%, rgba(47, 169, 140, 0.46) 0%, rgba(47, 169, 140, 0.14) 48%, transparent 68%),
+    radial-gradient(600px circle at 88% 16%, rgba(44, 194, 149, 0.42) 0%, rgba(44, 194, 149, 0.12) 50%, transparent 70%),
+    radial-gradient(540px circle at 22% 52%, rgba(170, 203, 196, 0.50) 0%, rgba(170, 203, 196, 0.16) 48%, transparent 68%),
+    radial-gradient(700px circle at 84% 64%, rgba(47, 169, 140, 0.40) 0%, rgba(47, 169, 140, 0.10) 50%, transparent 72%),
+    radial-gradient(580px circle at 50% 92%, rgba(3, 98, 76, 0.32) 0%, rgba(3, 98, 76, 0.08) 50%, transparent 72%),
+    linear-gradient(145deg, #e4f2ee 0%, #cae5de 45%, #d8ece5 100%);
 
   /* Semantic State Colors */
   --success: #16845b;                /* Positive financial values */
@@ -184,7 +191,13 @@
   --glass-blur: blur(28px) saturate(160%);
   --glass-shadow: 0 10px 32px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.22), 0 0 20px rgba(0, 223, 129, 0.04);
   --glass-shadow-elevated: 0 20px 48px rgba(0, 0, 0, 0.65), inset 0 1px 1.5px rgba(255, 255, 255, 0.28), 0 0 28px rgba(0, 223, 129, 0.07);
-  --ambient-gradient: radial-gradient(1200px circle at 15% 12%, rgba(3, 98, 76, 0.35) 0%, transparent 55%), radial-gradient(1300px circle at 85% 25%, rgba(23, 135, 109, 0.30) 0%, transparent 50%), radial-gradient(1100px circle at 40% 85%, rgba(47, 169, 140, 0.25) 0%, transparent 55%);
+  --ambient-gradient:
+    radial-gradient(640px circle at 10% 10%, rgba(23, 135, 109, 0.38) 0%, rgba(23, 135, 109, 0.12) 48%, transparent 68%),
+    radial-gradient(580px circle at 90% 15%, rgba(47, 169, 140, 0.32) 0%, rgba(47, 169, 140, 0.10) 50%, transparent 70%),
+    radial-gradient(660px circle at 16% 56%, rgba(3, 98, 76, 0.40) 0%, rgba(3, 98, 76, 0.12) 48%, transparent 70%),
+    radial-gradient(700px circle at 85% 65%, rgba(23, 135, 109, 0.35) 0%, rgba(23, 135, 109, 0.10) 50%, transparent 72%),
+    radial-gradient(520px circle at 50% 92%, rgba(47, 169, 140, 0.28) 0%, rgba(47, 169, 140, 0.06) 48%, transparent 70%),
+    radial-gradient(920px circle at 50% 40%, rgba(2, 27, 26, 0.94) 0%, rgba(3, 34, 33, 0.98) 100%);
 
   --background: var(--color-background);
   --canvas: var(--color-background);
@@ -255,20 +268,30 @@ html, body {
   padding: 0;
   width: 100%;
   max-width: 100%;
-  height: 100%;
   min-height: 100%;
   background-color: var(--canvas);
-  background-image: var(--ambient-gradient);
-  background-attachment: fixed;
   color: var(--ink);
   overflow-x: hidden;
   box-sizing: border-box;
 }
 
 body {
+  position: relative;
   min-width: 320px;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: var(--ambient-gradient);
+    background-attachment: fixed;
+    background-size: cover;
+    background-repeat: no-repeat;
+  }
 }
 
 /* Ensure flex/grid items don't overflow parent by default */
