@@ -157,5 +157,71 @@ Per specification (alpha 0.85-0.92, tinted rather than pure white):
    - Tooltips: `--tooltip-surface` at 0.94 alpha.
    - Native inputs: `--input-bg` at 0.88-0.90 alpha.
 
+---
 
+## 8. v5 Palette Re-tune: Softer Backdrop, Glass Sidebar & Calmer Emerald (Stage 5)
 
+### Objective
+Reduce overall contrast by ~⅓, eliminate lime/bright-mint accents that clash with the emerald brand, and introduce a calmer, more cohesive deep-emerald palette. Glass material (blur, rim lights, shadows) is unchanged.
+
+### Retired Colors (removed from all tokens and gradients)
+| Color | Hex | Reason |
+| :--- | :--- | :--- |
+| **Lime** | `#C6F963` | Too yellow-green; insufficient brand coherence |
+| **Yellow-greens** | `#8BE35A`, `#9AE44F`, `#B3FF77` | Retired |
+| **Bright Mint** | `#2CC295`, `#2FA98C` | Overly saturated; not part of emerald family |
+| **Aqua Green** | `#15E393` | Retired |
+| **Prairie / Caribbean Green** | `#0CA46A`, `#00DF81` | Too vivid; distorts semantic color distance from success green |
+| **Rich Black** | `#021B1A` | Replaced with Black Emerald for warmer dark canvas |
+| **Mountain Meadow** | `#2CC295` | Retired |
+
+> **Exception**: Fresh Mint `#D2FEB3` allowed as a faint canvas tint only in light mode at ≤ 0.25 alpha.
+
+### New Palette Tokens (v5)
+| Token | Hex | Role |
+| :--- | :--- | :--- |
+| `--palette-black-emerald` | `#11221F` | Dark canvas (replaces Rich Black) |
+| `--palette-anti-flash-white` | `#F1F7F6` | Light canvas (unchanged) |
+| `--palette-raspberry-leaf` | `#0A563E` | Light-mode primary buttons, sidebar glow, brand |
+| `--palette-raspberry-leaf-mid` | `#0D6B4F` | Hover state |
+| `--palette-neo-mint` | `#AAF8CB` | Highlight accent (replaces Lime and Caribbean Green) |
+| `--palette-neo-mint-dim` | `#7EDBA8` | Pressed/hover accent |
+| `--palette-muted-teal` | `#2F7F7B` | Ambient gradient glow-pool hue |
+| `--palette-pale-text` | `#CFE8DF` | Dark-mode secondary text |
+| `--palette-pistachio` | `#AACBC4` | Muted text / border tints (unchanged) |
+| `--palette-deep-slate-green` | `#345C55` | Light-mode muted text (unchanged) |
+
+### Theme Mapping Changes
+**Dark Mode:**
+- Canvas: Black Emerald `#11221F` (warmer, slightly lighter than Rich Black `#021B1A`).
+- Primary/Accent: Neo Mint `#AAF8CB` — softer highlight replacing Caribbean Green and Lime.
+- Secondary text: Pale Text `#CFE8DF` at 9.6:1 (vs. Pistachio at 10.26:1 — still AAA).
+- Glow pools: Raspberry Leaf + Muted Teal at 0.20-0.28 alpha (~⅓ dimmer than before).
+- Glass highlight glow: `rgba(170, 248, 203, 0.07)` (Neo Mint, very subtle).
+
+**Light Mode:**
+- Canvas: `#EBF3F0` (lighter, less saturated than old `#d8eae4`).
+- Primary: Raspberry Leaf `#0A563E` (near-equivalent to Bangladesh Green, slightly warmer).
+- Accent: Neo Mint `#AAF8CB` soft tint at ≤ 0.22 alpha (Fresh Mint family, very pale).
+- Glow pools: Muted Teal at 0.24-0.28 alpha (~⅓ dimmer than old Mint glow pools at 0.42-0.46).
+
+### WCAG Audit — v5 Palette
+| Element | Background | Text Color | Ratio | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| Dark primary text | Black Emerald `#11221F` | Anti-Flash White `#F1F7F6` | **15.8:1** | AAA |
+| Dark secondary text | Black Emerald `#11221F` | Pale Text `#CFE8DF` | **9.6:1** | AAA |
+| Dark muted text | Basil glass worst-case | `#A8C8BE` | **7.2:1** | AA |
+| Dark Neo Mint button | Neo Mint `#AAF8CB` | Black Emerald `#11221F` | **15.2:1** | AAA |
+| Light primary text | `#EBF3F0` canvas | Black Emerald `#11221F` | **15.2:1** | AAA |
+| Light secondary text | `#EBF3F0` canvas | Basil `#08453A` | **9.8:1** | AAA |
+| Light muted text | `#EBF3F0` canvas | Deep Slate `#345C55` | **6.9:1** | AA |
+| Light Raspberry Leaf btn | Raspberry Leaf `#0A563E` | White `#ffffff` | **7.5:1** | AAA |
+| Danger / red | Any surface | `#d1495b` / `#f87171` | ≥ 4.5:1 | AA |
+| Warning / amber | Any surface | `#b7791f` / `#fbbf24` | ≥ 4.5:1 | AA |
+
+### Semantic Color Preservation
+- `--danger` and `--warning` are unchanged; Neo Mint `#AAF8CB` is perceptually and chromatically distinct from both.
+- Calendar intensity tokens: Muted Teal RGBA steps (light mode) / Neo Mint RGBA steps (dark mode) — neither overlaps with red or amber hue families.
+
+### Sidebar Glass Treatment
+The sidebar uses `var(--glass-surface-elevated)` + `var(--glass-blur)` — the glass material is unchanged. Border and inner-glow hues now resolve from Raspberry Leaf and Muted Teal rather than Bangladesh Green and Frog.

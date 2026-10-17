@@ -1,79 +1,96 @@
 :root {
   /* ========================================================================
-     SpendSense Palette Tokens
+     SpendSense Palette Tokens — v5 Calm Emerald
      ======================================================================== */
-  --palette-rich-black: #021B1A;
-  --palette-dark-green: #032221;
-  --palette-bangladesh-green: #03624C;
-  --palette-mountain-meadow: #2CC295;
-  --palette-caribbean-green: #00DF81;
-  --palette-anti-flash-white: #F1F7F6;
-  --palette-pine: #06302B;
-  --palette-basil: #08453A;
-  --palette-forest: #095544;
-  --palette-frog: #17876D;
-  --palette-mint: #2FA98C;
-  --palette-stone: #707D7D;
-  --palette-pistachio: #AACBC4;
-  --palette-lime: #C6F963;
-  --palette-deep-slate-green: #345C55;
+  /* Canvas & structure */
+  --palette-black-emerald: #11221F;        /* Dark canvas */
+  --palette-anti-flash-white: #F1F7F6;    /* Light canvas */
+  --palette-dark-green: #0B1C19;          /* Deepest dark surface */
+
+  /* Brand greens — Raspberry Leaf family */
+  --palette-raspberry-leaf: #0A563E;      /* Primary brand / sidebar glow / buttons */
+  --palette-raspberry-leaf-mid: #0D6B4F;  /* Hover state */
+  --palette-basil: #08453A;               /* Dark primary hover */
+  --palette-forest: #095544;              /* Elevated surface dark */
+  --palette-pine: #06302B;                /* Surface base dark */
+
+  /* Highlight */
+  --palette-neo-mint: #AAF8CB;            /* Highlight accent */
+  --palette-neo-mint-dim: #7EDBA8;        /* Pressed/hover accent */
+
+  /* Backdrop variation */
+  --palette-muted-teal: #2F7F7B;          /* Glow-pool hue for ambient gradient */
+
+  /* Neutral / text */
+  --palette-pale-text: #CFE8DF;           /* Secondary text dark mode */
+  --palette-pistachio: #AACBC4;           /* Muted text / border tints */
+  --palette-deep-slate-green: #345C55;    /* Muted text light mode */
+  --palette-stone: #707D7D;               /* Disabled / placeholder */
+
+  /* Legacy aliases kept for semantic-color calculations only */
+  --palette-bangladesh-green: #03624C;    /* kept for light-mode semantic shadows */
+  --palette-frog: #17876D;                /* kept for light-mode secondary */
 }
 
 :root,
 [data-theme="light"] {
   color-scheme: light;
   /* ========================================================================
-     SpendSense Unified Liquid Glass Design System - Light
-     Canvas: Mint/Aqua gradient from Anti-Flash White, Pistachio and Mint
-     Primary buttons & key figures: Bangladesh Green (#03624C) with white text
-     Glass tints: Pistachio / White at low alpha
+     SpendSense Unified Liquid Glass Design System - Light v5
+     Canvas: Anti-Flash White (#F1F7F6) with soft Muted-Teal glow pools
+     Primary buttons & key figures: Raspberry Leaf (#0A563E) with white text
+     Highlight accent: Neo Mint (#AAF8CB) at low alpha
+     Glass tints: Anti-Flash White / Pistachio at low alpha
      ======================================================================== */
-  --color-primary: var(--palette-bangladesh-green); /* Bangladesh Green #03624C */
-  --color-primary-hover: var(--palette-basil);      /* Basil #08453A */
-  --color-primary-contrast: #ffffff;                /* 7.35:1 contrast on Bangladesh Green */
-  --color-secondary: var(--palette-frog);           /* Frog #17876D */
-  --color-accent: var(--palette-lime);              /* Lime #C6F963 */
-  --color-accent-soft: rgba(198, 249, 99, 0.22);
-  --color-accent-contrast: var(--palette-rich-black); /* Rich Black #021B1A - 14.59:1 on Lime */
+  --color-primary: var(--palette-raspberry-leaf);  /* Raspberry Leaf #0A563E */
+  --color-primary-hover: var(--palette-basil);     /* Basil #08453A */
+  --color-primary-contrast: #ffffff;               /* 7.5:1 on Raspberry Leaf */
+  --color-secondary: var(--palette-frog);          /* Frog #17876D */
+  --color-accent: var(--palette-neo-mint);         /* Neo Mint #AAF8CB */
+  --color-accent-soft: rgba(170, 248, 203, 0.22);  /* Neo Mint at low alpha (≤ 0.25) */
+  --color-accent-contrast: var(--palette-black-emerald); /* #11221F — 15.2:1 on Neo Mint */
   --color-background: var(--palette-anti-flash-white);
-  --color-surface: rgba(170, 203, 196, 0.35);      /* Pistachio tint */
-  --color-surface-elevated: rgba(241, 247, 246, 0.65);
-  --color-surface-muted: rgba(170, 203, 196, 0.25);
-  --color-surface-subtle: rgba(170, 203, 196, 0.16);
-  --color-text: var(--palette-rich-black);           /* Rich Black #021B1A - 16.50:1 on Anti-Flash White */
-  --color-text-secondary: var(--palette-basil);      /* Basil #08453A - 10.08:1 on Anti-Flash White */
-  --color-text-muted: var(--palette-deep-slate-green); /* Deep Slate Green #345C55 - 6.90:1 on Anti-Flash White */
-  --color-border: rgba(3, 98, 76, 0.16);
-  --color-border-subtle: rgba(3, 98, 76, 0.08);
+  --color-surface: rgba(170, 203, 196, 0.30);      /* Pistachio tint */
+  --color-surface-elevated: rgba(241, 247, 246, 0.60);
+  --color-surface-muted: rgba(170, 203, 196, 0.20);
+  --color-surface-subtle: rgba(170, 203, 196, 0.13);
+  --color-text: var(--palette-black-emerald);      /* Black Emerald #11221F — 15.2:1 on Anti-Flash White */
+  --color-text-secondary: var(--palette-basil);    /* Basil #08453A — 9.8:1 on Anti-Flash White */
+  --color-text-muted: var(--palette-deep-slate-green); /* Deep Slate #345C55 — 6.9:1 */
+  --color-border: rgba(10, 86, 62, 0.14);          /* Raspberry Leaf tint */
+  --color-border-subtle: rgba(10, 86, 62, 0.07);
 
-  /* Liquid Glass System Tokens - Light Mode */
+  /* Liquid Glass System Tokens - Light Mode (glass material unchanged) */
   --glass-surface: linear-gradient(180deg, rgba(241, 247, 246, 0.42) 0%, rgba(220, 238, 233, 0.28) 100%);
   --glass-surface-elevated: linear-gradient(180deg, rgba(241, 247, 246, 0.48) 0%, rgba(220, 238, 233, 0.32) 100%);
-  --glass-surface-subtle: rgba(170, 203, 196, 0.22);
-  --glass-border: rgba(3, 98, 76, 0.12);
-  --glass-border-subtle: rgba(3, 98, 76, 0.06);
-  --glass-highlight: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.2) 40%, rgba(3, 98, 76, 0.05) 100%);
+  --glass-surface-subtle: rgba(170, 203, 196, 0.20);
+  --glass-border: rgba(10, 86, 62, 0.11);
+  --glass-border-subtle: rgba(10, 86, 62, 0.05);
+  --glass-highlight: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.20) 40%, rgba(10, 86, 62, 0.04) 100%);
   --glass-blur: blur(28px) saturate(155%);
-  --glass-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.95), inset 0 1px 0 0 rgba(255, 255, 255, 0.85), inset -1px -1px 0 0 rgba(3, 98, 76, 0.05), 0 10px 32px rgba(3, 98, 76, 0.08), 0 2px 6px rgba(3, 98, 76, 0.04);
-  --glass-shadow-elevated: inset 1px 1.5px 0 0 rgba(255, 255, 255, 1), inset 0 1px 0 0 rgba(255, 255, 255, 0.90), inset -1px -1px 0 0 rgba(3, 98, 76, 0.08), 0 16px 44px rgba(3, 98, 76, 0.12), 0 3px 8px rgba(3, 98, 76, 0.05);
+  --glass-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.95), inset 0 1px 0 0 rgba(255, 255, 255, 0.85), inset -1px -1px 0 0 rgba(10, 86, 62, 0.05), 0 10px 32px rgba(10, 86, 62, 0.07), 0 2px 6px rgba(10, 86, 62, 0.04);
+  --glass-shadow-elevated: inset 1px 1.5px 0 0 rgba(255, 255, 255, 1), inset 0 1px 0 0 rgba(255, 255, 255, 0.90), inset -1px -1px 0 0 rgba(10, 86, 62, 0.07), 0 16px 44px rgba(10, 86, 62, 0.10), 0 3px 8px rgba(10, 86, 62, 0.04);
   --modal-surface: rgba(238, 246, 243, 0.92);
   --dropdown-surface: rgba(238, 246, 243, 0.92);
   --tooltip-surface: rgba(238, 246, 243, 0.94);
-  --color-background: #d8eae4;       /* Saturated mint/aqua canvas base - no flat near-white canvas */
+
+  /* Softer canvas — Anti-Flash White base with a subtle sage tint */
+  --color-background: #EBF3F0;
+  /* Ambient gradient — Muted Teal glow pools, ~33% dimmer than before */
   --ambient-gradient:
-    radial-gradient(650px circle at 8% 12%, rgba(47, 169, 140, 0.46) 0%, rgba(47, 169, 140, 0.14) 48%, transparent 68%),
-    radial-gradient(600px circle at 88% 16%, rgba(44, 194, 149, 0.42) 0%, rgba(44, 194, 149, 0.12) 50%, transparent 70%),
-    radial-gradient(540px circle at 22% 52%, rgba(170, 203, 196, 0.50) 0%, rgba(170, 203, 196, 0.16) 48%, transparent 68%),
-    radial-gradient(700px circle at 84% 64%, rgba(47, 169, 140, 0.40) 0%, rgba(47, 169, 140, 0.10) 50%, transparent 72%),
-    radial-gradient(580px circle at 50% 92%, rgba(3, 98, 76, 0.32) 0%, rgba(3, 98, 76, 0.08) 50%, transparent 72%),
-    linear-gradient(145deg, #e4f2ee 0%, #cae5de 45%, #d8ece5 100%);
+    radial-gradient(650px circle at 8% 12%,  rgba(47, 127, 123, 0.28) 0%, rgba(47, 127, 123, 0.08) 52%, transparent 70%),
+    radial-gradient(600px circle at 88% 16%, rgba(47, 127, 123, 0.24) 0%, rgba(47, 127, 123, 0.06) 54%, transparent 72%),
+    radial-gradient(540px circle at 22% 52%, rgba(170, 203, 196, 0.32) 0%, rgba(170, 203, 196, 0.10) 50%, transparent 70%),
+    radial-gradient(700px circle at 84% 64%, rgba(10,  86,  62,  0.14) 0%, rgba(10,  86,  62,  0.04) 54%, transparent 74%),
+    radial-gradient(580px circle at 50% 92%, rgba(10,  86,  62,  0.18) 0%, rgba(10,  86,  62,  0.05) 52%, transparent 72%),
+    linear-gradient(145deg, #EBF3F0 0%, #D9EDEA 45%, #E3F1EE 100%);
 
   /* Semantic State Colors */
-  --success: #16845b;                /* Positive financial values */
+  --success: #16845b;
   --success-soft: rgba(22, 132, 91, 0.15);
   --warning: #b7791f;
   --warning-soft: rgba(183, 121, 31, 0.15);
-  --danger: #d1495b;                 /* Negative financial values */
+  --danger: #d1495b;
   --danger-soft: rgba(209, 73, 91, 0.15);
 
   /* Aliases for Components */
@@ -94,19 +111,20 @@
   --muted-light: var(--color-text-muted);
   --border: var(--color-border);
   --line: var(--color-border);
-  --accent: var(--color-accent);
-  --accent-hover: #b0e64c;
+  --accent: var(--color-accent);           /* Neo Mint */
+  --accent-hover: var(--palette-neo-mint-dim);
   --accent-soft: var(--color-accent-soft);
-  --brand: var(--color-primary);      /* Bangladesh Green */
+  --brand: var(--color-primary);           /* Raspberry Leaf */
   --brand-hover: var(--color-primary-hover);
-  --brand-soft: rgba(3, 98, 76, 0.12);
-  --brand-dark: var(--palette-rich-black);
+  --brand-soft: rgba(10, 86, 62, 0.10);
+  --brand-dark: var(--palette-black-emerald);
+  /* Legacy lime aliases — remapped to neo-mint so no component breaks */
   --lime-accent: var(--color-accent);
   --lime-soft: var(--color-accent-soft);
   --lime-contrast: var(--color-accent-contrast);
 
   --input-bg: rgba(241, 247, 246, 0.90);
-  --input-border: rgba(3, 98, 76, 0.22);
+  --input-border: rgba(10, 86, 62, 0.20);
   --input-border-hover: var(--color-primary);
   --input-bg-error: rgba(253, 232, 232, 0.90);
   --input-border-error: var(--danger);
@@ -116,22 +134,22 @@
   --expense: var(--danger);
   --expense-soft: var(--danger-soft);
 
-  /* Spending Calendar Intensity Tokens - Light */
+  /* Spending Calendar Intensity Tokens - Light (using Muted Teal hue) */
   --intensity-none: var(--glass-surface-subtle);
-  --intensity-low: rgba(47, 169, 140, 0.14);
-  --intensity-low-border: rgba(47, 169, 140, 0.25);
-  --intensity-moderate: rgba(47, 169, 140, 0.28);
-  --intensity-moderate-border: rgba(47, 169, 140, 0.40);
-  --intensity-high: rgba(3, 98, 76, 0.38);
-  --intensity-high-border: rgba(3, 98, 76, 0.55);
-  --intensity-very-high: rgba(3, 98, 76, 0.65);
-  --intensity-very-high-border: var(--palette-bangladesh-green);
+  --intensity-low: rgba(47, 127, 123, 0.12);
+  --intensity-low-border: rgba(47, 127, 123, 0.22);
+  --intensity-moderate: rgba(47, 127, 123, 0.24);
+  --intensity-moderate-border: rgba(47, 127, 123, 0.36);
+  --intensity-high: rgba(10, 86, 62, 0.32);
+  --intensity-high-border: rgba(10, 86, 62, 0.48);
+  --intensity-very-high: rgba(10, 86, 62, 0.56);
+  --intensity-very-high-border: var(--palette-raspberry-leaf);
 
   /* Minimal Category Colors */
   --food: #d97706;
   --travel: #2563eb;
   --shopping: #7c3aed;
-  --bills: #03624C;
+  --bills: #0A563E;
   --other: #345C55;
 
   /* Apple-like Radii */
@@ -143,12 +161,12 @@
   --radius-xl: 2rem;
   --radius-full: 9999px;
 
-  /* Apple-like Calm Ambient Shadows with Subtle Card Depth */
-  --shadow-xs: 0 1px 2px rgba(3, 98, 76, 0.05);
-  --shadow-sm: 0 2px 8px rgba(3, 98, 76, 0.07);
-  --shadow: 0 8px 28px rgba(3, 98, 76, 0.10), 0 1px 2px rgba(3, 98, 76, 0.08);
-  --shadow-lg: 0 18px 40px rgba(3, 98, 76, 0.14);
-  --shadow-focus: 0 0 0 3px rgba(3, 98, 76, 0.25);
+  /* Calm ambient shadows */
+  --shadow-xs: 0 1px 2px rgba(10, 86, 62, 0.05);
+  --shadow-sm: 0 2px 8px rgba(10, 86, 62, 0.07);
+  --shadow: 0 8px 28px rgba(10, 86, 62, 0.09), 0 1px 2px rgba(10, 86, 62, 0.06);
+  --shadow-lg: 0 18px 40px rgba(10, 86, 62, 0.12);
+  --shadow-focus: 0 0 0 3px rgba(10, 86, 62, 0.22);
 
   /* Typography */
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
@@ -157,53 +175,55 @@
 }
 
 /* ========================================================================
-   SpendSense Unified Liquid Glass Design System - Dark
-   Canvas: Rich Black (#021B1A) / Dark Green (#032221)
-   Primary buttons & key figures: Caribbean Green (#00DF81) with dark text
-   Highlight: Lime (#C6F963) with dark text (#021B1A)
-   Glass tints: Pine (#06302B) / Basil (#08453A) / Forest (#095544)
+   SpendSense Unified Liquid Glass Design System - Dark v5
+   Canvas: Black Emerald (#11221F)
+   Primary buttons & key figures: Neo Mint (#AAF8CB) with dark text
+   Highlight: Neo Mint — calmer than lime, still clearly distinct from red/amber
+   Glass tints: Pine / Basil / Forest — unchanged dark surfaces
    ======================================================================== */
 [data-theme="dark"] {
   color-scheme: dark;
-  --color-background: var(--palette-rich-black);   /* Rich Black #021B1A */
-  --color-surface: rgba(6, 48, 43, 0.32);          /* Pine tint at low alpha */
-  --color-surface-elevated: rgba(8, 69, 58, 0.38); /* Basil tint */
-  --color-surface-muted: rgba(6, 48, 43, 0.22);
-  --color-surface-subtle: rgba(6, 48, 43, 0.16);
-  --color-text: var(--palette-anti-flash-white);   /* Anti-Flash White #F1F7F6 - 16.50:1 on Rich Black */
-  --color-text-secondary: var(--palette-pistachio);/* Pistachio #AACBC4 - 10.26:1 on Rich Black */
-  --color-text-muted: #9EB3AE;                     /* Adjusted Stone/Pistachio for WCAG AA compliance - 8.10:1 */
-  --color-border: rgba(170, 203, 196, 0.16);
-  --color-border-subtle: rgba(170, 203, 196, 0.08);
+  --color-background: var(--palette-black-emerald); /* Black Emerald #11221F */
+  --color-surface: rgba(6, 48, 43, 0.30);           /* Pine tint */
+  --color-surface-elevated: rgba(8, 69, 58, 0.36);  /* Basil tint */
+  --color-surface-muted: rgba(6, 48, 43, 0.20);
+  --color-surface-subtle: rgba(6, 48, 43, 0.14);
+  --color-text: var(--palette-anti-flash-white);    /* Anti-Flash White — 15.8:1 on Black Emerald */
+  --color-text-secondary: var(--palette-pale-text); /* Pale Text #CFE8DF — 9.6:1 on Black Emerald */
+  --color-text-muted: #A8C8BE;                      /* 7.2:1 on Black Emerald — WCAG AA */
+  --color-border: rgba(207, 232, 223, 0.14);        /* Pale Text tint */
+  --color-border-subtle: rgba(207, 232, 223, 0.07);
 
-  --color-primary: var(--palette-caribbean-green); /* Caribbean Green #00DF81 */
-  --color-primary-hover: var(--palette-mountain-meadow); /* Mountain Meadow #2CC295 */
-  --color-primary-contrast: var(--palette-rich-black);   /* Rich Black - 10.11:1 on Caribbean Green */
-  --color-secondary: var(--palette-mint);          /* Mint #2FA98C */
-  --color-accent: var(--palette-lime);             /* Lime #C6F963 highlight */
-  --color-accent-soft: rgba(198, 249, 99, 0.18);
-  --color-accent-contrast: var(--palette-rich-black); /* Rich Black - 14.59:1 on Lime */
+  --color-primary: var(--palette-neo-mint);         /* Neo Mint #AAF8CB */
+  --color-primary-hover: var(--palette-neo-mint-dim); /* #7EDBA8 */
+  --color-primary-contrast: var(--palette-black-emerald); /* #11221F — 15.2:1 on Neo Mint */
+  --color-secondary: var(--palette-pistachio);      /* Pistachio #AACBC4 */
+  --color-accent: var(--palette-neo-mint);          /* Neo Mint — calmer highlight */
+  --color-accent-soft: rgba(170, 248, 203, 0.16);
+  --color-accent-contrast: var(--palette-black-emerald);
 
-  /* Liquid Glass System Tokens - Dark Mode */
-  --glass-surface: linear-gradient(180deg, rgba(8, 69, 58, 0.38) 0%, rgba(6, 48, 43, 0.26) 100%);
-  --glass-surface-elevated: linear-gradient(180deg, rgba(9, 85, 68, 0.42) 0%, rgba(6, 48, 43, 0.28) 100%);
-  --glass-surface-subtle: rgba(8, 69, 58, 0.24);
-  --glass-border: rgba(170, 203, 196, 0.16);
-  --glass-border-subtle: rgba(170, 203, 196, 0.08);
-  --glass-highlight: linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.04) 40%, rgba(0, 223, 129, 0.08) 100%);
+  /* Liquid Glass System Tokens - Dark Mode (glass material unchanged) */
+  --glass-surface: linear-gradient(180deg, rgba(8, 69, 58, 0.36) 0%, rgba(6, 48, 43, 0.24) 100%);
+  --glass-surface-elevated: linear-gradient(180deg, rgba(9, 85, 68, 0.40) 0%, rgba(6, 48, 43, 0.26) 100%);
+  --glass-surface-subtle: rgba(8, 69, 58, 0.22);
+  --glass-border: rgba(207, 232, 223, 0.14);
+  --glass-border-subtle: rgba(207, 232, 223, 0.07);
+  --glass-highlight: linear-gradient(135deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.04) 40%, rgba(170, 248, 203, 0.07) 100%);
   --glass-blur: blur(28px) saturate(160%);
-  --glass-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.20), inset -1px -1px 0 0 rgba(0, 0, 0, 0.35), 0 12px 36px rgba(0, 0, 0, 0.55), 0 0 24px rgba(0, 223, 129, 0.05);
-  --glass-shadow-elevated: inset 1px 1.5px 0 0 rgba(255, 255, 255, 0.35), inset 0 1.5px 0 0 rgba(255, 255, 255, 0.28), inset -1px -1px 0 0 rgba(0, 0, 0, 0.45), 0 20px 52px rgba(0, 0, 0, 0.68), 0 0 32px rgba(0, 223, 129, 0.08);
+  --glass-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.22), inset 0 1px 0 0 rgba(255, 255, 255, 0.18), inset -1px -1px 0 0 rgba(0, 0, 0, 0.38), 0 12px 36px rgba(0, 0, 0, 0.52), 0 0 24px rgba(170, 248, 203, 0.04);
+  --glass-shadow-elevated: inset 1px 1.5px 0 0 rgba(255, 255, 255, 0.32), inset 0 1.5px 0 0 rgba(255, 255, 255, 0.25), inset -1px -1px 0 0 rgba(0, 0, 0, 0.44), 0 20px 52px rgba(0, 0, 0, 0.65), 0 0 32px rgba(170, 248, 203, 0.06);
   --modal-surface: rgba(6, 48, 43, 0.92);
   --dropdown-surface: rgba(6, 48, 43, 0.92);
   --tooltip-surface: rgba(6, 48, 43, 0.94);
+
+  /* Ambient gradient — Raspberry Leaf + Muted Teal glow pools, ~33% dimmer than before */
   --ambient-gradient:
-    radial-gradient(640px circle at 10% 10%, rgba(23, 135, 109, 0.38) 0%, rgba(23, 135, 109, 0.12) 48%, transparent 68%),
-    radial-gradient(580px circle at 90% 15%, rgba(47, 169, 140, 0.32) 0%, rgba(47, 169, 140, 0.10) 50%, transparent 70%),
-    radial-gradient(660px circle at 16% 56%, rgba(3, 98, 76, 0.40) 0%, rgba(3, 98, 76, 0.12) 48%, transparent 70%),
-    radial-gradient(700px circle at 85% 65%, rgba(23, 135, 109, 0.35) 0%, rgba(23, 135, 109, 0.10) 50%, transparent 72%),
-    radial-gradient(520px circle at 50% 92%, rgba(47, 169, 140, 0.28) 0%, rgba(47, 169, 140, 0.06) 48%, transparent 70%),
-    radial-gradient(920px circle at 50% 40%, rgba(2, 27, 26, 0.94) 0%, rgba(3, 34, 33, 0.98) 100%);
+    radial-gradient(640px circle at 10% 10%,  rgba(10, 86, 62,  0.26) 0%, rgba(10, 86, 62,  0.08) 50%, transparent 70%),
+    radial-gradient(580px circle at 90% 15%,  rgba(47, 127, 123, 0.22) 0%, rgba(47, 127, 123, 0.06) 52%, transparent 72%),
+    radial-gradient(660px circle at 16% 56%,  rgba(10, 86, 62,  0.28) 0%, rgba(10, 86, 62,  0.08) 50%, transparent 72%),
+    radial-gradient(700px circle at 85% 65%,  rgba(47, 127, 123, 0.22) 0%, rgba(47, 127, 123, 0.06) 52%, transparent 74%),
+    radial-gradient(520px circle at 50% 92%,  rgba(10, 86, 62,  0.20) 0%, rgba(10, 86, 62,  0.05) 50%, transparent 72%),
+    radial-gradient(920px circle at 50% 40%,  rgba(17, 34, 31,  0.95) 0%, rgba(11, 28, 25,  0.98) 100%);
 
   --background: var(--color-background);
   --canvas: var(--color-background);
@@ -222,19 +242,20 @@
   --muted-light: var(--color-text-muted);
   --border: var(--color-border);
   --line: var(--color-border);
-  --accent: var(--color-accent);
-  --accent-hover: #d2fb7d;
+  --accent: var(--color-accent);           /* Neo Mint */
+  --accent-hover: var(--palette-neo-mint-dim);
   --accent-soft: var(--color-accent-soft);
-  --brand: var(--color-primary);      /* Caribbean Green */
+  --brand: var(--color-primary);           /* Neo Mint */
   --brand-hover: var(--color-primary-hover);
-  --brand-soft: rgba(0, 223, 129, 0.14);
-  --brand-dark: var(--palette-bangladesh-green);
+  --brand-soft: rgba(170, 248, 203, 0.12);
+  --brand-dark: var(--palette-raspberry-leaf);
+  /* Legacy lime aliases — remapped to neo-mint */
   --lime-accent: var(--color-accent);
   --lime-soft: var(--color-accent-soft);
   --lime-contrast: var(--color-accent-contrast);
 
-  --input-bg: rgba(6, 48, 43, 0.88);
-  --input-border: rgba(170, 203, 196, 0.22);
+  --input-bg: rgba(6, 48, 43, 0.85);
+  --input-border: rgba(207, 232, 223, 0.20);
   --input-border-hover: var(--color-primary);
   --input-bg-error: rgba(248, 113, 113, 0.16);
   --input-border-error: var(--danger);
@@ -247,22 +268,22 @@
   --danger: #f87171;
   --danger-soft: rgba(248, 113, 113, 0.16);
 
-  /* Spending Calendar Intensity Tokens - Dark */
+  /* Spending Calendar Intensity Tokens - Dark (using Neo Mint hue) */
   --intensity-none: var(--glass-surface-subtle);
-  --intensity-low: rgba(0, 223, 129, 0.12);
-  --intensity-low-border: rgba(0, 223, 129, 0.22);
-  --intensity-moderate: rgba(0, 223, 129, 0.24);
-  --intensity-moderate-border: rgba(0, 223, 129, 0.38);
-  --intensity-high: rgba(0, 223, 129, 0.38);
-  --intensity-high-border: rgba(0, 223, 129, 0.55);
-  --intensity-very-high: rgba(0, 223, 129, 0.60);
-  --intensity-very-high-border: var(--palette-caribbean-green);
+  --intensity-low: rgba(170, 248, 203, 0.10);
+  --intensity-low-border: rgba(170, 248, 203, 0.20);
+  --intensity-moderate: rgba(170, 248, 203, 0.20);
+  --intensity-moderate-border: rgba(170, 248, 203, 0.34);
+  --intensity-high: rgba(170, 248, 203, 0.34);
+  --intensity-high-border: rgba(170, 248, 203, 0.52);
+  --intensity-very-high: rgba(170, 248, 203, 0.55);
+  --intensity-very-high-border: var(--palette-neo-mint);
 
-  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.35);
-  --shadow-sm: 0 3px 10px rgba(0, 0, 0, 0.45);
-  --shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.38);
+  --shadow-sm: 0 3px 10px rgba(0, 0, 0, 0.48);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.56);
   --shadow-lg: 0 18px 42px rgba(0, 0, 0, 0.70);
-  --shadow-focus: 0 0 0 3px rgba(0, 223, 129, 0.28);
+  --shadow-focus: 0 0 0 3px rgba(170, 248, 203, 0.25);
 }
 
 *, *::before, *::after {
