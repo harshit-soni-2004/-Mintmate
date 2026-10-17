@@ -553,6 +553,7 @@ export interface DebtCandidateTransactionDto {
   transactionType: TransactionType;
   transferDirection?: TransferDirection | null;
   isTopMatch: boolean;
+  isStrongMatch: boolean;
   matchReason?: string | null;
   score: number;
 }

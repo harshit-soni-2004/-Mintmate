@@ -520,16 +520,34 @@
               class="form-input"
             >
               <option value="">-- No linked transaction --</option>
-              @for (tx of candidateTransactions; track tx.id) {
-                <option [value]="tx.id">
-                  {{ tx.isTopMatch ? '⭐ [Top Match] ' : '' }}{{ tx.transactionDate | date:'mediumDate' }} · {{ tx.merchant || tx.description || 'Transaction' }} · {{ tx.amount | currency:'INR':'symbol-narrow':'1.0-0' }}{{ tx.matchReason ? ' (' + tx.matchReason + ')' : '' }}
-                </option>
+              @if (suggestedCandidates.length) {
+                <optgroup label="Suggested">
+                  @for (tx of suggestedCandidates; track tx.id) {
+                    <option [value]="tx.id">
+                      {{ tx.isStrongMatch ? '⭐ [Strong Match] ' : '💡 [Suggested] ' }}{{ tx.transactionDate | date:'mediumDate' }} · {{ tx.merchant || tx.description || 'Transaction' }} · {{ tx.amount | currency:'INR':'symbol-narrow':'1.0-0' }}{{ tx.matchReason ? ' (' + tx.matchReason + ')' : '' }}
+                    </option>
+                  }
+                </optgroup>
+              }
+              @if (otherCandidates.length) {
+                <optgroup label="Other Transactions">
+                  @for (tx of otherCandidates; track tx.id) {
+                    <option [value]="tx.id">
+                      {{ tx.transactionDate | date:'mediumDate' }} · {{ tx.merchant || tx.description || 'Transaction' }} · {{ tx.amount | currency:'INR':'symbol-narrow':'1.0-0' }}
+                    </option>
+                  }
+                </optgroup>
               }
             </select>
             @if (topMatchCandidate) {
-              <div class="top-match-indicator" id="top-match-badge">
-                <span class="top-match-star">★</span>
-                <span>Top match suggested: <strong>{{ topMatchCandidate.merchant || topMatchCandidate.description || 'Transaction' }}</strong> ({{ topMatchCandidate.amount | currency:'INR':'symbol-narrow':'1.0-0' }}) · {{ topMatchCandidate.matchReason }}</span>
+              <div class="top-match-indicator" id="top-match-badge" [class.strong-match]="topMatchCandidate.isStrongMatch">
+                <span class="top-match-star">{{ topMatchCandidate.isStrongMatch ? '★' : '💡' }}</span>
+                <span>
+                  {{ topMatchCandidate.isStrongMatch ? 'Strong match found:' : 'Suggested candidate:' }}
+                  <strong>{{ topMatchCandidate.merchant || topMatchCandidate.description || 'Transaction' }}</strong>
+                  ({{ topMatchCandidate.amount | currency:'INR':'symbol-narrow':'1.0-0' }}) · {{ topMatchCandidate.matchReason }}
+                  {{ topMatchCandidate.isStrongMatch ? '(Auto-selected)' : '(Select from dropdown to link)' }}
+                </span>
               </div>
             }
             <small class="field-hint">

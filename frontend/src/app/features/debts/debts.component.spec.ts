@@ -175,10 +175,10 @@ describe('DebtsComponent', () => {
     expect(component.showSettleModal).toBeFalse();
   });
 
-  it('fetches candidate transactions and automatically pre-selects top match candidate', () => {
+  it('pre-selects top candidate in settle dropdown when match is strong (exact amount AND counterparty present)', () => {
     const mockCandidates: DebtCandidateTransactionDto[] = [
       {
-        id: 'candidate-top',
+        id: 'candidate-strong',
         amount: 4500,
         description: 'Alice repayment',
         merchant: 'UPI-Alice',
@@ -186,6 +186,7 @@ describe('DebtsComponent', () => {
         transactionType: 'INCOME',
         transferDirection: null,
         isTopMatch: true,
+        isStrongMatch: true,
         matchReason: 'Exact amount and counterparty match',
         score: 10010,
       },
@@ -198,6 +199,7 @@ describe('DebtsComponent', () => {
         transactionType: 'INCOME',
         transferDirection: null,
         isTopMatch: false,
+        isStrongMatch: false,
         matchReason: 'Close amount match',
         score: 4008,
       },
@@ -214,15 +216,74 @@ describe('DebtsComponent', () => {
 
     expect(mockDebtService.getCandidates).toHaveBeenCalledWith('debt-1');
     expect(component.candidateTransactions.length).toBe(2);
-    expect(component.topMatchCandidate).toEqual(mockCandidates[0]);
-    // Verifies top match was automatically patched into form
-    expect(component.settleForm.value.linkedTransactionId).toBe('candidate-top');
+    expect(component.strongMatchCandidate).toEqual(mockCandidates[0]);
+    // Strong match must be pre-selected in the form
+    expect(component.settleForm.value.linkedTransactionId).toBe('candidate-strong');
 
     const compiled = fixture.nativeElement as HTMLElement;
     const topBadge = compiled.querySelector('#top-match-badge');
     expect(topBadge).toBeTruthy();
+    expect(topBadge?.textContent).toContain('Strong match found:');
     expect(topBadge?.textContent).toContain('UPI-Alice');
-    expect(topBadge?.textContent).toContain('Exact amount and counterparty match');
+
+    // Appears under Suggested optgroup
+    const suggestedOptgroup = compiled.querySelector('optgroup[label="Suggested"]');
+    expect(suggestedOptgroup).toBeTruthy();
+    expect(suggestedOptgroup?.children[0].getAttribute('value')).toBe('candidate-strong');
+  });
+
+  it('does not pre-select top candidate when match is not strong, leaving No linked transaction selected and showing candidate under Suggested', () => {
+    const mockCandidates: DebtCandidateTransactionDto[] = [
+      {
+        id: 'candidate-suggested-only',
+        amount: 4500,
+        description: 'Random transfer',
+        merchant: 'Unknown Bank',
+        transactionDate: '2026-10-14',
+        transactionType: 'INCOME',
+        transferDirection: null,
+        isTopMatch: true,
+        isStrongMatch: false,
+        matchReason: 'Exact amount match',
+        score: 7510,
+      },
+      {
+        id: 'candidate-recent',
+        amount: 200,
+        description: 'Coffee',
+        merchant: 'Cafe',
+        transactionDate: '2026-10-13',
+        transactionType: 'INCOME',
+        transferDirection: null,
+        isTopMatch: false,
+        isStrongMatch: false,
+        matchReason: 'Recent candidate',
+        score: 1008,
+      },
+    ];
+
+    mockDebtService.getCandidates.and.returnValue(of({
+      data: mockCandidates,
+      error: null,
+      meta: null,
+    }));
+
+    component.openSettleModal(mockDebts[0]);
+    fixture.detectChanges();
+
+    expect(component.strongMatchCandidate).toBeUndefined();
+    // Non-strong match must NOT be pre-selected (remains empty string / No linked transaction)
+    expect(component.settleForm.value.linkedTransactionId).toBe('');
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const select = compiled.querySelector('#settle-linked-tx') as HTMLSelectElement;
+    expect(select.value).toBe('');
+
+    // Suggested candidate still appears first under Suggested optgroup
+    const suggestedOptgroup = compiled.querySelector('optgroup[label="Suggested"]');
+    expect(suggestedOptgroup).toBeTruthy();
+    expect(suggestedOptgroup?.children[0].getAttribute('value')).toBe('candidate-suggested-only');
+    expect(suggestedOptgroup?.children[0].textContent).toContain('Exact amount match');
   });
 
   it('handles candidate loading error gracefully without breaking modal', () => {

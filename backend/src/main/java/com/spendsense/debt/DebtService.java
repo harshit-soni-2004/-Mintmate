@@ -160,6 +160,7 @@ public class DebtService {
             boolean exactAmount = targetAmount != null && t.getAmount() != null && targetAmount.compareTo(t.getAmount()) == 0;
             boolean counterpartyMatch = matchesCounterparty(debt.getCounterpartyName(), t.getMerchant(), t.getDescription());
             boolean closeAmount = !exactAmount && isCloseAmount(targetAmount, t.getAmount());
+            boolean isStrongMatch = exactAmount && counterpartyMatch;
 
             if (exactAmount && counterpartyMatch) {
                 baseScore = 100;
@@ -194,6 +195,7 @@ public class DebtService {
                     t.getTransactionType(),
                     t.getTransferDirection(),
                     false,
+                    isStrongMatch,
                     reason,
                     totalScore
             ));
@@ -215,6 +217,7 @@ public class DebtService {
                     top.transactionType(),
                     top.transferDirection(),
                     true,
+                    top.isStrongMatch(),
                     top.matchReason(),
                     top.score()
             ));

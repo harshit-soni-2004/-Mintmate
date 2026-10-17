@@ -336,22 +336,26 @@ class DebtServiceTest {
         List<DebtCandidateTransactionDto> candidates = debtService.getCandidateTransactions(debtId);
 
         assertThat(candidates).hasSize(4);
-        // Top ranked should be exact amount + counterparty match
+        // Top ranked should be exact amount + counterparty match -> isStrongMatch is true
         assertThat(candidates.get(0).id()).isEqualTo(txExactAndName.getId());
         assertThat(candidates.get(0).isTopMatch()).isTrue();
+        assertThat(candidates.get(0).isStrongMatch()).isTrue();
         assertThat(candidates.get(0).matchReason()).contains("Exact amount and counterparty match");
 
-        // Second should be exact amount
+        // Second should be exact amount (not strong match because no counterparty)
         assertThat(candidates.get(1).id()).isEqualTo(txExactAmount.getId());
         assertThat(candidates.get(1).isTopMatch()).isFalse();
+        assertThat(candidates.get(1).isStrongMatch()).isFalse();
 
-        // Third should be close amount + counterparty
+        // Third should be close amount + counterparty (not strong match because amount is not exact)
         assertThat(candidates.get(2).id()).isEqualTo(txCloseAmount.getId());
         assertThat(candidates.get(2).isTopMatch()).isFalse();
+        assertThat(candidates.get(2).isStrongMatch()).isFalse();
 
         // Fourth should be generic candidate
         assertThat(candidates.get(3).id()).isEqualTo(txGeneric.getId());
         assertThat(candidates.get(3).isTopMatch()).isFalse();
+        assertThat(candidates.get(3).isStrongMatch()).isFalse();
     }
 
     @Test

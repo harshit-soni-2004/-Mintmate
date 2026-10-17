@@ -35,6 +35,18 @@ export class DebtsComponent implements OnInit, OnDestroy {
     return this.candidateTransactions.find((c) => c.isTopMatch);
   }
 
+  get strongMatchCandidate(): DebtCandidateTransactionDto | undefined {
+    return this.candidateTransactions.find((c) => c.isStrongMatch);
+  }
+
+  get suggestedCandidates(): DebtCandidateTransactionDto[] {
+    return this.candidateTransactions.filter((c) => c.isTopMatch || c.score >= 3000);
+  }
+
+  get otherCandidates(): DebtCandidateTransactionDto[] {
+    return this.candidateTransactions.filter((c) => !c.isTopMatch && c.score < 3000);
+  }
+
   loading = true;
   error = '';
   submitting = false;
@@ -198,9 +210,13 @@ export class DebtsComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.candidateTransactions = res.data ?? [];
         this.loadingCandidates = false;
-        const topMatch = this.candidateTransactions.find((c) => c.isTopMatch);
-        if (topMatch) {
-          this.settleForm.patchValue({ linkedTransactionId: topMatch.id });
+        const strongMatch = this.candidateTransactions.find((c) => c.isStrongMatch);
+        if (strongMatch) {
+          // Only pre-select when the match is strong (exact amount AND counterparty name present)
+          this.settleForm.patchValue({ linkedTransactionId: strongMatch.id });
+        } else {
+          // Otherwise show it under "Suggested" with "No linked transaction" selected
+          this.settleForm.patchValue({ linkedTransactionId: '' });
         }
       },
       error: () => {
