@@ -18,9 +18,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final com.spendsense.auth.otp.OtpService otpService;
 
     public AuthController(AuthService authService) {
+        this(authService, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public AuthController(AuthService authService, com.spendsense.auth.otp.OtpService otpService) {
         this.authService = authService;
+        this.otpService = otpService;
     }
 
     @PostMapping("/register")
@@ -37,5 +44,26 @@ public class AuthController {
     @PostMapping("/google")
     public ApiResponse<AuthResponse> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
         return ApiResponse.of(authService.loginWithGoogle(request));
+    }
+
+    @PostMapping("/otp/send")
+    public ApiResponse<com.spendsense.auth.dto.OtpResponse> sendOtp(
+            @Valid @RequestBody com.spendsense.auth.dto.SendOtpRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest
+    ) {
+        String clientIp = httpRequest.getHeader("X-Forwarded-For");
+        if (clientIp == null || clientIp.isBlank()) {
+            clientIp = httpRequest.getRemoteAddr();
+        } else {
+            clientIp = clientIp.split(",")[0].trim();
+        }
+        return ApiResponse.of(otpService.sendVerificationOtp(request.getEmail(), request.getPurpose(), clientIp));
+    }
+
+    @PostMapping("/otp/verify")
+    public ApiResponse<com.spendsense.auth.dto.OtpResponse> verifyOtp(
+            @Valid @RequestBody com.spendsense.auth.dto.VerifyOtpRequest request
+    ) {
+        return ApiResponse.of(otpService.verifyOtp(request.getEmail(), request.getCode(), request.getPurpose()));
     }
 }

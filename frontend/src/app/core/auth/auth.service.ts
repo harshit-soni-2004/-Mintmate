@@ -3,7 +3,7 @@ import { Injectable, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ApiResponse, AuthResponse, User } from '../api/api.types';
+import { ApiResponse, AuthResponse, OtpResponse, User } from '../api/api.types';
 
 const TOKEN_KEY = 'mintmate.token';
 const USER_KEY = 'mintmate.user';
@@ -44,6 +44,14 @@ export class AuthService {
     return this.http
       .post<ApiResponse<AuthResponse>>(`${environment.apiUrl}/auth/google`, { idToken })
       .pipe(tap((response) => this.persist(response.data)));
+  }
+
+  sendOtp(email: string, purpose = 'EMAIL_VERIFICATION'): Observable<ApiResponse<OtpResponse>> {
+    return this.http.post<ApiResponse<OtpResponse>>(`${environment.apiUrl}/auth/otp/send`, { email, purpose });
+  }
+
+  verifyOtp(email: string, code: string, purpose = 'EMAIL_VERIFICATION'): Observable<ApiResponse<OtpResponse>> {
+    return this.http.post<ApiResponse<OtpResponse>>(`${environment.apiUrl}/auth/otp/verify`, { email, code, purpose });
   }
 
   logout(): void {
