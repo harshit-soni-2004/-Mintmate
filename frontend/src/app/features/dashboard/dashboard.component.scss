@@ -145,8 +145,8 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.25rem;
-  background: rgba(18, 116, 87, 0.08);
-  border: 1px solid rgba(18, 116, 87, 0.28);
+  background: var(--brand-soft, rgba(10, 86, 62, 0.08));
+  border: 1px solid rgba(10, 86, 62, 0.22);
   border-radius: 12px;
   animation: slideInDown 0.3s ease-out;
 
@@ -311,7 +311,7 @@
   border-radius: var(--radius-full);
   background: var(--color-primary);
   color: var(--color-primary-contrast);
-  box-shadow: 0 4px 14px rgba(3, 98, 76, 0.18);
+  box-shadow: 0 4px 14px rgba(10, 86, 62, 0.16);
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 
   &:hover {
@@ -463,7 +463,7 @@
       fill: var(--color-accent);
       stroke: var(--color-accent-contrast);
       stroke-width: 2;
-      filter: drop-shadow(0 2px 4px rgba(3, 98, 76, 0.25));
+      filter: drop-shadow(0 2px 4px rgba(10, 86, 62, 0.20));
     }
 
     /* Empty Month Notice */
@@ -503,7 +503,7 @@
       padding: 0.4rem 0.65rem;
       border-radius: var(--radius-xs, 8px);
       border: 1px solid var(--glass-border);
-      box-shadow: 0 4px 14px rgba(7, 59, 53, 0.12);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
       font-size: 0.72rem;
       pointer-events: none;
       white-space: nowrap;
@@ -2073,7 +2073,7 @@
       color: var(--color-text);
 
       &.positive {
-        color: var(--success);
+        color: var(--color-accent); /* #AAF8CB key positive figure */
       }
 
       &.negative {
@@ -2084,15 +2084,27 @@
         color: var(--color-text-secondary);
       }
     }
+
+    .delta-pill.positive {
+      background: rgba(170, 248, 203, 0.14);
+      color: var(--color-accent); /* #AAF8CB key positive figure */
+    }
+  }
+
+  .add-tx-btn {
+    border: 1px solid rgba(170, 248, 203, 0.20);
+    box-shadow: 0 4px 14px rgba(10, 86, 62, 0.32);
   }
 
   .key-insight-box {
     background: var(--glass-surface);
     border-color: var(--glass-border);
 
+    /* "SPENDING INSIGHT" label and "View full analytics" link:
+       use Pale Text (#CFE8DF) per palette rules — not bright green */
     .insight-sparkle-pill,
     .insight-cta-btn {
-      color: #8be35a;
+      color: var(--palette-pale-text);
     }
   }
 
@@ -2104,6 +2116,10 @@
   .guardrail-card {
     background: var(--glass-surface-subtle);
     border-color: var(--glass-border-subtle);
+
+    .g-status-badge:not(.on-track):not(.status-warning):not(.status-exceeded) {
+      color: var(--palette-pale-text);
+    }
   }
 
   .dash-column {
@@ -2117,30 +2133,45 @@
   }
 
   .clean-transactions-list .tx-row:hover {
-    background: #162622;
+    background: rgba(26, 48, 58, 0.50); /* blue-slate hover — matches card tint family */
+  }
+
+  .clean-transactions-list .tx-row .tx-avatar:not(.food):not(.travel):not(.shopping):not(.bills) {
+    color: var(--palette-pale-text);
   }
 
   .simple-bars-stream .chart-bar-col .bar-pillar {
-    background: #8be35a;
+    background: var(--color-accent); /* Neo Mint */
   }
 
   .hero-sparkline-wrap {
     .cashflow-line {
-      stroke: #8be35a;
+      /* Sparkline line: Neo Mint at ~85% opacity */
+      stroke: var(--color-accent); /* #AAF8CB */
+      opacity: 0.85;
     }
 
     .cashflow-cursor-dot {
-      fill: #8be35a;
-      stroke: #121e1b;
+      fill: var(--color-accent);      /* Neo Mint #AAF8CB */
+      stroke: var(--palette-ink-navy); /* #0B1419 — dark canvas */
+    }
+
+    .cashflow-cursor-line {
+      stroke: var(--color-accent);
+      opacity: 0.45;
+    }
+
+    #sparklineGrad stop {
+      stop-color: var(--color-accent);
     }
 
     .cashflow-tooltip {
-      background: #182824;
-      border-color: rgba(255, 255, 255, 0.12);
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+      background: rgba(15, 31, 40, 0.95); /* blue-slate tooltip */
+      border-color: rgba(170, 215, 230, 0.13);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.52);
 
       .tooltip-metric .tooltip-val {
-        color: #8be35a;
+        color: var(--palette-pale-text); /* labels in pale text — not bright green */
 
         &.negative {
           color: var(--danger);

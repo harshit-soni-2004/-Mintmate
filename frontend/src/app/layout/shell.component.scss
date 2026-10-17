@@ -699,6 +699,11 @@
 
 /* Dark mode adjustments for shell */
 :host-context([data-theme="dark"]) {
+  /* Sidebar: blue-slate glass panel, same blur and hairline border */
+  .sidebar {
+    background: var(--sidebar-surface, rgba(15, 32, 40, 0.50));
+  }
+
   .mobile-header,
   .profile-drawer {
     background: var(--glass-surface-elevated);
@@ -709,8 +714,13 @@
     border-top-color: var(--glass-border);
   }
 
-  .nav-item.active,
+  /* Active nav pill: Neo Mint tint with Neo Mint text */
+  .nav-item.active {
+    background: rgba(170, 248, 203, 0.14);
+    color: #AAF8CB;
+  }
+
   .mobile-nav-item.active {
-    color: var(--color-primary);
+    color: #AAF8CB;
   }
 }

@@ -225,3 +225,67 @@ Reduce overall contrast by ~⅓, eliminate lime/bright-mint accents that clash w
 
 ### Sidebar Glass Treatment
 The sidebar uses `var(--glass-surface-elevated)` + `var(--glass-blur)` — the glass material is unchanged. Border and inner-glow hues now resolve from Raspberry Leaf and Muted Teal rather than Bangladesh Green and Frog.
+
+---
+
+## 9. v6 Ink Blue-Slate Dark Backdrop with Green as Accent Only (Stage 6)
+
+### Objective
+Migrate dark-mode background and glass tint away from green to an ink blue-slate aesthetic. Green is preserved strictly as an accent. Light mode is untouched.
+
+### Architecture & Design Tokens
+1. **Backdrop Canvas Gradient**:
+   - Linear gradient `#0B1419` (Ink Navy) to `#0F1F28` (Ink Deep) at 160deg.
+   - Removed all green cast and dark radial vignette blotches around cards.
+2. **Fixed Ambient Glow Pools**:
+   - Deep Blue `#1E4D6B`: two pools at alpha 0.28 and 0.32 (within 0.25-0.35 spec).
+   - Muted Teal `#2F7F7B`: two pools at alpha 0.20 and 0.22 (within 0.18-0.25 spec).
+   - Brand Raspberry Leaf `#0A563E`: single small central pool at alpha 0.14 (within 0.12-0.18 spec) providing optical refraction through cards.
+3. **Dark Glass Tint (Blue-Slate)**:
+   - Base card surface (`--glass-surface`): linear gradient `rgba(26, 48, 58, 0.42)` to `rgba(10, 22, 28, 0.46)`.
+   - Elevated card surface (`--glass-surface-elevated`): linear gradient `rgba(30, 55, 66, 0.46)` to `rgba(10, 22, 28, 0.50)`.
+   - Subtle surface (`--glass-surface-subtle`): `rgba(26, 48, 58, 0.22)`.
+   - Blur (`blur(28px) saturate(160%)`), rim light, shadow structure, layout, spacing, and typography preserved exactly as before.
+4. **Sidebar Glass Treatment**:
+   - Sidebar panel: `rgba(15, 32, 40, 0.50)` (`--sidebar-surface`), same blur and hairline right border (`rgba(170, 215, 230, 0.13)`).
+   - Active item pill: `rgba(170, 248, 203, 0.14)` background with `#AAF8CB` text.
+5. **Accents & Primary Buttons**:
+   - Primary buttons (`.btn-primary`, `.add-tx-btn`): `#0A563E` fill with `#AAF8CB` text (`7.04:1` AAA contrast), hover fill `#0D6B4F`.
+   - Links and labels: Pale `#CFE8DF` (`--palette-pale-text`), distinct from bright green.
+   - Accent `#AAF8CB` reserved strictly for:
+     - Selected calendar day (`.is-selected`)
+     - Active sidebar and mobile nav items (`.nav-item.active`)
+     - Key positive figures (available balance delta pill and positive financial hero number)
+6. **Retired Color Replacements**:
+   - Replaced all instances of `#8be35a` and yellow-greens in component templates and SCSS:
+     - Sparkline cashflow path stroke: `var(--color-accent)` (`#AAF8CB`) at 0.85 opacity.
+     - Sparkline cursor dot: `#AAF8CB` with `#0B1419` outline.
+     - Sparkline SVG gradient (`#sparklineGrad`): `#AAF8CB` stops (0.38 to 0.0 alpha).
+     - Sparkline cursor guideline: `#AAF8CB` at 0.45 opacity.
+     - Spending insight pill and "View full analytics" CTA link: `#CFE8DF` (`--palette-pale-text`).
+     - Cashflow tooltip value: `#CFE8DF` (`--palette-pale-text`).
+     - Simple stream bar pillars: `#AAF8CB` (`var(--color-accent)`).
+
+### WCAG Contrast Audit — v6 Dark Theme
+| Element | Background | Text / Stroke | Contrast Ratio | WCAG AA / AAA |
+| :--- | :--- | :--- | :--- | :--- |
+| **Primary Text** | Canvas base `#0B1419` | Anti-Flash White `#F1F7F6` | **17.17:1** | Pass (AAA) |
+| **Secondary / Labels** | Canvas base `#0B1419` | Pale Text `#CFE8DF` | **14.41:1** | Pass (AAA) |
+| **Muted Text** | Canvas base `#0B1419` | Blue-Slate Muted `#A8C4CE` | **10.15:1** | Pass (AAA) |
+| **Primary Text** | Worst-case card on teal pool (`#1A353E`) | Anti-Flash White `#F1F7F6` | **11.94:1** | Pass (AAA) |
+| **Secondary / Labels** | Worst-case card on teal pool (`#1A353E`) | Pale Text `#CFE8DF` | **10.02:1** | Pass (AAA) |
+| **Muted Text** | Worst-case card on teal pool (`#1A353E`) | Blue-Slate Muted `#A8C4CE` | **7.06:1** | Pass (AAA) |
+| **Accent Text / Figures** | Worst-case card on teal pool (`#1A353E`) | Neo Mint `#AAF8CB` | **10.48:1** | Pass (AAA) |
+| **Primary Button Text** | Raspberry Leaf fill `#0A563E` | Neo Mint `#AAF8CB` | **7.04:1** | Pass (AAA) |
+| **Sidebar Active Text** | Active pill `rgba(170,248,203,0.14)` on sidebar `#0D1A21` | Neo Mint `#AAF8CB` | **13.20:1** | Pass (AAA) |
+
+### Semantic State Verification
+- Red (`--danger: #f87171`) and amber (`--warning: #fbbf24`) are untouched and visually distinct from the green accents and blue-slate glass.
+- Calendar intensity steps:
+  - None: `rgba(26, 48, 58, 0.22)`
+  - Low: `rgba(170, 248, 203, 0.10)` / border `0.20`
+  - Moderate: `rgba(170, 248, 203, 0.20)` / border `0.34`
+  - High: `rgba(170, 248, 203, 0.34)` / border `0.52`
+  - Very High (Peak): `rgba(170, 248, 203, 0.55)` / border `#AAF8CB`
+  All 5 levels clearly distinguishable against the card background.
+
