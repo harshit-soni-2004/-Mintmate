@@ -47,15 +47,15 @@
   --color-border-subtle: rgba(3, 98, 76, 0.08);
 
   /* Liquid Glass System Tokens - Light Mode */
-  --glass-surface: rgba(241, 247, 246, 0.36);
-  --glass-surface-elevated: rgba(241, 247, 246, 0.42);
-  --glass-surface-subtle: rgba(170, 203, 196, 0.25);
-  --glass-border: rgba(3, 98, 76, 0.14);
-  --glass-border-subtle: rgba(3, 98, 76, 0.08);
+  --glass-surface: linear-gradient(180deg, rgba(241, 247, 246, 0.42) 0%, rgba(220, 238, 233, 0.28) 100%);
+  --glass-surface-elevated: linear-gradient(180deg, rgba(241, 247, 246, 0.48) 0%, rgba(220, 238, 233, 0.32) 100%);
+  --glass-surface-subtle: rgba(170, 203, 196, 0.22);
+  --glass-border: rgba(3, 98, 76, 0.12);
+  --glass-border-subtle: rgba(3, 98, 76, 0.06);
   --glass-highlight: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.2) 40%, rgba(3, 98, 76, 0.05) 100%);
   --glass-blur: blur(28px) saturate(155%);
-  --glass-shadow: 0 10px 30px rgba(3, 98, 76, 0.08), 0 1px 3px rgba(3, 98, 76, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.95);
-  --glass-shadow-elevated: 0 16px 40px rgba(3, 98, 76, 0.12), 0 2px 6px rgba(3, 98, 76, 0.06), inset 0 1px 0 rgba(255, 255, 255, 1);
+  --glass-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.95), inset 0 1px 0 0 rgba(255, 255, 255, 0.85), inset -1px -1px 0 0 rgba(3, 98, 76, 0.05), 0 10px 32px rgba(3, 98, 76, 0.08), 0 2px 6px rgba(3, 98, 76, 0.04);
+  --glass-shadow-elevated: inset 1px 1.5px 0 0 rgba(255, 255, 255, 1), inset 0 1px 0 0 rgba(255, 255, 255, 0.90), inset -1px -1px 0 0 rgba(3, 98, 76, 0.08), 0 16px 44px rgba(3, 98, 76, 0.12), 0 3px 8px rgba(3, 98, 76, 0.05);
   --color-background: #d8eae4;       /* Saturated mint/aqua canvas base - no flat near-white canvas */
   --ambient-gradient:
     radial-gradient(650px circle at 8% 12%, rgba(47, 169, 140, 0.46) 0%, rgba(47, 169, 140, 0.14) 48%, transparent 68%),
@@ -182,15 +182,15 @@
   --color-accent-contrast: var(--palette-rich-black); /* Rich Black - 14.59:1 on Lime */
 
   /* Liquid Glass System Tokens - Dark Mode */
-  --glass-surface: rgba(6, 48, 43, 0.32);
-  --glass-surface-elevated: rgba(8, 69, 58, 0.38);
-  --glass-surface-subtle: rgba(6, 48, 43, 0.20);
+  --glass-surface: linear-gradient(180deg, rgba(8, 69, 58, 0.38) 0%, rgba(6, 48, 43, 0.26) 100%);
+  --glass-surface-elevated: linear-gradient(180deg, rgba(9, 85, 68, 0.42) 0%, rgba(6, 48, 43, 0.28) 100%);
+  --glass-surface-subtle: rgba(8, 69, 58, 0.24);
   --glass-border: rgba(170, 203, 196, 0.16);
   --glass-border-subtle: rgba(170, 203, 196, 0.08);
   --glass-highlight: linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.04) 40%, rgba(0, 223, 129, 0.08) 100%);
   --glass-blur: blur(28px) saturate(160%);
-  --glass-shadow: 0 10px 32px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.22), 0 0 20px rgba(0, 223, 129, 0.04);
-  --glass-shadow-elevated: 0 20px 48px rgba(0, 0, 0, 0.65), inset 0 1px 1.5px rgba(255, 255, 255, 0.28), 0 0 28px rgba(0, 223, 129, 0.07);
+  --glass-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.20), inset -1px -1px 0 0 rgba(0, 0, 0, 0.35), 0 12px 36px rgba(0, 0, 0, 0.55), 0 0 24px rgba(0, 223, 129, 0.05);
+  --glass-shadow-elevated: inset 1px 1.5px 0 0 rgba(255, 255, 255, 0.35), inset 0 1.5px 0 0 rgba(255, 255, 255, 0.28), inset -1px -1px 0 0 rgba(0, 0, 0, 0.45), 0 20px 52px rgba(0, 0, 0, 0.68), 0 0 32px rgba(0, 223, 129, 0.08);
   --ambient-gradient:
     radial-gradient(640px circle at 10% 10%, rgba(23, 135, 109, 0.38) 0%, rgba(23, 135, 109, 0.12) 48%, transparent 68%),
     radial-gradient(580px circle at 90% 15%, rgba(47, 169, 140, 0.32) 0%, rgba(47, 169, 140, 0.10) 50%, transparent 70%),
@@ -608,8 +608,29 @@ p {
 
 @supports not (backdrop-filter: blur(1px)) {
   .glass-panel,
-  .apple-card {
-    background: var(--surface);
+  .apple-card,
+  .glass-panel-elevated,
+  .hero-card,
+  .dash-calendar-card,
+  .dash-column,
+  .progressive-deep-dive,
+  .key-insight-box {
+    background: var(--surface) !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-panel,
+  .apple-card,
+  .glass-panel-elevated,
+  .hero-card,
+  .dash-calendar-card,
+  .dash-column,
+  .progressive-deep-dive,
+  .key-insight-box {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--surface) !important;
   }
 }
 

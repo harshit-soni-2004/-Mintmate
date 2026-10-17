@@ -92,3 +92,27 @@ Per specification (alpha 0.85-0.92, tinted rather than pure white):
 - **Dark Mode**: Rich Black (`#021B1A`) / Dark Green (`#032221`) base with large soft discs (520px - 700px) of Bangladesh Green (`#03624C`), Frog (`#17876D`), and Mint (`#2FA98C`) at 0.26 - 0.40 alpha. Center areas are kept darker to create natural optical refraction through top-level cards.
 - **Light Mode**: Medium-saturation mint/aqua gradient base (`#d8eae4` / linear blend) with large soft discs (540px - 700px) of Mint (`#2FA98C`), Mountain Meadow (`#2CC295`), and Pistachio (`#AACBC4`) at 0.32 - 0.50 alpha, providing high refractive depth without any flat near-white washout.
 
+---
+
+## 6. See-Through Glass Material Architecture (Stage 3)
+- **Translucent Material Fills**:
+  - Light mode: Low-opacity vertical gradient (`0.28-0.48`) from Anti-Flash White tint (`rgba(241, 247, 246, 0.42)`) to subtle Pistachio tint (`rgba(220, 238, 233, 0.28)`), subtly lighter at the top.
+  - Dark mode: Low-opacity vertical gradient (`0.26-0.42`) from Basil/Forest tint (`rgba(8, 69, 58, 0.38)`) to Pine tint (`rgba(6, 48, 43, 0.26)`).
+- **Blur & Saturation**: `blur(28px) saturate(155-160%)` for vivid background refraction without washing out text.
+- **1px Lit Edge Rim Light**:
+  - Implemented using curved multi-layer inset box-shadows (`inset 1px 1px 0 0 ...`, `inset 0 1px 0 0 ...`, `inset -1px -1px 0 0 ...`).
+  - Edge is brightest along the top and top-left, fading along sides and bottom, naturally conforming to each card's border radius (`var(--radius-lg)`, `var(--radius-md)`).
+- **Green-Tinted Ambient Depth Shadows**:
+  - Light Mode: Bangladesh Green-tinted soft depth shadow (`rgba(3, 98, 76, 0.08)` and `0.04`), eliminating flat grey halos.
+  - Dark Mode: Deep soft shadow with subtle Caribbean Green emerald ambient glow (`rgba(0, 223, 129, 0.05-0.08)`).
+- **Nested Elements Policy**:
+  - `backdrop-filter` is strictly reserved for top-level cards and major layout panels (e.g. sidebar, topbar, modal cards).
+  - Nested elements (calendar day cells, selected day popover banner `.cal-popover-banner`, daily transaction card `.daily-tx-expanded-card`, guardrail cards `.guardrail-card`, pill switchers, icon buttons) strictly use lighter frosted fills (`var(--glass-surface-subtle)`) with hairline borders (`var(--glass-border-subtle)`), with NO nested `backdrop-filter` to prevent severe GPU layering and composite seams.
+  - Circular icon buttons (`.btn-arrow`, `.btn-close-deep-dive`, `.btn-dismiss-onboarding`) use a thin ring over a faint fill.
+- **Hero Card Uniformity**:
+  - The hero card uses a continuous vertical glass gradient with no internal seams or horizontal banding across its width.
+- **Fallbacks**:
+  - `@supports not (backdrop-filter: blur(1px))` provides opaque fallbacks with solid surface fills.
+  - `@media (prefers-reduced-transparency: reduce)` turns off backdrop filters and provides solid surface backgrounds for users with sensitivity to transparency.
+
+

@@ -157,9 +157,7 @@
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--glass-border-subtle);
-  background: var(--glass-surface);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--glass-surface-subtle);
 
   .header-branding {
     display: flex;
@@ -471,9 +469,7 @@
 /* Footer / Input Bar */
 .flyout-footer {
   padding: 0.7rem 0.85rem;
-  background: var(--glass-surface);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--glass-surface-subtle);
   border-top: 1px solid var(--glass-border-subtle);
 
   .query-form {

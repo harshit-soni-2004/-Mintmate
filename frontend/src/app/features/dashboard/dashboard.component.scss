@@ -15,11 +15,12 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.85rem 1.15rem;
-  background: rgba(26, 32, 44, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(139, 227, 90, 0.22);
+  background: var(--glass-surface-elevated);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: var(--glass-shadow-elevated);
   animation: slideInDown 0.3s ease-out;
 
   @media (max-width: 640px) {
@@ -34,8 +35,9 @@
     gap: 0.35rem;
     padding: 0.25rem 0.65rem;
     border-radius: 9999px;
-    background: rgba(139, 227, 90, 0.12);
-    color: #8be35a;
+    background: var(--color-accent-soft);
+    color: var(--color-primary);
+    border: 1px solid var(--glass-border-subtle);
     font-size: 0.72rem;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -91,15 +93,15 @@
       border-radius: 8px;
       font-size: 0.8rem;
       font-weight: 600;
-      color: #8be35a;
-      background: rgba(139, 227, 90, 0.1);
-      border: 1px solid rgba(139, 227, 90, 0.3);
+      color: var(--color-primary);
+      background: var(--glass-surface-subtle);
+      border: 1px solid var(--glass-border-subtle);
       cursor: pointer;
       transition: all 0.15s ease-in-out;
 
       &:hover {
-        background: rgba(139, 227, 90, 0.2);
-        border-color: rgba(139, 227, 90, 0.5);
+        background: var(--color-accent-soft);
+        border-color: var(--color-primary);
         transform: translateY(-1px);
       }
 
@@ -199,17 +201,19 @@
     }
 
     .btn-dismiss-onboarding {
-      background: transparent;
-      border: 0;
+      background: var(--glass-surface-subtle);
+      border: 1px solid var(--glass-border-subtle);
       color: var(--muted);
       font-size: 0.95rem;
       cursor: pointer;
       padding: 0.3rem 0.5rem;
-      border-radius: 4px;
+      border-radius: var(--radius-xs, 6px);
+      transition: all 0.15s ease;
 
       &:hover {
-        color: var(--ink);
-        background: rgba(255, 255, 255, 0.08);
+        color: var(--color-text);
+        border-color: var(--color-primary);
+        background: var(--glass-surface);
       }
     }
   }
@@ -267,25 +271,27 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-surface-subtle);
+  border: 1px solid var(--glass-border-subtle);
   border-radius: var(--radius-full);
   padding: 0.25rem 0.65rem;
   box-shadow: var(--shadow-xs);
 
   .btn-arrow {
-    border: none;
-    background: transparent;
+    border: 1px solid var(--glass-border-subtle);
+    background: var(--glass-surface-subtle);
     color: var(--color-text-secondary);
     font-size: 1.1rem;
     line-height: 1;
     cursor: pointer;
     padding: 0.15rem 0.35rem;
     border-radius: 50%;
-    transition: color 0.15s ease;
+    transition: all 0.15s ease;
 
     &:hover {
       color: var(--color-text);
+      border-color: var(--color-primary);
+      background: var(--glass-surface);
     }
   }
 
@@ -905,8 +911,6 @@
 
   .guardrail-card {
     background: var(--glass-surface-subtle);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid var(--glass-border-subtle);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
     border-radius: var(--radius-md);
@@ -1138,18 +1142,20 @@
     }
 
     .btn-close-deep-dive {
-      border: 1px solid var(--border);
-      background: var(--color-surface-muted);
+      border: 1px solid var(--glass-border-subtle);
+      background: var(--glass-surface-subtle);
       color: var(--color-text);
       font-size: 0.78rem;
       font-weight: 600;
       padding: 0.35rem 0.85rem;
       border-radius: var(--radius-full);
       cursor: pointer;
+      transition: all 0.15s ease;
 
       &:hover {
         background: var(--color-accent-soft);
         color: var(--color-primary);
+        border-color: var(--color-primary);
       }
     }
   }
@@ -1531,11 +1537,10 @@
 .cal-popover-banner {
   margin-top: 1rem;
   padding: 0.85rem 1.15rem;
-  background: var(--glass-surface-elevated);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
+  background: var(--glass-surface-subtle);
+  border: 1px solid var(--glass-border-subtle);
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1657,12 +1662,10 @@
 /* Daily Expanded Transaction Card */
 .daily-tx-expanded-card {
   margin-top: 0.5rem;
-  background: var(--glass-surface-elevated);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
+  background: var(--glass-surface-subtle);
+  border: 1px solid var(--glass-border-subtle);
   border-radius: var(--radius-md);
-  box-shadow: var(--glass-shadow);
+  box-shadow: var(--shadow-xs);
   padding: 0.75rem 1rem;
   animation: dailyTxSlideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
