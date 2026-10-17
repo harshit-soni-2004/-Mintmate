@@ -9,6 +9,8 @@ import {
   DebtStatus,
   DebtSummaryDto,
   DebtType,
+  FinancialAccountResponse,
+  RecordPaymentAndSettleRequest,
   SettleDebtRequest,
 } from '../../core/api/api.types';
 import { DebtService } from '../../core/api/debt.service';
@@ -30,6 +32,10 @@ export class DebtsComponent implements OnInit, OnDestroy {
   summary: DebtSummaryDto | null = null;
   candidateTransactions: DebtCandidateTransactionDto[] = [];
   loadingCandidates = false;
+
+  accounts: FinancialAccountResponse[] = [];
+  loadingAccounts = false;
+  todayIst = '';
 
   get topMatchCandidate(): DebtCandidateTransactionDto | undefined {
     return this.candidateTransactions.find((c) => c.isTopMatch);
@@ -77,6 +83,11 @@ export class DebtsComponent implements OnInit, OnDestroy {
 
   readonly settleForm = this.fb.group({
     linkedTransactionId: [''],
+    recordPayment: [false],
+    paymentAmount: [null as number | null],
+    paymentDate: [''],
+    paymentAccountId: [''],
+    paymentNotes: [''],
   });
 
   ngOnInit(): void {
@@ -259,10 +270,36 @@ export class DebtsComponent implements OnInit, OnDestroy {
     });
   }
 
+  private getTodayIst(): string {
+    try {
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      return formatter.format(new Date());
+    } catch {
+      return new Date().toISOString().slice(0, 10);
+    }
+  }
+
   // Settle Modal Actions
   openSettleModal(debt: DebtDto): void {
     this.settlingDebt = debt;
-    this.settleForm.reset({ linkedTransactionId: '' });
+    this.todayIst = this.getTodayIst();
+    const defaultNote = debt.debtType === 'OWED_TO_ME'
+      ? `Repayment from ${debt.counterpartyName}`
+      : `Payment to ${debt.counterpartyName}`;
+
+    this.settleForm.reset({
+      linkedTransactionId: '',
+      recordPayment: false,
+      paymentAmount: debt.amount,
+      paymentDate: this.todayIst,
+      paymentAccountId: '',
+      paymentNotes: defaultNote,
+    });
     this.settleFormError = '';
     this.candidateTransactions = [];
     this.loadingCandidates = true;
@@ -286,6 +323,24 @@ export class DebtsComponent implements OnInit, OnDestroy {
         this.loadingCandidates = false;
       },
     });
+
+    this.loadingAccounts = true;
+    this.debtService.getAccounts().subscribe({
+      next: (res) => {
+        this.accounts = (res.data ?? []).filter((a) => a.active);
+        this.loadingAccounts = false;
+        if (!this.settleForm.value.paymentAccountId && this.accounts.length) {
+          const primary = this.accounts.find((a) => a.primary);
+          if (primary) {
+            this.settleForm.patchValue({ paymentAccountId: primary.id });
+          }
+        }
+      },
+      error: () => {
+        this.accounts = [];
+        this.loadingAccounts = false;
+      },
+    });
   }
 
   closeSettleModal(): void {
@@ -294,6 +349,8 @@ export class DebtsComponent implements OnInit, OnDestroy {
     this.settleFormError = '';
     this.candidateTransactions = [];
     this.loadingCandidates = false;
+    this.accounts = [];
+    this.loadingAccounts = false;
   }
 
   submitSettleDebt(): void {
@@ -303,6 +360,50 @@ export class DebtsComponent implements OnInit, OnDestroy {
     this.settleFormError = '';
 
     const txId = this.settleForm.value.linkedTransactionId?.trim() || null;
+
+    // Optional "Record this payment" flow when no linked transaction is selected
+    if (!txId && this.settleForm.value.recordPayment) {
+      const amount = Number(this.settleForm.value.paymentAmount);
+      if (!amount || amount <= 0) {
+        this.settleSubmitting = false;
+        this.settleFormError = 'Payment amount must be greater than zero.';
+        return;
+      }
+
+      const dateVal = this.settleForm.value.paymentDate;
+      if (!dateVal) {
+        this.settleSubmitting = false;
+        this.settleFormError = 'Please select a valid payment date.';
+        return;
+      }
+
+      if (dateVal > this.todayIst) {
+        this.settleSubmitting = false;
+        this.settleFormError = 'Payment date cannot be in the future.';
+        return;
+      }
+
+      const payload: RecordPaymentAndSettleRequest = {
+        amount,
+        transactionDate: dateVal,
+        accountId: this.settleForm.value.paymentAccountId || null,
+        notes: (this.settleForm.value.paymentNotes || '').trim() || null,
+      };
+
+      this.debtService.recordPaymentAndSettle(this.settlingDebt.id, payload).subscribe({
+        next: () => {
+          this.settleSubmitting = false;
+          this.closeSettleModal();
+          this.loadData(false);
+        },
+        error: (err) => {
+          this.settleSubmitting = false;
+          this.settleFormError = err.error?.message || 'Failed to record payment and settle debt. Please try again.';
+        },
+      });
+      return;
+    }
+
     const payload: SettleDebtRequest = txId ? { linkedTransactionId: txId } : {};
 
     this.debtService.settle(this.settlingDebt.id, payload).subscribe({

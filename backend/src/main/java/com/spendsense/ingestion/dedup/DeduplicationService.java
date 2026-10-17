@@ -50,6 +50,32 @@ public class DeduplicationService {
         String normCandidateCombined = normalizeText((candidate.rawMerchant() != null ? candidate.rawMerchant() : "")
                 + " " + (candidate.rawDescription() != null ? candidate.rawDescription() : ""));
 
+        // 1.5. Debt repayment duplicate guard:
+        // When an imported candidate matches a manually created repayment
+        // (same user, same direction, same amount, date within 2 days),
+        // do NOT auto-merge or drop it. Flag it as a possible duplicate for user confirmation.
+        for (Transaction existing : existingTransactions) {
+            boolean isManualRepayment = existing.getSourceType() == com.spendsense.transaction.TransactionSourceType.MANUAL
+                    && existing.getSourceReference() != null
+                    && existing.getSourceReference().startsWith("debt:repayment:");
+
+            if (isManualRepayment) {
+                boolean sameDirection = (candidate.direction() == com.spendsense.transaction.TransactionType.INCOME
+                        && (existing.getTransferDirection() == com.spendsense.transaction.TransferDirection.IN || existing.getTransactionType() == com.spendsense.transaction.TransactionType.INCOME))
+                        || (candidate.direction() == com.spendsense.transaction.TransactionType.EXPENSE
+                        && (existing.getTransferDirection() == com.spendsense.transaction.TransferDirection.OUT || existing.getTransactionType() == com.spendsense.transaction.TransactionType.EXPENSE));
+
+                if (sameDirection && candidate.amount().compareTo(existing.getAmount()) == 0) {
+                    long daysDiff = Math.abs(ChronoUnit.DAYS.between(candidate.transactionDate(), existing.getTransactionDate()));
+                    if (daysDiff <= 2) {
+                        return DuplicateCheckResult.probable(existing,
+                                String.format("Possible duplicate of manually recorded repayment on %s for %s (%s)",
+                                        existing.getTransactionDate(), existing.getAmount(), existing.getMerchant()));
+                    }
+                }
+            }
+        }
+
         // 2. Exact duplicate check
         for (Transaction existing : existingTransactions) {
             if (candidate.amount().compareTo(existing.getAmount()) == 0

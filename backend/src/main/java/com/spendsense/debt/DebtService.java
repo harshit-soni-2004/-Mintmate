@@ -13,6 +13,7 @@ import com.spendsense.transaction.TransactionCategory;
 import com.spendsense.transaction.TransactionRepository;
 import com.spendsense.transaction.TransactionType;
 import com.spendsense.transaction.TransferDirection;
+import com.spendsense.transaction.TransferMatchStatus;
 import com.spendsense.user.User;
 import com.spendsense.user.UserRepository;
 import org.slf4j.Logger;
@@ -40,6 +41,7 @@ public class DebtService {
     private final UserRepository userRepository;
     private final CurrentUser currentUser;
     private final DebtMatchDismissalRepository dismissalRepository;
+    private final com.spendsense.account.FinancialAccountRepository accountRepository;
 
     public DebtService(
             DebtRepository debtRepository,
@@ -47,7 +49,17 @@ public class DebtService {
             UserRepository userRepository,
             CurrentUser currentUser
     ) {
-        this(debtRepository, transactionRepository, userRepository, currentUser, null);
+        this(debtRepository, transactionRepository, userRepository, currentUser, null, null);
+    }
+
+    public DebtService(
+            DebtRepository debtRepository,
+            TransactionRepository transactionRepository,
+            UserRepository userRepository,
+            CurrentUser currentUser,
+            DebtMatchDismissalRepository dismissalRepository
+    ) {
+        this(debtRepository, transactionRepository, userRepository, currentUser, dismissalRepository, null);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -56,13 +68,15 @@ public class DebtService {
             TransactionRepository transactionRepository,
             UserRepository userRepository,
             CurrentUser currentUser,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) DebtMatchDismissalRepository dismissalRepository
+            @org.springframework.beans.factory.annotation.Autowired(required = false) DebtMatchDismissalRepository dismissalRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) com.spendsense.account.FinancialAccountRepository accountRepository
     ) {
         this.debtRepository = debtRepository;
         this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
         this.currentUser = currentUser;
         this.dismissalRepository = dismissalRepository;
+        this.accountRepository = accountRepository;
     }
 
     @Transactional
@@ -336,6 +350,111 @@ public class DebtService {
         Debt updated = debtRepository.save(debt);
         log.info("Settled debt {} for user {}, linked tx: {}", debtId, user.getId(),
                 settlementTx != null ? settlementTx.getId() : "none");
+        return DebtDto.fromEntity(updated);
+    }
+
+    /**
+     * Records a payment transaction and settles the debt entry in one atomic operation.
+     * The transaction is created as a TRANSFER (IN for OWED_TO_ME, OUT for I_OWE) with category OTHER.
+     * Income, expenses, and savings rate remain unchanged.
+     */
+    @Transactional
+    public DebtDto recordPaymentAndSettle(UUID debtId, com.spendsense.debt.dto.RecordPaymentAndSettleRequest request) {
+        User user = requireUser();
+        Debt debt = debtRepository.findByIdAndUserId(debtId, user.getId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "DEBT_NOT_FOUND", "Debt entry not found"));
+
+        if (debt.getStatus() == DebtStatus.SETTLED) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "DEBT_ALREADY_SETTLED", "Debt is already settled");
+        }
+        if (debt.getStatus() == DebtStatus.CANCELLED) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "DEBT_CANCELLED", "Cannot settle a cancelled debt");
+        }
+
+        if (request == null || request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_AMOUNT", "Amount must be greater than zero");
+        }
+
+        LocalDate todayIst = LocalDate.now(IST_ZONE);
+        if (request.transactionDate() == null || request.transactionDate().isAfter(todayIst)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_DATE", "Transaction date cannot be in the future");
+        }
+
+        com.spendsense.account.FinancialAccount account = null;
+        if (request.accountId() != null) {
+            if (accountRepository == null) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "ACCOUNT_NOT_FOUND", "Account repository unavailable");
+            }
+            account = accountRepository.findByIdAndUserId(request.accountId(), user.getId())
+                    .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "ACCOUNT_NOT_FOUND", "Selected account not found or does not belong to user"));
+        }
+
+        String defaultNote = debt.getDebtType() == DebtType.OWED_TO_ME
+                ? "Repayment from " + debt.getCounterpartyName()
+                : "Payment to " + debt.getCounterpartyName();
+        String note = (request.notes() != null && !request.notes().isBlank()) ? request.notes().trim() : defaultNote;
+
+        Transaction tx;
+        if (debt.getDebtType() == DebtType.OWED_TO_ME) {
+            tx = new Transaction(
+                    user,
+                    request.amount(),
+                    debt.getCounterpartyName(),
+                    defaultNote,
+                    TransactionCategory.OTHER,
+                    TransactionType.TRANSFER,
+                    com.spendsense.transaction.PaymentMethod.OTHER,
+                    request.transactionDate(),
+                    note,
+                    BigDecimal.ONE,
+                    com.spendsense.categorization.ConfidenceLevel.HIGH,
+                    com.spendsense.categorization.CategorizationSource.MANUAL,
+                    false,
+                    TransactionCategory.OTHER,
+                    null,
+                    com.spendsense.transaction.TransactionSourceType.MANUAL,
+                    null,
+                    "debt:repayment:" + debt.getId(),
+                    account,
+                    TransferDirection.IN,
+                    null,
+                    null,
+                    TransferMatchStatus.NONE
+            );
+            tx.setIncomeTier(IncomeTier.TIER_3_REFUND);
+            tx.setIncomeVerified(false);
+        } else {
+            tx = new Transaction(
+                    user,
+                    request.amount(),
+                    debt.getCounterpartyName(),
+                    defaultNote,
+                    TransactionCategory.OTHER,
+                    TransactionType.TRANSFER,
+                    com.spendsense.transaction.PaymentMethod.OTHER,
+                    request.transactionDate(),
+                    note,
+                    BigDecimal.ONE,
+                    com.spendsense.categorization.ConfidenceLevel.HIGH,
+                    com.spendsense.categorization.CategorizationSource.MANUAL,
+                    false,
+                    TransactionCategory.OTHER,
+                    null,
+                    com.spendsense.transaction.TransactionSourceType.MANUAL,
+                    null,
+                    "debt:repayment:" + debt.getId(),
+                    account,
+                    TransferDirection.OUT,
+                    null,
+                    null,
+                    TransferMatchStatus.NONE
+            );
+        }
+
+        Transaction savedTx = transactionRepository.save(tx);
+        debt.settle(savedTx);
+        Debt updated = debtRepository.save(debt);
+        log.info("Recorded payment transaction {} and settled debt {} for user {}", savedTx.getId(), debtId, user.getId());
         return DebtDto.fromEntity(updated);
     }
 

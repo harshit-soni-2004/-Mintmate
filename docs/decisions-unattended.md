@@ -63,3 +63,26 @@ Candidates are scored deterministically by the backend so that frontend clients 
 - Statement ingestion in `StatementIngestionService` invokes `debtService.evaluateSuggestionsAfterIngestion(user.getId(), importedTransactions)` after persisting new transactions.
 - **Failure-Isolated**: Enclosed in a strict try/catch block. If matching evaluation fails or throws an exception, it is logged as a warning; statement ingestion always succeeds and never rolls back.
 - **Suggest-Only**: Statement import never automatically settles debts or reclassifies transactions without explicit user confirmation.
+
+---
+
+## 5. Record Payment and Settle Flow (Atomic Settlement)
+
+- **Optional Selection**: When no candidate transaction is linked, the Settle Debt modal provides an unchecked checkbox: *"Also record this payment in my transactions"*.
+- **Direction Lock**: The transaction direction is fixed by the debt type and cannot be edited:
+  - `OWED_TO_ME`: Created as `TRANSFER` with direction `IN`, category `OTHER`, and `IncomeTier.TIER_3_REFUND` (excluded from core salary/income calculations).
+  - `I_OWE`: Created as `TRANSFER` with direction `OUT`, category `OTHER` (excluded from expense totals and budget category burn).
+- **Invariance of Analytics**: Because the transaction is created as a `TRANSFER` in category `OTHER`, income, expenses, and savings rate remain unchanged.
+- **Single Atomic Operation**: Executed in a single backend database transaction via `POST /api/v1/debts/{id}/record-payment-and-settle` (never multiple frontend calls). If either creation or settlement fails, all changes are rolled back.
+- **Source Identification**: Stamped with `sourceType = MANUAL` and `sourceReference = "debt:repayment:<debtId>"`.
+
+---
+
+## 6. Duplicate Guard on Statement Import
+
+- **Current Deduplication Baseline**: `DeduplicationService.checkDuplicate` identifies exact duplicates (same date, same amount, same direction, matching merchant/ref) and drops them automatically during ingestion (`exactDuplicates++`). Non-exact candidates with fuzzy or amount-date matches are flagged as probable duplicates (`requiresReview = true`).
+- **Debt Repayment Guard Rule**:
+  - When an incoming imported candidate matches a manually created debt repayment (`sourceType == MANUAL` and `sourceReference.startsWith("debt:repayment:")`), same user, matching direction, exact amount, and `transactionDate` within 2 days (`|candidate.date - repayment.date| <= 2`):
+  - **Do NOT auto-merge or drop**: The system strictly prevents silent dropping.
+  - **Deterministic Flagging**: Returns `DuplicateCheckResult.probable(...)`, causing the statement ingestion flow to persist the candidate with `requiresReview = true` so the user can explicitly review and confirm whether it is a duplicate or an independent transaction.
+  - Near-miss amounts, opposite directions, or dates outside the 2-day window are NOT flagged by this guard.

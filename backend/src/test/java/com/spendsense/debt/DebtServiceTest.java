@@ -55,13 +55,16 @@ class DebtServiceTest {
     @Mock
     private DebtMatchDismissalRepository dismissalRepository;
 
+    @Mock
+    private com.spendsense.account.FinancialAccountRepository accountRepository;
+
     private DebtService debtService;
     private User testUser;
     private UUID userId;
 
     @BeforeEach
     void setUp() {
-        debtService = new DebtService(debtRepository, transactionRepository, userRepository, currentUser, dismissalRepository);
+        debtService = new DebtService(debtRepository, transactionRepository, userRepository, currentUser, dismissalRepository, accountRepository);
 
         testUser = new User("user@example.com", "hash", "User", "Asia/Kolkata");
         userId = testUser.getId();
@@ -687,5 +690,166 @@ class DebtServiceTest {
         assertThatThrownBy(() -> debtService.linkTransactionToSettledDebt(debtId, new SettleDebtRequest(txId)))
                 .isInstanceOf(ApiException.class)
                 .satisfies(ex -> assertThat(((ApiException) ex).getStatus()).isEqualTo(HttpStatus.FORBIDDEN));
+    }
+
+    @Test
+    @DisplayName("Record payment and settle: OWED_TO_ME creates TRANSFER-IN with refund tier and settles debt")
+    void testRecordPaymentAndSettle_SuccessOwedToMe() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Rohan", DebtType.OWED_TO_ME, new BigDecimal("2500.00"), null, null);
+        debt.setId(debtId);
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(debtRepository.save(any(Debt.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        com.spendsense.debt.dto.RecordPaymentAndSettleRequest request = new com.spendsense.debt.dto.RecordPaymentAndSettleRequest(
+                new BigDecimal("2500.00"),
+                LocalDate.now(ZoneId.of("Asia/Kolkata")),
+                null,
+                "Got money back via cash"
+        );
+
+        DebtDto result = debtService.recordPaymentAndSettle(debtId, request);
+
+        assertThat(result.status()).isEqualTo(DebtStatus.SETTLED);
+        assertThat(result.linkedTransactionId()).isNotNull();
+
+        org.mockito.ArgumentCaptor<Transaction> txCaptor = org.mockito.ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionRepository).save(txCaptor.capture());
+        Transaction savedTx = txCaptor.getValue();
+
+        assertThat(savedTx.getAmount()).isEqualByComparingTo(new BigDecimal("2500.00"));
+        assertThat(savedTx.getTransactionType()).isEqualTo(TransactionType.TRANSFER);
+        assertThat(savedTx.getTransferDirection()).isEqualTo(TransferDirection.IN);
+        assertThat(savedTx.getCategory()).isEqualTo(TransactionCategory.OTHER);
+        assertThat(savedTx.getIncomeTier()).isEqualTo(IncomeTier.TIER_3_REFUND);
+        assertThat(savedTx.isIncomeVerified()).isFalse();
+        assertThat(savedTx.getSourceType()).isEqualTo(com.spendsense.transaction.TransactionSourceType.MANUAL);
+        assertThat(savedTx.getSourceReference()).isEqualTo("debt:repayment:" + debtId);
+        assertThat(savedTx.getNotes()).isEqualTo("Got money back via cash");
+    }
+
+    @Test
+    @DisplayName("Record payment and settle: I_OWE creates TRANSFER-OUT and settles debt")
+    void testRecordPaymentAndSettle_SuccessIOwe() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Landlord", DebtType.I_OWE, new BigDecimal("12000.00"), null, null);
+        debt.setId(debtId);
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(debtRepository.save(any(Debt.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        com.spendsense.debt.dto.RecordPaymentAndSettleRequest request = new com.spendsense.debt.dto.RecordPaymentAndSettleRequest(
+                new BigDecimal("12000.00"),
+                LocalDate.now(ZoneId.of("Asia/Kolkata")),
+                null,
+                null
+        );
+
+        DebtDto result = debtService.recordPaymentAndSettle(debtId, request);
+
+        assertThat(result.status()).isEqualTo(DebtStatus.SETTLED);
+
+        org.mockito.ArgumentCaptor<Transaction> txCaptor = org.mockito.ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionRepository).save(txCaptor.capture());
+        Transaction savedTx = txCaptor.getValue();
+
+        assertThat(savedTx.getAmount()).isEqualByComparingTo(new BigDecimal("12000.00"));
+        assertThat(savedTx.getTransactionType()).isEqualTo(TransactionType.TRANSFER);
+        assertThat(savedTx.getTransferDirection()).isEqualTo(TransferDirection.OUT);
+        assertThat(savedTx.getCategory()).isEqualTo(TransactionCategory.OTHER);
+        assertThat(savedTx.getIncomeTier()).isNull();
+        assertThat(savedTx.getSourceType()).isEqualTo(com.spendsense.transaction.TransactionSourceType.MANUAL);
+        assertThat(savedTx.getSourceReference()).isEqualTo("debt:repayment:" + debtId);
+        assertThat(savedTx.getNotes()).isEqualTo("Payment to Landlord");
+    }
+
+    @Test
+    @DisplayName("Record payment and settle: validates account belongs to user")
+    void testRecordPaymentAndSettle_AccountValidation() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Rohan", DebtType.OWED_TO_ME, new BigDecimal("1000.00"), null, null);
+        debt.setId(debtId);
+
+        UUID accountId = UUID.randomUUID();
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(accountRepository.findByIdAndUserId(accountId, userId)).thenReturn(Optional.empty());
+
+        com.spendsense.debt.dto.RecordPaymentAndSettleRequest request = new com.spendsense.debt.dto.RecordPaymentAndSettleRequest(
+                new BigDecimal("1000.00"),
+                LocalDate.now(ZoneId.of("Asia/Kolkata")),
+                accountId,
+                null
+        );
+
+        assertThatThrownBy(() -> debtService.recordPaymentAndSettle(debtId, request))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> {
+                    assertThat(((ApiException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+                    assertThat(((ApiException) ex).getCode()).isEqualTo("ACCOUNT_NOT_FOUND");
+                });
+    }
+
+    @Test
+    @DisplayName("Record payment and settle: rejects invalid amount or future date")
+    void testRecordPaymentAndSettle_ValidationRules() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Rohan", DebtType.OWED_TO_ME, new BigDecimal("1000.00"), null, null);
+        debt.setId(debtId);
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+
+        // Negative/zero amount
+        com.spendsense.debt.dto.RecordPaymentAndSettleRequest zeroAmount = new com.spendsense.debt.dto.RecordPaymentAndSettleRequest(
+                BigDecimal.ZERO,
+                LocalDate.now(ZoneId.of("Asia/Kolkata")),
+                null,
+                null
+        );
+        assertThatThrownBy(() -> debtService.recordPaymentAndSettle(debtId, zeroAmount))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> assertThat(((ApiException) ex).getCode()).isEqualTo("INVALID_AMOUNT"));
+
+        // Future date
+        com.spendsense.debt.dto.RecordPaymentAndSettleRequest futureDate = new com.spendsense.debt.dto.RecordPaymentAndSettleRequest(
+                new BigDecimal("500.00"),
+                LocalDate.now(ZoneId.of("Asia/Kolkata")).plusDays(1),
+                null,
+                null
+        );
+        assertThatThrownBy(() -> debtService.recordPaymentAndSettle(debtId, futureDate))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> assertThat(((ApiException) ex).getCode()).isEqualTo("INVALID_DATE"));
+    }
+
+    @Test
+    @DisplayName("Record payment and settle: rejects already settled debt or missing debt")
+    void testRecordPaymentAndSettle_DebtStateValidation() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Rohan", DebtType.OWED_TO_ME, new BigDecimal("1000.00"), null, null);
+        debt.setId(debtId);
+        debt.settle(null);
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+
+        com.spendsense.debt.dto.RecordPaymentAndSettleRequest request = new com.spendsense.debt.dto.RecordPaymentAndSettleRequest(
+                new BigDecimal("1000.00"),
+                LocalDate.now(ZoneId.of("Asia/Kolkata")),
+                null,
+                null
+        );
+
+        assertThatThrownBy(() -> debtService.recordPaymentAndSettle(debtId, request))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> assertThat(((ApiException) ex).getCode()).isEqualTo("DEBT_ALREADY_SETTLED"));
+
+        UUID missingDebtId = UUID.randomUUID();
+        when(debtRepository.findByIdAndUserId(missingDebtId, userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> debtService.recordPaymentAndSettle(missingDebtId, request))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> assertThat(((ApiException) ex).getStatus()).isEqualTo(HttpStatus.NOT_FOUND));
     }
 }

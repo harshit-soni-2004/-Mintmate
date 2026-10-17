@@ -64,6 +64,14 @@ public class DebtController {
         return ResponseEntity.ok(ApiResponse.of(settled));
     }
 
+    @PostMapping("/{id}/record-payment-and-settle")
+    public ResponseEntity<ApiResponse<DebtDto>> recordPaymentAndSettle(
+            @PathVariable("id") UUID id,
+            @Valid @RequestBody com.spendsense.debt.dto.RecordPaymentAndSettleRequest request) {
+        DebtDto settled = debtService.recordPaymentAndSettle(id, request);
+        return ResponseEntity.ok(ApiResponse.of(settled));
+    }
+
     @PostMapping("/{id}/link-transaction")
     public ResponseEntity<ApiResponse<DebtDto>> linkTransactionToSettledDebt(
             @PathVariable("id") UUID id,

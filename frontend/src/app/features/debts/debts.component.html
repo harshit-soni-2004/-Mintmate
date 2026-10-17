@@ -592,6 +592,85 @@
             </small>
           </div>
 
+          <!-- Optional "Record this payment" flow when no linked transaction is selected -->
+          @if (!settleForm.value.linkedTransactionId) {
+            <div class="record-payment-toggle-wrap">
+              <label class="checkbox-label" for="record-payment-checkbox">
+                <input
+                  type="checkbox"
+                  id="record-payment-checkbox"
+                  formControlName="recordPayment"
+                />
+                <span>Also record this payment in my transactions</span>
+              </label>
+            </div>
+
+            @if (settleForm.value.recordPayment) {
+              <div class="record-payment-fields" id="record-payment-fields-panel">
+                <div class="form-row-2">
+                  <div class="form-group">
+                    <label class="field-label">Payment Direction</label>
+                    <div class="static-field-badge">
+                      {{ settlingDebt.debtType === 'OWED_TO_ME' ? 'Incoming Transfer' : 'Outgoing Transfer' }}
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="record-payment-amount" class="field-label">Amount (₹) *</label>
+                    <input
+                      type="number"
+                      id="record-payment-amount"
+                      formControlName="paymentAmount"
+                      class="form-input"
+                      min="0.01"
+                      step="0.01"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-row-2">
+                  <div class="form-group">
+                    <label for="record-payment-date" class="field-label">Date *</label>
+                    <input
+                      type="date"
+                      id="record-payment-date"
+                      formControlName="paymentDate"
+                      class="form-input"
+                      [max]="todayIst"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="record-payment-account" class="field-label">Account</label>
+                    <select
+                      id="record-payment-account"
+                      formControlName="paymentAccountId"
+                      class="form-input"
+                    >
+                      <option value="">-- Select account (optional) --</option>
+                      @for (acc of accounts; track acc.id) {
+                        <option [value]="acc.id">
+                          {{ acc.name }}{{ acc.accountNumberLast4 ? ' (••' + acc.accountNumberLast4 + ')' : '' }}
+                        </option>
+                      }
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="record-payment-notes" class="field-label">Note</label>
+                  <input
+                    type="text"
+                    id="record-payment-notes"
+                    formControlName="paymentNotes"
+                    class="form-input"
+                    placeholder="Payment note"
+                    maxlength="200"
+                  />
+                </div>
+              </div>
+            }
+          }
+
           <!-- Modal Footer -->
           <div class="modal-footer">
             <button

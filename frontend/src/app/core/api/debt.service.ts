@@ -9,6 +9,8 @@ import {
   DebtDto,
   DebtStatus,
   DebtSummaryDto,
+  FinancialAccountResponse,
+  RecordPaymentAndSettleRequest,
   SettleDebtRequest,
 } from './api.types';
 
@@ -57,6 +59,16 @@ export class DebtService {
     return this.http.post<ApiResponse<DebtDto>>(`${this.url}/${id}/link-transaction`, payload).pipe(
       tap(() => this.mutationSubject.next())
     );
+  }
+
+  recordPaymentAndSettle(id: string, payload: RecordPaymentAndSettleRequest): Observable<ApiResponse<DebtDto>> {
+    return this.http.post<ApiResponse<DebtDto>>(`${this.url}/${id}/record-payment-and-settle`, payload).pipe(
+      tap(() => this.mutationSubject.next())
+    );
+  }
+
+  getAccounts(): Observable<ApiResponse<FinancialAccountResponse[]>> {
+    return this.http.get<ApiResponse<FinancialAccountResponse[]>>(`${environment.apiUrl}/accounts`);
   }
 
   dismissCandidate(debtId: string, transactionId: string): Observable<ApiResponse<void>> {

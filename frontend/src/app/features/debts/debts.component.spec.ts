@@ -60,6 +60,8 @@ describe('DebtsComponent', () => {
       'dismissCandidate',
       'cancel',
       'getCandidates',
+      'recordPaymentAndSettle',
+      'getAccounts',
     ], {
       onDebtMutated$: mutationSubject.asObservable(),
     });
@@ -67,6 +69,7 @@ describe('DebtsComponent', () => {
     mockDebtService.list.and.returnValue(of({ data: mockDebts, error: null, meta: null }));
     mockDebtService.getSummary.and.returnValue(of({ data: mockSummary, error: null, meta: null }));
     mockDebtService.getCandidates.and.returnValue(of({ data: [], error: null, meta: null }));
+    mockDebtService.getAccounts.and.returnValue(of({ data: [], error: null, meta: null }));
 
     await TestBed.configureTestingModule({
       imports: [DebtsComponent],
@@ -170,11 +173,107 @@ describe('DebtsComponent', () => {
     expect(component.settlingDebt?.counterpartyName).toBe('Alice Sharma');
     expect(mockDebtService.getCandidates).toHaveBeenCalledWith('debt-1');
 
-    component.settleForm.setValue({ linkedTransactionId: 'tx-123' });
+    component.settleForm.patchValue({ linkedTransactionId: 'tx-123' });
     component.submitSettleDebt();
 
     expect(mockDebtService.settle).toHaveBeenCalledWith('debt-1', { linkedTransactionId: 'tx-123' });
     expect(component.showSettleModal).toBeFalse();
+  });
+
+  it('settles debt with recordPayment=false creates no transaction and calls standard settle endpoint', () => {
+    mockDebtService.settle.and.returnValue(of({
+      data: { ...mockDebts[0], status: 'SETTLED', linkedTransactionId: null },
+      error: null,
+      meta: null,
+    }));
+
+    component.openSettleModal(mockDebts[0]);
+    fixture.detectChanges();
+
+    // Verify option is unchecked by default
+    expect(component.settleForm.value.recordPayment).toBeFalse();
+
+    component.submitSettleDebt();
+
+    expect(mockDebtService.settle).toHaveBeenCalledWith('debt-1', {});
+    expect(mockDebtService.recordPaymentAndSettle).not.toHaveBeenCalled();
+    expect(component.showSettleModal).toBeFalse();
+  });
+
+  it('settles debt with recordPayment=true calls recordPaymentAndSettle endpoint with prefilled values', () => {
+    const mockAccounts = [
+      { id: 'acc-1', name: 'HDFC Bank', accountType: 'SAVINGS', currency: 'INR', active: true, primary: true },
+    ];
+    mockDebtService.getAccounts.and.returnValue(of({ data: mockAccounts as any, error: null, meta: null }));
+    mockDebtService.recordPaymentAndSettle.and.returnValue(of({
+      data: { ...mockDebts[0], status: 'SETTLED', linkedTransactionId: 'tx-recorded-1' },
+      error: null,
+      meta: null,
+    }));
+
+    component.openSettleModal(mockDebts[0]);
+    fixture.detectChanges();
+
+    // Verify prefilling
+    expect(component.settleForm.value.paymentAmount).toBe(4500);
+    expect(component.settleForm.value.paymentDate).toBe(component.todayIst);
+    expect(component.settleForm.value.paymentNotes).toBe('Repayment from Alice Sharma');
+    expect(component.settleForm.value.paymentAccountId).toBe('acc-1');
+
+    // Turn on recordPayment
+    component.settleForm.patchValue({ recordPayment: true });
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('#record-payment-fields-panel')).toBeTruthy();
+
+    component.submitSettleDebt();
+
+    expect(mockDebtService.recordPaymentAndSettle).toHaveBeenCalledWith('debt-1', {
+      amount: 4500,
+      transactionDate: component.todayIst,
+      accountId: 'acc-1',
+      notes: 'Repayment from Alice Sharma',
+    });
+    expect(mockDebtService.settle).not.toHaveBeenCalled();
+    expect(component.showSettleModal).toBeFalse();
+  });
+
+  it('validates invalid amount or future date in record payment flow without submitting', () => {
+    component.openSettleModal(mockDebts[0]);
+    component.settleForm.patchValue({
+      recordPayment: true,
+      paymentAmount: 0,
+    });
+
+    component.submitSettleDebt();
+    expect(mockDebtService.recordPaymentAndSettle).not.toHaveBeenCalled();
+    expect(component.settleFormError).toContain('greater than zero');
+
+    // Future date
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 2);
+    component.settleForm.patchValue({
+      paymentAmount: 4500,
+      paymentDate: tomorrow.toISOString().slice(0, 10),
+    });
+
+    component.submitSettleDebt();
+    expect(mockDebtService.recordPaymentAndSettle).not.toHaveBeenCalled();
+    expect(component.settleFormError).toContain('cannot be in the future');
+  });
+
+  it('hides record payment checkbox when a linked transaction is selected', () => {
+    component.openSettleModal(mockDebts[0]);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('#record-payment-checkbox')).toBeTruthy();
+
+    component.settleForm.patchValue({ linkedTransactionId: 'tx-some-id' });
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('#record-payment-checkbox')).toBeFalsy();
   });
 
   it('pre-selects top candidate in settle dropdown when match is strong (exact amount AND counterparty present)', () => {

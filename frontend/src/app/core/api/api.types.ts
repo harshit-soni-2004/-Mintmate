@@ -557,6 +557,20 @@ export interface DebtCandidateTransactionDto {
   matchReason?: string | null;
   score: number;
 }
+export interface RecordPaymentAndSettleRequest {
+  amount: number;
+  transactionDate: string;
+  accountId?: string | null;
+  notes?: string | null;
+}
 
-
-
+export interface FinancialAccountResponse {
+  id: string;
+  name: string;
+  institutionName?: string | null;
+  accountType: string;
+  accountNumberLast4?: string | null;
+  currency: string;
+  active: boolean;
+  primary: boolean;
+}
