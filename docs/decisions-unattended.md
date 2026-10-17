@@ -11,10 +11,16 @@
     - The local MySQL test database had previously executed migrations V17 and V18 from `feat/auth-google-email-otp`. On `feat/debt-reminders-and-matching`, Flyway reported checksum mismatch for V17 (`V17__create_debt_match_dismissals.sql` vs `V17__add_google_auth_and_email_verification_to_users.sql`), and schema validation failed due to missing table `debt_match_dismissals`.
     - Resolved by creating `debt_match_dismissals` table and running Flyway repair.
     - Verified test execution: all 461 backend tests pass, all 169 frontend tests pass, and frontend production build succeeds with zero errors.
-  - **Flyway Migration Collision Warning**:
-    - Debt branch uses `V17__create_debt_match_dismissals.sql`.
-    - Auth branch uses `V17__add_google_auth_and_email_verification_to_users.sql` and `V18__create_email_otps.sql`.
-    - When merging the branches, one branch's migrations will need sequential renumbering (e.g. debt dismissals to V19).
+  - **Separate Local Database Configuration**:
+    - To prevent schema state collision between development branches, database connectivity is driven via environment variables with zero password fallback in `application.yml`:
+      - `DB_PASSWORD`: Read directly from environment (no fallback allowed).
+      - `DB_NAME`: Branch-specific default (`spendsense_debt` on `feat/debt-reminders-and-matching`, `spendsense_auth` on `feat/auth-google-email-otp`), overridable via `DB_NAME` or full `DB_URL`.
+    - No hand-written DDL or `flyway:repair` should be run across branches.
+  - **Branch Merge Plan**:
+    - **Step 1**: The auth branch (`feat/auth-google-email-otp`) merges into `develop` first, retaining Flyway migrations `V17__add_google_auth_and_email_verification_to_users.sql` and `V18__create_email_otps.sql`.
+    - **Step 2**: The debt branch (`feat/debt-reminders-and-matching`) is subsequently rebased onto `develop`.
+    - **Step 3**: The debt dismissal migration `V17__create_debt_match_dismissals.sql` is renamed to `V19__create_debt_match_dismissals.sql` (renaming is safe because it has never been applied to any environment outside local development).
+    - **Step 4**: Run tests and complete the merge into `develop`.
 
 ## 1. Candidate Search & Exact Matching Rules
 
