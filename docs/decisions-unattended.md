@@ -5,10 +5,16 @@
    - `Debt` entity does not contain a separate `lent_date` / `start_date` field.
    - Per requirement, `createdAt` converted to IST `LocalDate` is used with a named constant `LOOKBACK_DAYS = 7` (`transactionDate >= createdAt.toLocalDate() - 7`).
    - Boundary tests added for exactly 7 days before, 8 days before, and same day.
-2. **Flyway Migration Number Collision**:
-   - On `feat/debt-reminders-and-matching`, next free migration was `V17__create_debt_match_dismissals.sql`.
-   - On `feat/auth-google-email-otp`, next free migrations from `develop` are `V17__add_google_auth_and_email_verification_to_users.sql` and `V18__create_email_otps.sql`.
-   - These collide on version 17 at merge time and will need sequential renaming during merge (e.g. debt dismissals to V19).
+2. **Separate Local Database Configuration & Branch Merge Plan**:
+   - **Database Isolation**: Database connectivity is driven via environment variables with zero password fallback in `application.yml`:
+     - `DB_PASSWORD`: Read directly from environment (no default/fallback).
+     - `DB_NAME`: Defaults to branch-scoped database (`spendsense_auth` on `feat/auth-google-email-otp`, `spendsense_debt` on `feat/debt-reminders-and-matching`), overridable via `DB_NAME` or `DB_URL`.
+     - Hand-written DDL and `flyway:repair` are strictly avoided.
+   - **Merge Plan**:
+     - **Step 1**: The auth branch (`feat/auth-google-email-otp`) merges first into `develop` with migrations `V17__add_google_auth_and_email_verification_to_users.sql` and `V18__create_email_otps.sql`.
+     - **Step 2**: The debt branch (`feat/debt-reminders-and-matching`) is then rebased onto `develop`.
+     - **Step 3**: The debt dismissal migration `V17__create_debt_match_dismissals.sql` is renamed to `V19__create_debt_match_dismissals.sql` (renaming only, as it has never been applied to any remote/shared database).
+     - **Step 4**: Complete test verification and merge.
 3. **Statement Import Duplicate Guard for Repayments**:
    - Rule: When an imported statement transaction matches a manually created repayment (`direction` match, `amount` match, transaction date within +/- 2 days), it is flagged as a potential duplicate (`DUPLICATE_SUSPECT`) rather than automatically merged or discarded, surfacing it in the reconciliation UI for user review.
 

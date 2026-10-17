@@ -11,9 +11,9 @@ spring:
     serialization:
       write-dates-as-timestamps: false
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/spendsense?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/${DB_NAME:spendsense_auth}?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8}
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:Harshit#$04}
+    password: ${DB_PASSWORD}
   jpa:
     open-in-view: false
     hibernate:
