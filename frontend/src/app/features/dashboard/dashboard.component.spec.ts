@@ -2,9 +2,10 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { Observable, of, throwError } from 'rxjs';
-import { DashboardData, InsightsOverview, Transaction } from '../../core/api/api.types';
+import { Observable, of, Subject, throwError } from 'rxjs';
+import { DashboardData, DebtDto, DebtSummaryDto, InsightsOverview, Transaction } from '../../core/api/api.types';
 import { AuthService } from '../../core/auth/auth.service';
+import { DebtService } from '../../core/api/debt.service';
 import { InsightsService } from '../insights/insights.service';
 import { TransactionService } from '../transactions/transaction.service';
 import { AssistantService } from '../assistant/assistant.service';
@@ -17,6 +18,7 @@ describe('DashboardComponent', () => {
   let dashboardServiceSpy: jasmine.SpyObj<DashboardService>;
   let insightsServiceSpy: jasmine.SpyObj<InsightsService>;
   let assistantServiceSpy: jasmine.SpyObj<AssistantService>;
+  let debtServiceSpy: jasmine.SpyObj<DebtService>;
   let transactionService: TransactionService;
 
   const mockDashboardData: DashboardData = {
@@ -132,6 +134,12 @@ describe('DashboardComponent', () => {
       of({ data: [], error: null, meta: null })
     );
 
+    debtServiceSpy = jasmine.createSpyObj('DebtService', ['getSummary']);
+    (debtServiceSpy as any).onDebtMutated$ = new Subject<void>();
+    debtServiceSpy.getSummary.and.returnValue(
+      of({ data: null, error: null, meta: null })
+    );
+
     await TestBed.configureTestingModule({
       imports: [DashboardComponent],
       providers: [
@@ -141,10 +149,11 @@ describe('DashboardComponent', () => {
         { provide: DashboardService, useValue: dashboardServiceSpy },
         { provide: InsightsService, useValue: insightsServiceSpy },
         { provide: AssistantService, useValue: assistantServiceSpy },
+        { provide: DebtService, useValue: debtServiceSpy },
         {
           provide: AuthService,
           useValue: {
-            currentUser: () => ({ displayName: 'Ada Lovelace', email: 'ada@example.com' }),
+            currentUser: () => ({ id: 'ada-1', displayName: 'Ada Lovelace', email: 'ada@example.com' }),
           },
         },
       ],
@@ -806,6 +815,273 @@ describe('DashboardComponent', () => {
       expect(spyOpenEdit).toHaveBeenCalledWith(sampleExpenses[0]);
       expect(component.showForm).toBeTrue();
       expect(component.editing).toEqual(sampleExpenses[0]);
+    });
+  });
+
+  describe('Dashboard - Debt Reminder Combined Banner', () => {
+    beforeEach(() => {
+      localStorage.clear();
+      spyOn(component, 'getTodayIST').and.returnValue('2026-09-08');
+    });
+
+    it('does not render banner when there are no qualifying debts', () => {
+      component.updateDebtReminderBanner({
+        totalReceivable: 0,
+        totalPayable: 0,
+        netDebtPosition: 0,
+        activeCount: 0,
+        overdueCount: 0,
+        upcomingDebts: [],
+        overdueDebts: [],
+      });
+      fixture.detectChanges();
+
+      expect(component.debtReminderBanner).toBeNull();
+      expect(component.showDebtBanner).toBeFalse();
+      expect(fixture.nativeElement.querySelector('#debt-reminder-banner')).toBeNull();
+    });
+
+    it('renders amber banner when a debt is due in exactly 3 days (due soon boundary)', () => {
+      const debtDueIn3Days: DebtDto = {
+        id: 'd-3days',
+        counterpartyName: 'Rahul',
+        debtType: 'OWED_TO_ME',
+        amount: 1500,
+        dueDate: '2026-09-11', // 2026-09-08 + 3 days
+        status: 'ACTIVE',
+        overdue: false,
+        createdAt: '2026-09-01T10:00:00Z',
+      };
+
+      component.updateDebtReminderBanner({
+        totalReceivable: 1500,
+        totalPayable: 0,
+        netDebtPosition: 1500,
+        activeCount: 1,
+        overdueCount: 0,
+        upcomingDebts: [debtDueIn3Days],
+        overdueDebts: [],
+      });
+      fixture.detectChanges();
+
+      expect(component.showDebtBanner).toBeTrue();
+      expect(component.debtReminderBanner?.severity).toBe('warning');
+      expect(component.debtReminderBanner?.title).toContain('1 debt due soon · ₹1,500 due');
+      expect(component.debtReminderBanner?.subtitle).toBe('Due within 3 days');
+
+      const bannerEl = fixture.nativeElement.querySelector('#debt-reminder-banner');
+      expect(bannerEl).toBeTruthy();
+      expect(bannerEl.classList.contains('status-due-soon')).toBeTrue();
+      expect(bannerEl.querySelector('#debt-banner-title')?.textContent).toContain('1 debt due soon · ₹1,500 due');
+
+      const link = bannerEl.querySelector('#btn-debt-banner-link') as HTMLAnchorElement;
+      expect(link).toBeTruthy();
+      expect(link.getAttribute('routerLink')).toBe('/app/debts');
+    });
+
+    it('does NOT render banner when debt is due in 4 days (outside 3-day threshold)', () => {
+      const debtDueIn4Days: DebtDto = {
+        id: 'd-4days',
+        counterpartyName: 'Priya',
+        debtType: 'I_OWE',
+        amount: 2000,
+        dueDate: '2026-09-12', // 2026-09-08 + 4 days
+        status: 'ACTIVE',
+        overdue: false,
+        createdAt: '2026-09-01T10:00:00Z',
+      };
+
+      component.updateDebtReminderBanner({
+        totalReceivable: 0,
+        totalPayable: 2000,
+        netDebtPosition: -2000,
+        activeCount: 1,
+        overdueCount: 0,
+        upcomingDebts: [debtDueIn4Days],
+        overdueDebts: [],
+      });
+      fixture.detectChanges();
+
+      expect(component.debtReminderBanner).toBeNull();
+      expect(component.showDebtBanner).toBeFalse();
+      expect(fixture.nativeElement.querySelector('#debt-reminder-banner')).toBeNull();
+    });
+
+    it('renders red banner when there is an overdue debt', () => {
+      const overdueDebt: DebtDto = {
+        id: 'd-overdue',
+        counterpartyName: 'Anil',
+        debtType: 'OWED_TO_ME',
+        amount: 3400,
+        dueDate: '2026-09-07', // 1 day overdue relative to 2026-09-08
+        status: 'ACTIVE',
+        overdue: true,
+        createdAt: '2026-08-20T10:00:00Z',
+      };
+
+      component.updateDebtReminderBanner({
+        totalReceivable: 3400,
+        totalPayable: 0,
+        netDebtPosition: 3400,
+        activeCount: 1,
+        overdueCount: 1,
+        upcomingDebts: [],
+        overdueDebts: [overdueDebt],
+      });
+      fixture.detectChanges();
+
+      expect(component.showDebtBanner).toBeTrue();
+      expect(component.debtReminderBanner?.severity).toBe('danger');
+      expect(component.debtReminderBanner?.title).toContain('1 debt needs attention · ₹3,400 overdue');
+
+      const bannerEl = fixture.nativeElement.querySelector('#debt-reminder-banner');
+      expect(bannerEl).toBeTruthy();
+      expect(bannerEl.classList.contains('status-overdue')).toBeTrue();
+    });
+
+    it('renders combined red banner with plural count when both overdue and due soon debts exist', () => {
+      const overdueDebt: DebtDto = {
+        id: 'd-od',
+        counterpartyName: 'Anil',
+        debtType: 'OWED_TO_ME',
+        amount: 3400,
+        dueDate: '2026-09-05',
+        status: 'ACTIVE',
+        overdue: true,
+        createdAt: '2026-08-20T10:00:00Z',
+      };
+      const dueSoonDebt: DebtDto = {
+        id: 'd-ds',
+        counterpartyName: 'Kiran',
+        debtType: 'I_OWE',
+        amount: 1200,
+        dueDate: '2026-09-10', // 2 days away
+        status: 'ACTIVE',
+        overdue: false,
+        createdAt: '2026-08-25T10:00:00Z',
+      };
+
+      component.updateDebtReminderBanner({
+        totalReceivable: 3400,
+        totalPayable: 1200,
+        netDebtPosition: 2200,
+        activeCount: 2,
+        overdueCount: 1,
+        upcomingDebts: [dueSoonDebt],
+        overdueDebts: [overdueDebt],
+      });
+      fixture.detectChanges();
+
+      expect(component.debtReminderBanner?.severity).toBe('danger');
+      expect(component.debtReminderBanner?.title).toContain('2 debts need attention · ₹3,400 overdue');
+      expect(component.debtReminderBanner?.subtitle).toContain('1 overdue, 1 due within 3 days');
+    });
+
+    it('persists dismissal in localStorage for 24 hours and snoozes banner', () => {
+      const overdueDebt: DebtDto = {
+        id: 'd-od',
+        counterpartyName: 'Anil',
+        debtType: 'OWED_TO_ME',
+        amount: 3400,
+        dueDate: '2026-09-05',
+        status: 'ACTIVE',
+        overdue: true,
+        createdAt: '2026-08-20T10:00:00Z',
+      };
+
+      component.updateDebtReminderBanner({
+        totalReceivable: 3400,
+        totalPayable: 0,
+        netDebtPosition: 3400,
+        activeCount: 1,
+        overdueCount: 1,
+        upcomingDebts: [],
+        overdueDebts: [overdueDebt],
+      });
+      fixture.detectChanges();
+
+      const dismissBtn = fixture.nativeElement.querySelector('#btn-dismiss-debt-banner') as HTMLButtonElement;
+      expect(dismissBtn).toBeTruthy();
+
+      // Click dismiss
+      dismissBtn.click();
+      fixture.detectChanges();
+
+      expect(component.isDebtBannerDismissed).toBeTrue();
+      expect(component.showDebtBanner).toBeFalse();
+      expect(fixture.nativeElement.querySelector('#debt-reminder-banner')).toBeNull();
+
+      // Verify localStorage was written with current timestamp
+      const storedSnooze = localStorage.getItem('spendsense_debt_banner_snooze_ada-1');
+      expect(storedSnooze).toBeTruthy();
+      expect(Number(storedSnooze)).toBeGreaterThan(0);
+
+      // Re-evaluating loadDebtSummary while within 24 hours keeps banner hidden
+      debtServiceSpy.getSummary.and.returnValue(
+        of({
+          data: {
+            totalReceivable: 3400,
+            totalPayable: 0,
+            netDebtPosition: 3400,
+            activeCount: 1,
+            overdueCount: 1,
+            upcomingDebts: [],
+            overdueDebts: [overdueDebt],
+          },
+          error: null,
+          meta: null,
+        })
+      );
+      component.loadDebtSummary();
+      fixture.detectChanges();
+      expect(component.showDebtBanner).toBeFalse();
+
+      // When snooze expires after 24h (e.g. 25h ago)
+      const expiredTimestamp = Date.now() - 25 * 60 * 60 * 1000;
+      localStorage.setItem('spendsense_debt_banner_snooze_ada-1', String(expiredTimestamp));
+
+      component.loadDebtSummary();
+      fixture.detectChanges();
+      expect(component.showDebtBanner).toBeTrue();
+      expect(fixture.nativeElement.querySelector('#debt-reminder-banner')).toBeTruthy();
+    });
+
+    it('banner state reflects current debts and is unaffected by dashboard month changes', () => {
+      const overdueDebt: DebtDto = {
+        id: 'd-od',
+        counterpartyName: 'Anil',
+        debtType: 'OWED_TO_ME',
+        amount: 3400,
+        dueDate: '2026-09-05',
+        status: 'ACTIVE',
+        overdue: true,
+        createdAt: '2026-08-20T10:00:00Z',
+      };
+
+      component.updateDebtReminderBanner({
+        totalReceivable: 3400,
+        totalPayable: 0,
+        netDebtPosition: 3400,
+        activeCount: 1,
+        overdueCount: 1,
+        upcomingDebts: [],
+        overdueDebts: [overdueDebt],
+      });
+      fixture.detectChanges();
+
+      expect(component.showDebtBanner).toBeTrue();
+      const initialBannerTitle = component.debtReminderBanner?.title;
+
+      // User navigates month backwards and forwards on dashboard
+      component.changeMonth(-1);
+      fixture.detectChanges();
+      expect(component.showDebtBanner).toBeTrue();
+      expect(component.debtReminderBanner?.title).toBe(initialBannerTitle);
+
+      component.changeMonth(2);
+      fixture.detectChanges();
+      expect(component.showDebtBanner).toBeTrue();
+      expect(component.debtReminderBanner?.title).toBe(initialBannerTitle);
     });
   });
 });
