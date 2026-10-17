@@ -346,22 +346,26 @@ class DebtServiceTest {
         assertThat(candidates.get(0).id()).isEqualTo(txExactAndName.getId());
         assertThat(candidates.get(0).isTopMatch()).isTrue();
         assertThat(candidates.get(0).isStrongMatch()).isTrue();
+        assertThat(candidates.get(0).exactAmount()).isTrue();
         assertThat(candidates.get(0).matchReason()).contains("Exact amount and counterparty match");
 
         // Second should be exact amount (not strong match because no counterparty)
         assertThat(candidates.get(1).id()).isEqualTo(txExactAmount.getId());
         assertThat(candidates.get(1).isTopMatch()).isFalse();
         assertThat(candidates.get(1).isStrongMatch()).isFalse();
+        assertThat(candidates.get(1).exactAmount()).isTrue();
 
         // Third should be close amount + counterparty (not strong match because amount is not exact)
         assertThat(candidates.get(2).id()).isEqualTo(txCloseAmount.getId());
         assertThat(candidates.get(2).isTopMatch()).isFalse();
         assertThat(candidates.get(2).isStrongMatch()).isFalse();
+        assertThat(candidates.get(2).exactAmount()).isFalse();
 
         // Fourth should be generic candidate
         assertThat(candidates.get(3).id()).isEqualTo(txGeneric.getId());
         assertThat(candidates.get(3).isTopMatch()).isFalse();
         assertThat(candidates.get(3).isStrongMatch()).isFalse();
+        assertThat(candidates.get(3).exactAmount()).isFalse();
     }
 
     @Test

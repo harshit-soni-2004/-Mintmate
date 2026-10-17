@@ -288,6 +288,7 @@ describe('DebtsComponent', () => {
         transferDirection: null,
         isTopMatch: true,
         isStrongMatch: true,
+        exactAmount: true,
         matchReason: 'Exact amount and counterparty match',
         score: 10010,
       },
@@ -301,6 +302,7 @@ describe('DebtsComponent', () => {
         transferDirection: null,
         isTopMatch: false,
         isStrongMatch: false,
+        exactAmount: false,
         matchReason: 'Close amount match',
         score: 4008,
       },
@@ -345,6 +347,7 @@ describe('DebtsComponent', () => {
         transferDirection: null,
         isTopMatch: true,
         isStrongMatch: false,
+        exactAmount: true,
         matchReason: 'Exact amount match',
         score: 7510,
       },
@@ -358,6 +361,7 @@ describe('DebtsComponent', () => {
         transferDirection: null,
         isTopMatch: false,
         isStrongMatch: false,
+        exactAmount: false,
         matchReason: 'Recent candidate',
         score: 1008,
       },
@@ -466,6 +470,7 @@ describe('DebtsComponent', () => {
       transferDirection: null,
       isTopMatch: true,
       isStrongMatch: true,
+      exactAmount: true,
       matchReason: 'Exact amount and counterparty match',
       score: 10010,
     };
@@ -537,6 +542,7 @@ describe('DebtsComponent', () => {
         matchReason: 'Close amount and counterparty match',
         score: 5510,
         isStrongMatch: false,
+        exactAmount: false,
       };
       component.suggestionsByDebtId['debt-1'] = [nearCandidate];
       fixture.detectChanges();
@@ -554,6 +560,7 @@ describe('DebtsComponent', () => {
         matchReason: 'Counterparty name match',
         score: 3010,
         isStrongMatch: false,
+        exactAmount: false,
       };
       component.suggestionsByDebtId['debt-1'] = [counterpartyOnlyCandidate];
       fixture.detectChanges();

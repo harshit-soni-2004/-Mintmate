@@ -16,6 +16,7 @@ public record DebtCandidateTransactionDto(
         TransferDirection transferDirection,
         boolean isTopMatch,
         boolean isStrongMatch,
+        boolean exactAmount,
         String matchReason,
         int score
 ) {}

@@ -155,20 +155,13 @@ export class DebtsComponent implements OnInit, OnDestroy {
   }
 
   getTopSuggestion(debtId: string): DebtCandidateTransactionDto | undefined {
-    const debt = this.debts.find((d) => d.id === debtId);
-    if (!debt) {
-      return undefined;
-    }
     const list = this.suggestionsByDebtId[debtId];
     if (!list || list.length === 0) {
       return undefined;
     }
     const top = list[0];
-    // The suggestion notice card appears ONLY for exact-amount matches
-    if (Math.abs(Number(top.amount) - Number(debt.amount)) < 0.001) {
-      return top;
-    }
-    return undefined;
+    // Suggestion card appears ONLY for exact-amount matches returned by backend candidate DTO
+    return top.exactAmount ? top : undefined;
   }
 
   confirmAndLink(debt: DebtDto, candidate: DebtCandidateTransactionDto): void {

@@ -256,6 +256,7 @@ public class DebtService {
                     t.getTransferDirection(),
                     false,
                     isStrongMatch,
+                    exactAmount,
                     reason,
                     totalScore
             ));
@@ -278,6 +279,7 @@ public class DebtService {
                     top.transferDirection(),
                     true,
                     top.isStrongMatch(),
+                    top.exactAmount(),
                     top.matchReason(),
                     top.score()
             ));
