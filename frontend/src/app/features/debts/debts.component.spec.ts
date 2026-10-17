@@ -56,6 +56,8 @@ describe('DebtsComponent', () => {
       'getSummary',
       'create',
       'settle',
+      'linkTransaction',
+      'dismissCandidate',
       'cancel',
       'getCandidates',
     ], {
@@ -351,6 +353,81 @@ describe('DebtsComponent', () => {
       emptyBtn.click();
       fixture.detectChanges();
       expect(component.showCreateModal).toBeTrue();
+    });
+  });
+
+  describe('Part 3 Repayment Matching & Suggestion Actions', () => {
+    const candidate: DebtCandidateTransactionDto = {
+      id: 'tx-cand-1',
+      amount: 4500,
+      description: 'Transfer from Alice Sharma',
+      merchant: 'Alice',
+      transactionDate: '2026-10-15',
+      transactionType: 'INCOME',
+      transferDirection: null,
+      isTopMatch: true,
+      isStrongMatch: true,
+      matchReason: 'Exact amount and counterparty match',
+      score: 10010,
+    };
+
+    it('renders suggested match callout and settles active debt on Confirm & Link', () => {
+      component.suggestionsByDebtId['debt-1'] = [candidate];
+      fixture.detectChanges();
+
+      const callout = fixture.nativeElement.querySelector('#debt-suggestion-debt-1');
+      expect(callout).toBeTruthy();
+      expect(callout.textContent).toContain('Transfer from Alice Sharma');
+      expect(callout.textContent).toContain('Exact amount and counterparty match');
+
+      mockDebtService.settle.and.returnValue(of({
+        data: { ...mockDebts[0], status: 'SETTLED', linkedTransactionId: 'tx-cand-1' },
+        error: null,
+        meta: null,
+      }));
+
+      const confirmBtn = fixture.nativeElement.querySelector('#btn-confirm-link-debt-1');
+      expect(confirmBtn).toBeTruthy();
+      confirmBtn.click();
+
+      expect(mockDebtService.settle).toHaveBeenCalledWith('debt-1', { linkedTransactionId: 'tx-cand-1' });
+    });
+
+    it('calls dedicated linkTransaction endpoint when Confirm & Link is clicked for settled debt', () => {
+      const settledDebt: DebtDto = {
+        ...mockDebts[0],
+        id: 'debt-settled-1',
+        status: 'SETTLED',
+        settledAt: '2026-10-12T10:00:00Z',
+        linkedTransactionId: null,
+      };
+      component.debts = [settledDebt];
+      component.suggestionsByDebtId['debt-settled-1'] = [candidate];
+      fixture.detectChanges();
+
+      mockDebtService.linkTransaction.and.returnValue(of({
+        data: { ...settledDebt, linkedTransactionId: 'tx-cand-1' },
+        error: null,
+        meta: null,
+      }));
+
+      component.confirmAndLink(settledDebt, candidate);
+      expect(mockDebtService.linkTransaction).toHaveBeenCalledWith('debt-settled-1', { linkedTransactionId: 'tx-cand-1' });
+      expect(mockDebtService.settle).not.toHaveBeenCalled();
+    });
+
+    it('dismisses candidate when Not a match is clicked and removes it from view', () => {
+      component.suggestionsByDebtId['debt-1'] = [candidate];
+      fixture.detectChanges();
+
+      mockDebtService.dismissCandidate.and.returnValue(of({ data: null as any, error: null, meta: null }));
+
+      const dismissBtn = fixture.nativeElement.querySelector('#btn-dismiss-match-debt-1');
+      expect(dismissBtn).toBeTruthy();
+      dismissBtn.click();
+
+      expect(mockDebtService.dismissCandidate).toHaveBeenCalledWith('debt-1', 'tx-cand-1');
+      expect(component.suggestionsByDebtId['debt-1']).toEqual([]);
     });
   });
 });

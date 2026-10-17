@@ -93,6 +93,9 @@ export class DebtsComponent implements OnInit, OnDestroy {
     this.sub.unsubscribe();
   }
 
+  suggestionsByDebtId: Record<string, DebtCandidateTransactionDto[]> = {};
+  loadingSuggestions: Record<string, boolean> = {};
+
   loadData(showSpinner = true): void {
     if (showSpinner) {
       this.loading = true;
@@ -105,6 +108,12 @@ export class DebtsComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.debts = res.data ?? [];
         this.loading = false;
+        // Load candidates for active debts and settled debts without links
+        this.debts.forEach((d) => {
+          if (d.status === 'ACTIVE' || (d.status === 'SETTLED' && !d.linkedTransactionId)) {
+            this.loadSuggestionsForDebt(d.id);
+          }
+        });
       },
       error: (err) => {
         this.error = err.error?.message || 'Failed to load debts. Please try again.';
@@ -116,6 +125,59 @@ export class DebtsComponent implements OnInit, OnDestroy {
     this.debtService.getSummary().subscribe({
       next: (res) => {
         this.summary = res.data ?? null;
+      },
+    });
+  }
+
+  loadSuggestionsForDebt(debtId: string): void {
+    this.loadingSuggestions[debtId] = true;
+    this.debtService.getCandidates(debtId).subscribe({
+      next: (res) => {
+        this.suggestionsByDebtId[debtId] = res.data ?? [];
+        this.loadingSuggestions[debtId] = false;
+      },
+      error: () => {
+        this.suggestionsByDebtId[debtId] = [];
+        this.loadingSuggestions[debtId] = false;
+      },
+    });
+  }
+
+  getTopSuggestion(debtId: string): DebtCandidateTransactionDto | undefined {
+    const list = this.suggestionsByDebtId[debtId];
+    return list && list.length > 0 ? list[0] : undefined;
+  }
+
+  confirmAndLink(debt: DebtDto, candidate: DebtCandidateTransactionDto): void {
+    this.submitting = true;
+    const obs =
+      debt.status === 'SETTLED'
+        ? this.debtService.linkTransaction(debt.id, { linkedTransactionId: candidate.id })
+        : this.debtService.settle(debt.id, { linkedTransactionId: candidate.id });
+
+    obs.subscribe({
+      next: () => {
+        this.submitting = false;
+        this.loadData(false);
+      },
+      error: (err) => {
+        this.submitting = false;
+        this.error = err.error?.message || 'Failed to link transaction.';
+      },
+    });
+  }
+
+  dismissCandidate(debt: DebtDto, candidate: DebtCandidateTransactionDto): void {
+    this.debtService.dismissCandidate(debt.id, candidate.id).subscribe({
+      next: () => {
+        if (this.suggestionsByDebtId[debt.id]) {
+          this.suggestionsByDebtId[debt.id] = this.suggestionsByDebtId[debt.id].filter(
+            (c) => c.id !== candidate.id
+          );
+        }
+      },
+      error: (err) => {
+        this.error = err.error?.message || 'Failed to dismiss suggestion.';
       },
     });
   }

@@ -672,4 +672,31 @@ class StatementIngestionServiceTest {
         assertEquals(1, doc.getImportedCount());
         assertEquals(1, doc.getDuplicateCount());
     }
+
+    @Test
+    @DisplayName("Statement ingestion succeeds and completes even if debt repayment matching hook throws")
+    void testIngestStatement_SucceedsEvenIfDebtMatchingThrows() throws Exception {
+        FinancialDocument doc = createDocument(UUID.randomUUID(), DocumentAccountType.SAVINGS);
+        LocalDate date = LocalDate.of(2026, 3, 10);
+
+        TransactionCandidate row = createCandidate(
+                doc.getId(), 1, date, new BigDecimal("1500.00"), "Friend Repayment",
+                TransactionType.INCOME, SourceTransactionClassification.DEPOSIT, PaymentMethod.UPI, null);
+
+        setupDocumentExtraction(doc, List.of(row));
+        when(transactionRepository.findByUser_IdAndTransactionDateBetweenOrderByTransactionDateDescCreatedAtDesc(any(), any(), any()))
+                .thenReturn(List.of());
+
+        com.spendsense.debt.DebtService mockDebtService = mock(com.spendsense.debt.DebtService.class);
+        when(mockDebtService.evaluateSuggestionsAfterIngestion(any(), any()))
+                .thenThrow(new RuntimeException("Simulated matching error"));
+
+        ingestionService.setDebtService(mockDebtService);
+
+        StatementImportResult result = ingestionService.ingestDocument(doc.getId());
+
+        assertEquals(1, result.importedTransactions());
+        assertEquals(DocumentStatus.COMPLETED, doc.getStatus());
+        verify(mockDebtService).evaluateSuggestionsAfterIngestion(eq(testUser.getId()), any());
+    }
 }

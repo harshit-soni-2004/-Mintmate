@@ -39,6 +39,7 @@ public class DebtService {
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private final CurrentUser currentUser;
+    private final DebtMatchDismissalRepository dismissalRepository;
 
     public DebtService(
             DebtRepository debtRepository,
@@ -46,10 +47,22 @@ public class DebtService {
             UserRepository userRepository,
             CurrentUser currentUser
     ) {
+        this(debtRepository, transactionRepository, userRepository, currentUser, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public DebtService(
+            DebtRepository debtRepository,
+            TransactionRepository transactionRepository,
+            UserRepository userRepository,
+            CurrentUser currentUser,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) DebtMatchDismissalRepository dismissalRepository
+    ) {
         this.debtRepository = debtRepository;
         this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
         this.currentUser = currentUser;
+        this.dismissalRepository = dismissalRepository;
     }
 
     @Transactional
@@ -119,6 +132,8 @@ public class DebtService {
      * - Lookback: transactionDate >= createdAt date minus CREATED_AT_LOOKBACK_DAYS (never uses dueDate)
      * - Direction: OWED_TO_ME requires incoming credits (INCOME or TRANSFER IN); I_OWE requires outgoing debits (EXPENSE or TRANSFER OUT)
      * - Excludes transactions already linked to any debt
+     * - Excludes transactions dismissed by user for this debt
+     * - Settled-without-link debts: suggested only with counterparty text match OR within 60 days after settled_at
      * - Ranked by exact amount + counterparty > exact amount > close amount > recent date
      */
     @Transactional(readOnly = true)
@@ -127,15 +142,37 @@ public class DebtService {
         Debt debt = debtRepository.findByIdAndUserId(debtId, user.getId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "DEBT_NOT_FOUND", "Debt entry not found"));
 
+        return computeCandidates(user, debt);
+    }
+
+    public List<DebtCandidateTransactionDto> computeCandidates(User user, Debt debt) {
+        if (debt == null || debt.getStatus() == DebtStatus.CANCELLED) {
+            return Collections.emptyList();
+        }
+        if (debt.getStatus() == DebtStatus.SETTLED && debt.getLinkedTransaction() != null) {
+            return Collections.emptyList();
+        }
+
         LocalDate refDate = debt.getCreatedAt() != null
                 ? debt.getCreatedAt().atZone(IST_ZONE).toLocalDate()
                 : LocalDate.now(IST_ZONE);
         LocalDate earliestDate = refDate.minusDays(CREATED_AT_LOOKBACK_DAYS);
+        LocalDate settledDate = debt.getSettledAt() != null
+                ? debt.getSettledAt().atZone(IST_ZONE).toLocalDate()
+                : null;
 
         List<UUID> linkedIdsList = debtRepository.findLinkedTransactionIdsByUserId(user.getId());
         Set<UUID> linkedIds = new HashSet<>(linkedIdsList != null ? linkedIdsList : List.of());
         if (debt.getLinkedTransaction() != null) {
             linkedIds.remove(debt.getLinkedTransaction().getId());
+        }
+
+        Set<UUID> dismissedIds = new HashSet<>();
+        if (dismissalRepository != null) {
+            List<UUID> dismissed = dismissalRepository.findDismissedTransactionIdsByUserIdAndDebtId(user.getId(), debt.getId());
+            if (dismissed != null) {
+                dismissedIds.addAll(dismissed);
+            }
         }
 
         List<Transaction> rawCandidates;
@@ -148,6 +185,15 @@ public class DebtService {
         List<Transaction> eligible = rawCandidates.stream()
                 .filter(t -> t.getTransactionDate() != null && !t.getTransactionDate().isBefore(earliestDate))
                 .filter(t -> !linkedIds.contains(t.getId()))
+                .filter(t -> !dismissedIds.contains(t.getId()))
+                .filter(t -> {
+                    if (debt.getStatus() == DebtStatus.SETTLED && debt.getLinkedTransaction() == null) {
+                        boolean counterpartyMatch = matchesCounterparty(debt.getCounterpartyName(), t.getMerchant(), t.getDescription());
+                        boolean within60Days = settledDate != null && !t.getTransactionDate().isAfter(settledDate.plusDays(60));
+                        return counterpartyMatch || within60Days;
+                    }
+                    return true;
+                })
                 .toList();
 
         List<DebtCandidateTransactionDto> scoredCandidates = new ArrayList<>();
@@ -256,10 +302,10 @@ public class DebtService {
     }
 
     /**
-     * Settles a debt entry.
+     * Settles an active debt entry.
      * When linked to a transaction, reconciles without double-counting:
-     * - If OWED_TO_ME: Repayment credit is excluded from Income metrics (reclassified as refund/settlement)
-     * - If I_OWE: Repayment debit is reclassified to prevent inflating discretionary category budgets
+     * - If OWED_TO_ME: Repayment credit is excluded from Income metrics (reclassified as TRANSFER IN)
+     * - If I_OWE: Repayment debit is reclassified to prevent inflating discretionary category budgets (reclassified as TRANSFER OUT)
      */
     @Transactional
     public DebtDto settleDebt(UUID debtId, SettleDebtRequest settleRequest) {
@@ -268,10 +314,10 @@ public class DebtService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "DEBT_NOT_FOUND", "Debt entry not found"));
 
         if (debt.getStatus() == DebtStatus.SETTLED) {
-            if (debt.getLinkedTransaction() != null || settleRequest == null || settleRequest.linkedTransactionId() == null) {
-                return DebtDto.fromEntity(debt);
-            }
-            // Allow linking a settlement transaction to a debt that was previously settled without a link
+            throw new ApiException(HttpStatus.BAD_REQUEST, "DEBT_ALREADY_SETTLED", "Debt is already settled. Use the link endpoint to attach a transaction.");
+        }
+        if (debt.getStatus() == DebtStatus.CANCELLED) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "DEBT_CANCELLED", "Cannot settle a cancelled debt");
         }
 
         Transaction settlementTx = null;
@@ -283,36 +329,113 @@ public class DebtService {
                 throw new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Cannot link transaction belonging to another user");
             }
 
-            // Reconcile transaction to avoid double counting
-            if (debt.getDebtType() == DebtType.OWED_TO_ME) {
-                // Incoming repayment is not salary/income: tag as Tier 3 refund/repayment
-                settlementTx.setIncomeTier(IncomeTier.TIER_3_REFUND);
-                settlementTx.setCategory(TransactionCategory.OTHER);
-                // Also set transfer direction as IN if transferred
-                if (settlementTx.getTransactionType() == TransactionType.INCOME) {
-                    settlementTx.setTransactionType(TransactionType.TRANSFER);
-                    settlementTx.setTransferDirection(TransferDirection.IN);
-                }
-            } else {
-                // Outgoing repayment is debt settlement: assign OTHER category to protect category budgets
-                settlementTx.setCategory(TransactionCategory.OTHER);
-                if (settlementTx.getTransactionType() == TransactionType.EXPENSE) {
-                    settlementTx.setTransactionType(TransactionType.TRANSFER);
-                    settlementTx.setTransferDirection(TransferDirection.OUT);
-                }
-            }
-            transactionRepository.save(settlementTx);
+            reconcileSettlementTransaction(debt, settlementTx);
         }
 
-        if (debt.getStatus() != DebtStatus.SETTLED) {
-            debt.settle(settlementTx);
-        } else {
-            debt.setLinkedTransaction(settlementTx);
-        }
+        debt.settle(settlementTx);
         Debt updated = debtRepository.save(debt);
-        log.info("Settled/linked debt {} for user {}, linked tx: {}", debtId, user.getId(),
+        log.info("Settled debt {} for user {}, linked tx: {}", debtId, user.getId(),
                 settlementTx != null ? settlementTx.getId() : "none");
         return DebtDto.fromEntity(updated);
+    }
+
+    /**
+     * Dedicated link-only path for debts already marked settled without a transaction link.
+     * Reuses the existing TRANSFER reclassification.
+     */
+    @Transactional
+    public DebtDto linkTransactionToSettledDebt(UUID debtId, SettleDebtRequest request) {
+        User user = requireUser();
+        Debt debt = debtRepository.findByIdAndUserId(debtId, user.getId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "DEBT_NOT_FOUND", "Debt entry not found"));
+
+        if (debt.getStatus() != DebtStatus.SETTLED) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "DEBT_NOT_SETTLED", "Debt is not settled. Use settle endpoint to settle an active debt.");
+        }
+        if (debt.getLinkedTransaction() != null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "DEBT_ALREADY_LINKED", "Debt is already linked to a transaction");
+        }
+        if (request == null || request.linkedTransactionId() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "TRANSACTION_REQUIRED", "A transaction ID is required to link to a settled debt");
+        }
+
+        Transaction settlementTx = transactionRepository.findById(request.linkedTransactionId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "TRANSACTION_NOT_FOUND", "Settlement transaction not found"));
+
+        if (!settlementTx.getUser().getId().equals(user.getId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Cannot link transaction belonging to another user");
+        }
+
+        reconcileSettlementTransaction(debt, settlementTx);
+        debt.setLinkedTransaction(settlementTx);
+        Debt updated = debtRepository.save(debt);
+        log.info("Linked transaction {} to settled debt {} for user {}", settlementTx.getId(), debtId, user.getId());
+        return DebtDto.fromEntity(updated);
+    }
+
+    private void reconcileSettlementTransaction(Debt debt, Transaction settlementTx) {
+        if (debt.getDebtType() == DebtType.OWED_TO_ME) {
+            settlementTx.setIncomeTier(IncomeTier.TIER_3_REFUND);
+            settlementTx.setCategory(TransactionCategory.OTHER);
+            if (settlementTx.getTransactionType() == TransactionType.INCOME) {
+                settlementTx.setTransactionType(TransactionType.TRANSFER);
+                settlementTx.setTransferDirection(TransferDirection.IN);
+            }
+        } else {
+            settlementTx.setCategory(TransactionCategory.OTHER);
+            if (settlementTx.getTransactionType() == TransactionType.EXPENSE) {
+                settlementTx.setTransactionType(TransactionType.TRANSFER);
+                settlementTx.setTransferDirection(TransferDirection.OUT);
+            }
+        }
+        transactionRepository.save(settlementTx);
+    }
+
+    @Transactional
+    public void dismissCandidate(UUID debtId, UUID transactionId) {
+        User user = requireUser();
+        Debt debt = debtRepository.findByIdAndUserId(debtId, user.getId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "DEBT_NOT_FOUND", "Debt entry not found"));
+        Transaction tx = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "TRANSACTION_NOT_FOUND", "Transaction not found"));
+
+        if (!tx.getUser().getId().equals(user.getId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Cannot dismiss transaction belonging to another user");
+        }
+
+        if (dismissalRepository != null && !dismissalRepository.existsByUserIdAndDebtIdAndTransactionId(user.getId(), debtId, transactionId)) {
+            DebtMatchDismissal dismissal = new DebtMatchDismissal(user, debt, tx);
+            dismissalRepository.save(dismissal);
+            log.info("Persisted candidate dismissal for user {}, debt {}, tx {}", user.getId(), debtId, transactionId);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public int evaluateSuggestionsAfterIngestion(UUID userId, List<Transaction> importedTransactions) {
+        if (userId == null || importedTransactions == null || importedTransactions.isEmpty()) {
+            return 0;
+        }
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return 0;
+        }
+
+        List<Debt> candidateDebts = debtRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .filter(d -> d.getStatus() == DebtStatus.ACTIVE || (d.getStatus() == DebtStatus.SETTLED && d.getLinkedTransaction() == null))
+                .toList();
+
+        int suggestionsFound = 0;
+        for (Debt debt : candidateDebts) {
+            List<DebtCandidateTransactionDto> candidates = computeCandidates(user, debt);
+            if (!candidates.isEmpty()) {
+                suggestionsFound += candidates.size();
+            }
+        }
+
+        log.info("Evaluated debt suggestions after statement import for user {}: found {} candidate matches across {} eligible debts",
+                userId, suggestionsFound, candidateDebts.size());
+        return suggestionsFound;
     }
 
     @Transactional

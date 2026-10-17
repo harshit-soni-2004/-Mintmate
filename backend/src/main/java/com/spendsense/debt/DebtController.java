@@ -64,6 +64,22 @@ public class DebtController {
         return ResponseEntity.ok(ApiResponse.of(settled));
     }
 
+    @PostMapping("/{id}/link-transaction")
+    public ResponseEntity<ApiResponse<DebtDto>> linkTransactionToSettledDebt(
+            @PathVariable("id") UUID id,
+            @RequestBody SettleDebtRequest request) {
+        DebtDto linked = debtService.linkTransactionToSettledDebt(id, request);
+        return ResponseEntity.ok(ApiResponse.of(linked));
+    }
+
+    @PostMapping("/{id}/candidates/{transactionId}/dismiss")
+    public ResponseEntity<ApiResponse<Void>> dismissCandidate(
+            @PathVariable("id") UUID id,
+            @PathVariable("transactionId") UUID transactionId) {
+        debtService.dismissCandidate(id, transactionId);
+        return ResponseEntity.ok(ApiResponse.of(null));
+    }
+
     @PostMapping("/{id}/cancel")
     public ResponseEntity<ApiResponse<DebtDto>> cancelDebt(@PathVariable("id") UUID id) {
         DebtDto cancelled = debtService.cancelDebt(id);

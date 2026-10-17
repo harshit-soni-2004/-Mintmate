@@ -52,13 +52,16 @@ class DebtServiceTest {
     @Mock
     private CurrentUser currentUser;
 
+    @Mock
+    private DebtMatchDismissalRepository dismissalRepository;
+
     private DebtService debtService;
     private User testUser;
     private UUID userId;
 
     @BeforeEach
     void setUp() {
-        debtService = new DebtService(debtRepository, transactionRepository, userRepository, currentUser);
+        debtService = new DebtService(debtRepository, transactionRepository, userRepository, currentUser, dismissalRepository);
 
         testUser = new User("user@example.com", "hash", "User", "Asia/Kolkata");
         userId = testUser.getId();
@@ -386,5 +389,303 @@ class DebtServiceTest {
         assertThatThrownBy(() -> debtService.settleDebt(debtId, new SettleDebtRequest(missingTxId)))
                 .isInstanceOf(ApiException.class)
                 .satisfies(ex -> assertThat(((ApiException) ex).getStatus()).isEqualTo(HttpStatus.NOT_FOUND));
+    }
+
+    @Test
+    @DisplayName("Candidate transactions: no match returns empty list")
+    void testCandidateTransactions_NoMatch_ReturnsEmptyList() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Rohan", DebtType.OWED_TO_ME, new BigDecimal("1000.00"), null, null);
+        debt.setId(debtId);
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(debtRepository.findLinkedTransactionIdsByUserId(userId)).thenReturn(List.of());
+        when(dismissalRepository.findDismissedTransactionIdsByUserIdAndDebtId(userId, debtId)).thenReturn(List.of());
+        when(transactionRepository.findCandidateCreditsForDebt(eq(userId), any())).thenReturn(List.of());
+
+        List<DebtCandidateTransactionDto> candidates = debtService.getCandidateTransactions(debtId);
+        assertThat(candidates).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Candidate transactions: wrong direction - I_OWE queries debits and ignores credits")
+    void testCandidateTransactions_WrongDirection_IOweQueriesDebits() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Landlord", DebtType.I_OWE, new BigDecimal("15000.00"), null, null);
+        debt.setId(debtId);
+
+        Transaction debitTx = new Transaction(testUser, new BigDecimal("15000.00"), "Rent payment",
+                TransactionCategory.OTHER, TransactionType.EXPENSE, LocalDate.now(), "");
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(debtRepository.findLinkedTransactionIdsByUserId(userId)).thenReturn(List.of());
+        when(dismissalRepository.findDismissedTransactionIdsByUserIdAndDebtId(userId, debtId)).thenReturn(List.of());
+        when(transactionRepository.findCandidateDebitsForDebt(eq(userId), any())).thenReturn(List.of(debitTx));
+
+        List<DebtCandidateTransactionDto> candidates = debtService.getCandidateTransactions(debtId);
+
+        assertThat(candidates).hasSize(1);
+        assertThat(candidates.get(0).id()).isEqualTo(debitTx.getId());
+        verify(transactionRepository).findCandidateDebitsForDebt(eq(userId), any());
+        verify(transactionRepository, never()).findCandidateCreditsForDebt(any(), any());
+    }
+
+    @Test
+    @DisplayName("Candidate transactions: amount mismatch scores low and does not flag top match")
+    void testCandidateTransactions_AmountMismatch() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Priya", DebtType.OWED_TO_ME, new BigDecimal("5000.00"), null, null);
+        debt.setId(debtId);
+
+        Transaction txSmall = new Transaction(testUser, new BigDecimal("50.00"), "Tea",
+                TransactionCategory.OTHER, TransactionType.INCOME, LocalDate.now(), "");
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(debtRepository.findLinkedTransactionIdsByUserId(userId)).thenReturn(List.of());
+        when(dismissalRepository.findDismissedTransactionIdsByUserIdAndDebtId(userId, debtId)).thenReturn(List.of());
+        when(transactionRepository.findCandidateCreditsForDebt(eq(userId), any())).thenReturn(List.of(txSmall));
+
+        List<DebtCandidateTransactionDto> candidates = debtService.getCandidateTransactions(debtId);
+
+        assertThat(candidates).hasSize(1);
+        assertThat(candidates.get(0).isTopMatch()).isFalse();
+        assertThat(candidates.get(0).isStrongMatch()).isFalse();
+        assertThat(candidates.get(0).score()).isLessThan(3000);
+    }
+
+    @Test
+    @DisplayName("Candidate transactions: settled without link - within 60 days qualifies without name match")
+    void testCandidateTransactions_SettledWithoutLink_Within60DaysQualifies() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Arun Kumar", DebtType.OWED_TO_ME, new BigDecimal("2000.00"), null, null);
+        debt.setId(debtId);
+        debt.settle(null); // Settled without link
+
+        LocalDate settledDate = debt.getSettledAt().atZone(ZoneId.of("Asia/Kolkata")).toLocalDate();
+        LocalDate txDate = settledDate.plusDays(45); // Within 60 days
+        Transaction txWithin60Days = new Transaction(testUser, new BigDecimal("2000.00"), "Unrelated narration",
+                TransactionCategory.OTHER, TransactionType.INCOME, txDate, "");
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(debtRepository.findLinkedTransactionIdsByUserId(userId)).thenReturn(List.of());
+        when(dismissalRepository.findDismissedTransactionIdsByUserIdAndDebtId(userId, debtId)).thenReturn(List.of());
+        when(transactionRepository.findCandidateCreditsForDebt(eq(userId), any())).thenReturn(List.of(txWithin60Days));
+
+        List<DebtCandidateTransactionDto> candidates = debtService.getCandidateTransactions(debtId);
+
+        assertThat(candidates).hasSize(1);
+        assertThat(candidates.get(0).id()).isEqualTo(txWithin60Days.getId());
+    }
+
+    @Test
+    @DisplayName("Candidate transactions: settled without link - outside 60 days without name match is excluded")
+    void testCandidateTransactions_SettledWithoutLink_Outside60DaysWithoutNameMatchExcluded() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Arun Kumar", DebtType.OWED_TO_ME, new BigDecimal("2000.00"), null, null);
+        debt.setId(debtId);
+        debt.settle(null);
+
+        LocalDate settledDate = debt.getSettledAt().atZone(ZoneId.of("Asia/Kolkata")).toLocalDate();
+        LocalDate txDate = settledDate.plusDays(65); // Beyond 60 days, no name match
+        Transaction txLate = new Transaction(testUser, new BigDecimal("2000.00"), "Unrelated Narration",
+                TransactionCategory.OTHER, TransactionType.INCOME, txDate, "");
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(debtRepository.findLinkedTransactionIdsByUserId(userId)).thenReturn(List.of());
+        when(dismissalRepository.findDismissedTransactionIdsByUserIdAndDebtId(userId, debtId)).thenReturn(List.of());
+        when(transactionRepository.findCandidateCreditsForDebt(eq(userId), any())).thenReturn(List.of(txLate));
+
+        List<DebtCandidateTransactionDto> candidates = debtService.getCandidateTransactions(debtId);
+
+        assertThat(candidates).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Candidate transactions: settled without link - outside 60 days WITH name match qualifies")
+    void testCandidateTransactions_SettledWithoutLink_Outside60DaysWithNameMatchQualifies() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Arun Kumar", DebtType.OWED_TO_ME, new BigDecimal("2000.00"), null, null);
+        debt.setId(debtId);
+        debt.settle(null);
+
+        LocalDate settledDate = debt.getSettledAt().atZone(ZoneId.of("Asia/Kolkata")).toLocalDate();
+        LocalDate txDate = settledDate.plusDays(70); // Beyond 60 days, but counterparty matches
+        Transaction txLateWithMatch = new Transaction(testUser, new BigDecimal("2000.00"), "Transfer from Arun Kumar",
+                TransactionCategory.OTHER, TransactionType.INCOME, txDate, "");
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(debtRepository.findLinkedTransactionIdsByUserId(userId)).thenReturn(List.of());
+        when(dismissalRepository.findDismissedTransactionIdsByUserIdAndDebtId(userId, debtId)).thenReturn(List.of());
+        when(transactionRepository.findCandidateCreditsForDebt(eq(userId), any())).thenReturn(List.of(txLateWithMatch));
+
+        List<DebtCandidateTransactionDto> candidates = debtService.getCandidateTransactions(debtId);
+
+        assertThat(candidates).hasSize(1);
+        assertThat(candidates.get(0).id()).isEqualTo(txLateWithMatch.getId());
+    }
+
+    @Test
+    @DisplayName("Candidate transactions: dismissed transaction IDs are filtered out")
+    void testCandidateTransactions_ExcludesDismissedTransactions() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Arun", DebtType.OWED_TO_ME, new BigDecimal("2000.00"), null, null);
+        debt.setId(debtId);
+
+        Transaction txDismissed = new Transaction(testUser, new BigDecimal("2000.00"), "Arun repayment",
+                TransactionCategory.OTHER, TransactionType.INCOME, LocalDate.now(), "");
+        Transaction txActive = new Transaction(testUser, new BigDecimal("2000.00"), "Arun second try",
+                TransactionCategory.OTHER, TransactionType.INCOME, LocalDate.now(), "");
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(debtRepository.findLinkedTransactionIdsByUserId(userId)).thenReturn(List.of());
+        when(dismissalRepository.findDismissedTransactionIdsByUserIdAndDebtId(userId, debtId))
+                .thenReturn(List.of(txDismissed.getId()));
+        when(transactionRepository.findCandidateCreditsForDebt(eq(userId), any()))
+                .thenReturn(List.of(txDismissed, txActive));
+
+        List<DebtCandidateTransactionDto> candidates = debtService.getCandidateTransactions(debtId);
+
+        assertThat(candidates).hasSize(1);
+        assertThat(candidates.get(0).id()).isEqualTo(txActive.getId());
+    }
+
+    @Test
+    @DisplayName("Dismiss candidate persists dismissal entry")
+    void testDismissCandidate_PersistsDismissal() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Arun", DebtType.OWED_TO_ME, new BigDecimal("2000.00"), null, null);
+        debt.setId(debtId);
+
+        Transaction tx = new Transaction(testUser, new BigDecimal("2000.00"), "Wrong credit",
+                TransactionCategory.OTHER, TransactionType.INCOME, LocalDate.now(), "");
+        UUID txId = tx.getId();
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(transactionRepository.findById(txId)).thenReturn(Optional.of(tx));
+        when(dismissalRepository.existsByUserIdAndDebtIdAndTransactionId(userId, debtId, txId)).thenReturn(false);
+
+        debtService.dismissCandidate(debtId, txId);
+
+        verify(dismissalRepository).save(any(DebtMatchDismissal.class));
+    }
+
+    @Test
+    @DisplayName("Dismiss candidate rejects foreign transaction (user isolation)")
+    void testDismissCandidate_UserIsolation() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Arun", DebtType.OWED_TO_ME, new BigDecimal("2000.00"), null, null);
+        debt.setId(debtId);
+
+        User foreignUser = new User("other@example.com", "hash", "Other", "Asia/Kolkata");
+        Transaction foreignTx = new Transaction(foreignUser, new BigDecimal("2000.00"), "Foreign credit",
+                TransactionCategory.OTHER, TransactionType.INCOME, LocalDate.now(), "");
+        UUID txId = foreignTx.getId();
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(transactionRepository.findById(txId)).thenReturn(Optional.of(foreignTx));
+
+        assertThatThrownBy(() -> debtService.dismissCandidate(debtId, txId))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> assertThat(((ApiException) ex).getStatus()).isEqualTo(HttpStatus.FORBIDDEN));
+
+        verify(dismissalRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Settle debt throws BAD_REQUEST when called on already settled debt")
+    void testSettleDebt_RejectsAlreadySettledDebt() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Arun", DebtType.OWED_TO_ME, new BigDecimal("1000.00"), null, null);
+        debt.setId(debtId);
+        debt.settle(null);
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+
+        assertThatThrownBy(() -> debtService.settleDebt(debtId, null))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> {
+                    assertThat(((ApiException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+                    assertThat(((ApiException) ex).getCode()).isEqualTo("DEBT_ALREADY_SETTLED");
+                });
+    }
+
+    @Test
+    @DisplayName("Link transaction to settled debt: links transaction and reclassifies as TRANSFER")
+    void testLinkTransactionToSettledDebt_SuccessAndReclassification() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Kavita", DebtType.OWED_TO_ME, new BigDecimal("3000.00"), null, null);
+        debt.setId(debtId);
+        debt.settle(null);
+
+        Transaction tx = new Transaction(testUser, new BigDecimal("3000.00"), "Kavita repayment",
+                TransactionCategory.OTHER, TransactionType.INCOME, LocalDate.now(), "");
+        UUID txId = tx.getId();
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(transactionRepository.findById(txId)).thenReturn(Optional.of(tx));
+        when(debtRepository.save(any(Debt.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        DebtDto result = debtService.linkTransactionToSettledDebt(debtId, new SettleDebtRequest(txId));
+
+        assertThat(result.linkedTransactionId()).isEqualTo(txId);
+        assertThat(tx.getTransactionType()).isEqualTo(TransactionType.TRANSFER);
+        assertThat(tx.getTransferDirection()).isEqualTo(TransferDirection.IN);
+        assertThat(tx.getIncomeTier()).isEqualTo(IncomeTier.TIER_3_REFUND);
+        assertThat(tx.getCategory()).isEqualTo(TransactionCategory.OTHER);
+    }
+
+    @Test
+    @DisplayName("Link transaction to settled debt: rejects ACTIVE debt and already linked debt")
+    void testLinkTransactionToSettledDebt_RejectsActiveOrAlreadyLinked() {
+        UUID activeDebtId = UUID.randomUUID();
+        Debt activeDebt = new Debt(testUser, "Kavita", DebtType.OWED_TO_ME, new BigDecimal("3000.00"), null, null);
+        activeDebt.setId(activeDebtId);
+
+        when(debtRepository.findByIdAndUserId(activeDebtId, userId)).thenReturn(Optional.of(activeDebt));
+
+        assertThatThrownBy(() -> debtService.linkTransactionToSettledDebt(activeDebtId, new SettleDebtRequest(UUID.randomUUID())))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> {
+                    assertThat(((ApiException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+                    assertThat(((ApiException) ex).getCode()).isEqualTo("DEBT_NOT_SETTLED");
+                });
+
+        UUID linkedDebtId = UUID.randomUUID();
+        Debt alreadyLinkedDebt = new Debt(testUser, "Kavita", DebtType.OWED_TO_ME, new BigDecimal("3000.00"), null, null);
+        alreadyLinkedDebt.setId(linkedDebtId);
+        Transaction dummy = new Transaction(testUser, new BigDecimal("3000.00"), "Repayment",
+                TransactionCategory.OTHER, TransactionType.TRANSFER, LocalDate.now(), "");
+        alreadyLinkedDebt.settle(dummy);
+
+        when(debtRepository.findByIdAndUserId(linkedDebtId, userId)).thenReturn(Optional.of(alreadyLinkedDebt));
+
+        assertThatThrownBy(() -> debtService.linkTransactionToSettledDebt(linkedDebtId, new SettleDebtRequest(UUID.randomUUID())))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> {
+                    assertThat(((ApiException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+                    assertThat(((ApiException) ex).getCode()).isEqualTo("DEBT_ALREADY_LINKED");
+                });
+    }
+
+    @Test
+    @DisplayName("Link transaction to settled debt: rejects foreign user transaction")
+    void testLinkTransactionToSettledDebt_UserIsolation() {
+        UUID debtId = UUID.randomUUID();
+        Debt debt = new Debt(testUser, "Kavita", DebtType.OWED_TO_ME, new BigDecimal("3000.00"), null, null);
+        debt.setId(debtId);
+        debt.settle(null);
+
+        User foreignUser = new User("foreign@example.com", "hash", "Foreign", "Asia/Kolkata");
+        Transaction foreignTx = new Transaction(foreignUser, new BigDecimal("3000.00"), "Repayment",
+                TransactionCategory.OTHER, TransactionType.INCOME, LocalDate.now(), "");
+        UUID txId = foreignTx.getId();
+
+        when(debtRepository.findByIdAndUserId(debtId, userId)).thenReturn(Optional.of(debt));
+        when(transactionRepository.findById(txId)).thenReturn(Optional.of(foreignTx));
+
+        assertThatThrownBy(() -> debtService.linkTransactionToSettledDebt(debtId, new SettleDebtRequest(txId)))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> assertThat(((ApiException) ex).getStatus()).isEqualTo(HttpStatus.FORBIDDEN));
     }
 }

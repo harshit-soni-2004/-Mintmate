@@ -289,6 +289,39 @@
                 }
               </div>
             }
+
+            @if (getTopSuggestion(debt.id); as suggestion) {
+              <div class="suggested-match-box" [id]="'debt-suggestion-' + debt.id">
+                <div class="suggestion-header">
+                  <span class="suggestion-tag">💡 Suggested Match</span>
+                  <span class="suggestion-reason">{{ suggestion.matchReason }}</span>
+                </div>
+                <div class="suggestion-details">
+                  <span class="suggestion-desc">{{ suggestion.description || suggestion.merchant || 'Bank transaction' }}</span>
+                  <strong class="suggestion-amount">{{ suggestion.amount | currency:'INR':'symbol-narrow':'1.0-0' }}</strong>
+                  <span class="suggestion-date">· {{ suggestion.transactionDate | date:'mediumDate' }}</span>
+                </div>
+                <div class="suggestion-actions">
+                  <button
+                    type="button"
+                    class="btn-confirm-link"
+                    [id]="'btn-confirm-link-' + debt.id"
+                    [disabled]="submitting"
+                    (click)="confirmAndLink(debt, suggestion)"
+                  >
+                    Confirm &amp; Link
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-dismiss-match"
+                    [id]="'btn-dismiss-match-' + debt.id"
+                    (click)="dismissCandidate(debt, suggestion)"
+                  >
+                    Not a match
+                  </button>
+                </div>
+              </div>
+            }
           </div>
 
           <!-- Card Actions (Active Debts Only) -->

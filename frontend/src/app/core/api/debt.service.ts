@@ -53,6 +53,16 @@ export class DebtService {
     );
   }
 
+  linkTransaction(id: string, payload: SettleDebtRequest): Observable<ApiResponse<DebtDto>> {
+    return this.http.post<ApiResponse<DebtDto>>(`${this.url}/${id}/link-transaction`, payload).pipe(
+      tap(() => this.mutationSubject.next())
+    );
+  }
+
+  dismissCandidate(debtId: string, transactionId: string): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.url}/${debtId}/candidates/${transactionId}/dismiss`, {});
+  }
+
   cancel(id: string): Observable<ApiResponse<DebtDto>> {
     return this.http.post<ApiResponse<DebtDto>>(`${this.url}/${id}/cancel`, {}).pipe(
       tap(() => this.mutationSubject.next())
