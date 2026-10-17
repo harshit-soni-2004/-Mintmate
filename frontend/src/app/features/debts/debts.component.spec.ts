@@ -528,5 +528,39 @@ describe('DebtsComponent', () => {
       expect(mockDebtService.dismissCandidate).toHaveBeenCalledWith('debt-1', 'tx-cand-1');
       expect(component.suggestionsByDebtId['debt-1']).toEqual([]);
     });
+
+    it('does NOT render suggested match card for near-amount candidates', () => {
+      const nearCandidate: DebtCandidateTransactionDto = {
+        ...candidate,
+        id: 'tx-cand-near',
+        amount: 4400, // Near-amount (debt amount is 4500)
+        matchReason: 'Close amount and counterparty match',
+        score: 5510,
+        isStrongMatch: false,
+      };
+      component.suggestionsByDebtId['debt-1'] = [nearCandidate];
+      fixture.detectChanges();
+
+      const callout = fixture.nativeElement.querySelector('#debt-suggestion-debt-1');
+      expect(callout).toBeNull();
+      expect(component.getTopSuggestion('debt-1')).toBeUndefined();
+    });
+
+    it('does NOT render suggested match card for counterparty-only candidates without exact amount', () => {
+      const counterpartyOnlyCandidate: DebtCandidateTransactionDto = {
+        ...candidate,
+        id: 'tx-cand-cp',
+        amount: 1000, // Different amount (debt amount is 4500)
+        matchReason: 'Counterparty name match',
+        score: 3010,
+        isStrongMatch: false,
+      };
+      component.suggestionsByDebtId['debt-1'] = [counterpartyOnlyCandidate];
+      fixture.detectChanges();
+
+      const callout = fixture.nativeElement.querySelector('#debt-suggestion-debt-1');
+      expect(callout).toBeNull();
+      expect(component.getTopSuggestion('debt-1')).toBeUndefined();
+    });
   });
 });
