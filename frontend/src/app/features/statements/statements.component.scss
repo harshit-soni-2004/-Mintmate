@@ -819,8 +819,8 @@
 
 /* Common button and notice styles */
 .btn-primary {
-  background: var(--brand, #127457);
-  color: #ffffff;
+  background: var(--brand);
+  color: var(--color-primary-contrast);
   border: none;
   border-radius: var(--radius-sm, 6px);
   padding: 0.65rem 1.25rem;
@@ -830,7 +830,7 @@
   transition: background 0.15s ease;
 
   &:hover:not(:disabled) {
-    background: var(--brand-hover, #0e5b44);
+    background: var(--brand-hover);
   }
 
   &:disabled {
@@ -840,9 +840,9 @@
 }
 
 .btn-secondary {
-  background: var(--surface, #ffffff);
-  color: var(--brand, #127457);
-  border: 1px solid var(--brand, #127457);
+  background: var(--surface);
+  color: var(--color-text);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm, 6px);
   padding: 0.65rem 1.15rem;
   font-size: 0.875rem;
@@ -850,7 +850,7 @@
   cursor: pointer;
 
   &:hover {
-    background: rgba(18, 116, 87, 0.05);
+    background: var(--surface-muted);
   }
 }
 

@@ -701,16 +701,16 @@
 :host-context([data-theme="dark"]) {
   .mobile-header,
   .profile-drawer {
-    background: #121e1b;
+    background: var(--surface);
   }
 
   .mobile-nav {
-    background: rgba(18, 30, 27, 0.92);
-    border-top-color: rgba(255, 255, 255, 0.08);
+    background: var(--surface);
+    border-top-color: var(--border);
   }
 
   .nav-item.active,
   .mobile-nav-item.active {
-    color: #8be35a;
+    color: var(--color-primary);
   }
 }

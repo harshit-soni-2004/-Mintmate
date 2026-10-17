@@ -304,8 +304,8 @@
   font-weight: 600;
   border-radius: var(--radius-full);
   background: var(--color-primary);
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(7, 59, 53, 0.18);
+  color: var(--color-primary-contrast);
+  box-shadow: 0 4px 14px rgba(3, 98, 76, 0.18);
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 
   &:hover {
@@ -435,7 +435,7 @@
     }
 
     .cashflow-line {
-      stroke: #2d8c7d;
+      stroke: var(--color-secondary);
       transition: stroke 0.2s ease;
     }
 
@@ -454,10 +454,10 @@
     }
 
     .cashflow-cursor-dot {
-      fill: #8be35a;
-      stroke: #073b35;
+      fill: var(--color-accent);
+      stroke: var(--color-accent-contrast);
       stroke-width: 2;
-      filter: drop-shadow(0 2px 4px rgba(7, 59, 53, 0.25));
+      filter: drop-shadow(0 2px 4px rgba(3, 98, 76, 0.25));
     }
 
     /* Empty Month Notice */
@@ -1354,20 +1354,24 @@
           border-radius: 50%;
 
           &.intensity-none {
-            background: var(--surface-muted);
+            background: var(--intensity-none);
             border: 1px solid var(--border);
           }
           &.intensity-low {
-            background: rgba(45, 140, 125, 0.25);
+            background: var(--intensity-low);
+            border: 1px solid var(--intensity-low-border);
           }
           &.intensity-moderate {
-            background: rgba(45, 140, 125, 0.50);
+            background: var(--intensity-moderate);
+            border: 1px solid var(--intensity-moderate-border);
           }
           &.intensity-high {
-            background: rgba(45, 140, 125, 0.75);
+            background: var(--intensity-high);
+            border: 1px solid var(--intensity-high-border);
           }
           &.intensity-very-high {
-            background: #2d8c7d;
+            background: var(--intensity-very-high);
+            border: 1px solid var(--intensity-very-high-border);
           }
         }
       }
@@ -1445,29 +1449,29 @@
 
     /* Subtle Green Palette Intensities (Apple Health Style) */
     &.intensity-none {
-      background: var(--glass-surface-subtle);
+      background: var(--intensity-none);
       opacity: 0.88;
     }
 
     &.intensity-low {
-      background: rgba(45, 140, 125, 0.08);
-      border-color: rgba(45, 140, 125, 0.2);
+      background: var(--intensity-low);
+      border-color: var(--intensity-low-border);
       .day-spent {
         color: var(--color-text);
       }
     }
 
     &.intensity-moderate {
-      background: rgba(45, 140, 125, 0.16);
-      border-color: rgba(45, 140, 125, 0.3);
+      background: var(--intensity-moderate);
+      border-color: var(--intensity-moderate-border);
       .day-spent {
         color: var(--color-text);
       }
     }
 
     &.intensity-high {
-      background: rgba(45, 140, 125, 0.26);
-      border-color: rgba(45, 140, 125, 0.42);
+      background: var(--intensity-high);
+      border-color: var(--intensity-high-border);
       .day-spent {
         color: var(--color-text);
         font-weight: 700;
@@ -1475,8 +1479,8 @@
     }
 
     &.intensity-very-high {
-      background: rgba(45, 140, 125, 0.38);
-      border-color: rgba(45, 140, 125, 0.6);
+      background: var(--intensity-very-high);
+      border-color: var(--intensity-very-high-border);
       .day-spent {
         color: var(--color-text);
         font-weight: 700;
@@ -1493,7 +1497,7 @@
     &.is-today {
       .day-num {
         background: var(--color-primary);
-        color: #ffffff;
+        color: var(--color-primary-contrast);
         width: 18px;
         height: 18px;
         border-radius: 50%;
@@ -1505,8 +1509,15 @@
     }
 
     &.is-selected {
-      border-color: var(--color-primary);
-      box-shadow: 0 0 0 2px rgba(45, 140, 125, 0.25);
+      background: var(--color-accent) !important;
+      border-color: var(--color-accent) !important;
+      box-shadow: 0 0 0 2px var(--color-accent);
+
+      .day-num,
+      .day-spent {
+        color: var(--color-accent-contrast) !important;
+        font-weight: 700;
+      }
     }
 
     &:hover:not(.not-current) {
@@ -1865,16 +1876,16 @@
           background: transparent;
         }
         &.intensity-low {
-          background: rgba(45, 140, 125, 0.4);
+          background: var(--intensity-low-border);
         }
         &.intensity-moderate {
-          background: rgba(45, 140, 125, 0.65);
+          background: var(--intensity-moderate-border);
         }
         &.intensity-high {
-          background: rgba(45, 140, 125, 0.85);
+          background: var(--intensity-high);
         }
         &.intensity-very-high {
-          background: #2d8c7d;
+          background: var(--intensity-very-high);
         }
       }
     }

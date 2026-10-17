@@ -122,8 +122,8 @@
 
     .btn-apply {
       padding: 0.35rem 0.75rem;
-      background: var(--brand, #16a34a);
-      color: #ffffff;
+      background: var(--brand);
+      color: var(--color-primary-contrast);
       border: none;
       border-radius: var(--radius-xs, 6px);
       font-size: 0.825rem;
@@ -403,12 +403,12 @@
         min-width: 2px;
         max-width: 24px;
         border-radius: 3px 3px 0 0;
-        background: var(--brand, #16a34a);
+        background: var(--brand);
         opacity: 0.85;
         transition: opacity 0.18s ease, transform 0.18s ease;
 
         &.expense-fill {
-          background: #10b981;
+          background: var(--color-secondary);
         }
       }
 

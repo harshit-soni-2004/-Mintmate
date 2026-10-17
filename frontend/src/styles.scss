@@ -1,46 +1,70 @@
+:root {
+  /* ========================================================================
+     SpendSense Palette Tokens
+     ======================================================================== */
+  --palette-rich-black: #021B1A;
+  --palette-dark-green: #032221;
+  --palette-bangladesh-green: #03624C;
+  --palette-mountain-meadow: #2CC295;
+  --palette-caribbean-green: #00DF81;
+  --palette-anti-flash-white: #F1F7F6;
+  --palette-pine: #06302B;
+  --palette-basil: #08453A;
+  --palette-forest: #095544;
+  --palette-frog: #17876D;
+  --palette-mint: #2FA98C;
+  --palette-stone: #707D7D;
+  --palette-pistachio: #AACBC4;
+  --palette-lime: #C6F963;
+  --palette-deep-slate-green: #345C55;
+}
+
 :root,
 [data-theme="light"] {
   color-scheme: light;
   /* ========================================================================
-     Mintmate Unified Liquid Glass Design System - Light
+     SpendSense Unified Liquid Glass Design System - Light
+     Canvas: Mint/Aqua gradient from Anti-Flash White, Pistachio and Mint
+     Primary buttons & key figures: Bangladesh Green (#03624C) with white text
+     Glass tints: Pistachio / White at low alpha
      ======================================================================== */
-  --color-primary: #073b35;          /* Deep forest green */
-  --color-primary-hover: #042723;
-  --color-primary-contrast: #ffffff; /* High contrast text for primary buttons in light mode */
-  --color-secondary: #168575;        /* Target Brand accent */
-  --color-accent: #8be35a;           /* Soft lime-green */
-  --color-accent-soft: rgba(139, 227, 90, 0.18);
-  --color-accent-contrast: #073b35;
-  --color-background: #dceae4;       /* Deeper pale mint-grey base canvas */
-  --color-surface: #ffffff;          /* Target Card surfaces */
-  --color-surface-elevated: #ffffff;
-  --color-surface-muted: #d5e5dd;
-  --color-surface-subtle: #e5f0ea;
-  --color-text: #14251f;             /* Target Primary text */
-  --color-text-secondary: #475852;   /* WCAG AA (5.4:1) high contrast secondary text */
-  --color-text-muted: #4e5f59;       /* WCAG AA (4.8:1) contrast for subtitles & baseline labels */
-  --color-border: rgba(20, 80, 65, 0.12); /* Subtle green-tinted hairline outer edge */
-  --color-border-subtle: rgba(20, 80, 65, 0.08);
+  --color-primary: var(--palette-bangladesh-green); /* Bangladesh Green #03624C */
+  --color-primary-hover: var(--palette-basil);      /* Basil #08453A */
+  --color-primary-contrast: #ffffff;                /* 7.35:1 contrast on Bangladesh Green */
+  --color-secondary: var(--palette-frog);           /* Frog #17876D */
+  --color-accent: var(--palette-lime);              /* Lime #C6F963 */
+  --color-accent-soft: rgba(198, 249, 99, 0.22);
+  --color-accent-contrast: var(--palette-rich-black); /* Rich Black #021B1A - 14.59:1 on Lime */
+  --color-background: var(--palette-anti-flash-white);
+  --color-surface: rgba(170, 203, 196, 0.35);      /* Pistachio tint */
+  --color-surface-elevated: rgba(241, 247, 246, 0.65);
+  --color-surface-muted: rgba(170, 203, 196, 0.25);
+  --color-surface-subtle: rgba(170, 203, 196, 0.16);
+  --color-text: var(--palette-rich-black);           /* Rich Black #021B1A - 16.50:1 on Anti-Flash White */
+  --color-text-secondary: var(--palette-basil);      /* Basil #08453A - 10.08:1 on Anti-Flash White */
+  --color-text-muted: var(--palette-deep-slate-green); /* Deep Slate Green #345C55 - 6.90:1 on Anti-Flash White */
+  --color-border: rgba(3, 98, 76, 0.16);
+  --color-border-subtle: rgba(3, 98, 76, 0.08);
 
   /* Liquid Glass System Tokens - Light Mode */
-  --glass-surface: rgba(255, 255, 255, 0.58);
-  --glass-surface-elevated: rgba(255, 255, 255, 0.66);
-  --glass-surface-subtle: rgba(255, 255, 255, 0.45);
-  --glass-border: rgba(20, 80, 65, 0.12);
-  --glass-border-subtle: rgba(20, 80, 65, 0.08);
-  --glass-highlight: linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.85) 50%, rgba(255, 255, 255, 0.15) 100%);
-  --glass-blur: blur(20px) saturate(145%);
-  --glass-shadow: 0 8px 28px rgba(16, 70, 58, 0.10), 0 1px 2px rgba(16, 70, 58, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.90);
-  --glass-shadow-elevated: 0 12px 36px rgba(16, 70, 58, 0.12), 0 2px 4px rgba(16, 70, 58, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
-  --ambient-gradient: radial-gradient(1300px circle at 15% 15%, rgba(22, 133, 117, 0.28) 0%, rgba(22, 133, 117, 0.08) 55%, transparent 75%), radial-gradient(1400px circle at 85% 20%, rgba(139, 227, 90, 0.24) 0%, rgba(139, 227, 90, 0.06) 50%, transparent 75%), radial-gradient(1100px circle at 50% 85%, rgba(45, 140, 125, 0.22) 0%, transparent 70%);
+  --glass-surface: rgba(241, 247, 246, 0.36);
+  --glass-surface-elevated: rgba(241, 247, 246, 0.42);
+  --glass-surface-subtle: rgba(170, 203, 196, 0.25);
+  --glass-border: rgba(3, 98, 76, 0.14);
+  --glass-border-subtle: rgba(3, 98, 76, 0.08);
+  --glass-highlight: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.2) 40%, rgba(3, 98, 76, 0.05) 100%);
+  --glass-blur: blur(28px) saturate(155%);
+  --glass-shadow: 0 10px 30px rgba(3, 98, 76, 0.08), 0 1px 3px rgba(3, 98, 76, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --glass-shadow-elevated: 0 16px 40px rgba(3, 98, 76, 0.12), 0 2px 6px rgba(3, 98, 76, 0.06), inset 0 1px 0 rgba(255, 255, 255, 1);
+  --ambient-gradient: radial-gradient(1200px circle at 15% 15%, rgba(47, 169, 140, 0.45) 0%, rgba(47, 169, 140, 0.12) 55%, transparent 75%), radial-gradient(1300px circle at 85% 20%, rgba(44, 194, 149, 0.40) 0%, rgba(44, 194, 149, 0.10) 50%, transparent 75%), radial-gradient(1100px circle at 50% 85%, rgba(170, 203, 196, 0.50) 0%, transparent 70%);
 
   /* Semantic State Colors */
-  --success: #16845b;                /* Target Positive financial values */
-  --success-soft: #e5f6ee;
+  --success: #16845b;                /* Positive financial values */
+  --success-soft: rgba(22, 132, 91, 0.15);
   --warning: #b7791f;
-  --warning-soft: #fef3c7;
-  --danger: #d1495b;                 /* Target Negative financial values */
-  --danger-soft: #fde8e8;
+  --warning-soft: rgba(183, 121, 31, 0.15);
+  --danger: #d1495b;                 /* Negative financial values */
+  --danger-soft: rgba(209, 73, 91, 0.15);
 
   /* Aliases for Components */
   --background: var(--color-background);
@@ -60,33 +84,45 @@
   --muted-light: var(--color-text-muted);
   --border: var(--color-border);
   --line: var(--color-border);
-  --accent: var(--color-primary);
-  --accent-hover: var(--color-primary-hover);
-  --accent-soft: rgba(7, 59, 53, 0.08);
-  --brand: var(--color-secondary);
-  --brand-hover: #11685c;
-  --brand-soft: rgba(22, 133, 117, 0.12);
-  --brand-dark: #073b35;
+  --accent: var(--color-accent);
+  --accent-hover: #b0e64c;
+  --accent-soft: var(--color-accent-soft);
+  --brand: var(--color-primary);      /* Bangladesh Green */
+  --brand-hover: var(--color-primary-hover);
+  --brand-soft: rgba(3, 98, 76, 0.12);
+  --brand-dark: var(--palette-rich-black);
   --lime-accent: var(--color-accent);
   --lime-soft: var(--color-accent-soft);
+  --lime-contrast: var(--color-accent-contrast);
 
-  --input-bg: rgba(255, 255, 255, 0.95);
-  --input-border: #dcd6c8;
-  --input-border-hover: #073b35;
-  --input-bg-error: #fff5f5;
+  --input-bg: rgba(241, 247, 246, 0.90);
+  --input-border: rgba(3, 98, 76, 0.22);
+  --input-border-hover: var(--color-primary);
+  --input-bg-error: rgba(253, 232, 232, 0.90);
   --input-border-error: var(--danger);
   --input-focus-error-shadow: 0 0 0 3px rgba(209, 73, 91, 0.18);
-  --income: #16845b;
-  --income-soft: #e5f6ee;
-  --expense: #d1495b;
-  --expense-soft: #fde8e8;
+  --income: var(--success);
+  --income-soft: var(--success-soft);
+  --expense: var(--danger);
+  --expense-soft: var(--danger-soft);
+
+  /* Spending Calendar Intensity Tokens - Light */
+  --intensity-none: var(--glass-surface-subtle);
+  --intensity-low: rgba(47, 169, 140, 0.14);
+  --intensity-low-border: rgba(47, 169, 140, 0.25);
+  --intensity-moderate: rgba(47, 169, 140, 0.28);
+  --intensity-moderate-border: rgba(47, 169, 140, 0.40);
+  --intensity-high: rgba(3, 98, 76, 0.38);
+  --intensity-high-border: rgba(3, 98, 76, 0.55);
+  --intensity-very-high: rgba(3, 98, 76, 0.65);
+  --intensity-very-high-border: var(--palette-bangladesh-green);
 
   /* Minimal Category Colors */
   --food: #d97706;
   --travel: #2563eb;
   --shopping: #7c3aed;
-  --bills: #0d9488;
-  --other: #64748b;
+  --bills: #03624C;
+  --other: #345C55;
 
   /* Apple-like Radii */
   --radius-xs: 0.375rem;
@@ -98,11 +134,11 @@
   --radius-full: 9999px;
 
   /* Apple-like Calm Ambient Shadows with Subtle Card Depth */
-  --shadow-xs: 0 1px 2px rgba(16, 70, 58, 0.05);
-  --shadow-sm: 0 2px 8px rgba(16, 70, 58, 0.07);
-  --shadow: 0 8px 28px rgba(16, 70, 58, 0.10), 0 1px 2px rgba(16, 70, 58, 0.08);
-  --shadow-lg: 0 18px 40px rgba(16, 70, 58, 0.14);
-  --shadow-focus: 0 0 0 3px rgba(45, 140, 125, 0.25);
+  --shadow-xs: 0 1px 2px rgba(3, 98, 76, 0.05);
+  --shadow-sm: 0 2px 8px rgba(3, 98, 76, 0.07);
+  --shadow: 0 8px 28px rgba(3, 98, 76, 0.10), 0 1px 2px rgba(3, 98, 76, 0.08);
+  --shadow-lg: 0 18px 40px rgba(3, 98, 76, 0.14);
+  --shadow-focus: 0 0 0 3px rgba(3, 98, 76, 0.25);
 
   /* Typography */
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
@@ -111,40 +147,44 @@
 }
 
 /* ========================================================================
-   Mintmate Dark Mode - Liquid Glass Forest Charcoal
+   SpendSense Unified Liquid Glass Design System - Dark
+   Canvas: Rich Black (#021B1A) / Dark Green (#032221)
+   Primary buttons & key figures: Caribbean Green (#00DF81) with dark text
+   Highlight: Lime (#C6F963) with dark text (#021B1A)
+   Glass tints: Pine (#06302B) / Basil (#08453A) / Forest (#095544)
    ======================================================================== */
 [data-theme="dark"] {
   color-scheme: dark;
-  --color-background: #09110f;       /* Deep dark green-black */
-  --color-surface: #121e1b;          /* Solid dark surface */
-  --color-surface-elevated: #182824;
-  --color-surface-muted: #152420;
-  --color-surface-subtle: #162622;
-  --color-text: #f2f5f3;
-  --color-text-secondary: #7e8e88;
-  --color-text-muted: #586862;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-subtle: rgba(255, 255, 255, 0.04);
+  --color-background: var(--palette-rich-black);   /* Rich Black #021B1A */
+  --color-surface: rgba(6, 48, 43, 0.32);          /* Pine tint at low alpha */
+  --color-surface-elevated: rgba(8, 69, 58, 0.38); /* Basil tint */
+  --color-surface-muted: rgba(6, 48, 43, 0.22);
+  --color-surface-subtle: rgba(6, 48, 43, 0.16);
+  --color-text: var(--palette-anti-flash-white);   /* Anti-Flash White #F1F7F6 - 16.50:1 on Rich Black */
+  --color-text-secondary: var(--palette-pistachio);/* Pistachio #AACBC4 - 10.26:1 on Rich Black */
+  --color-text-muted: #9EB3AE;                     /* Adjusted Stone/Pistachio for WCAG AA compliance - 8.10:1 */
+  --color-border: rgba(170, 203, 196, 0.16);
+  --color-border-subtle: rgba(170, 203, 196, 0.08);
 
-  --color-primary: #8be35a;          /* Soft lime highlight in dark mode */
-  --color-primary-hover: #a3eb7a;
-  --color-primary-contrast: #073b35; /* Readable dark forest text on lime in dark mode */
-  --color-secondary: #2d8c7d;
-  --color-accent: #8be35a;
-  --color-accent-soft: rgba(139, 227, 90, 0.14);
-  --color-accent-contrast: #073b35;
+  --color-primary: var(--palette-caribbean-green); /* Caribbean Green #00DF81 */
+  --color-primary-hover: var(--palette-mountain-meadow); /* Mountain Meadow #2CC295 */
+  --color-primary-contrast: var(--palette-rich-black);   /* Rich Black - 10.11:1 on Caribbean Green */
+  --color-secondary: var(--palette-mint);          /* Mint #2FA98C */
+  --color-accent: var(--palette-lime);             /* Lime #C6F963 highlight */
+  --color-accent-soft: rgba(198, 249, 99, 0.18);
+  --color-accent-contrast: var(--palette-rich-black); /* Rich Black - 14.59:1 on Lime */
 
   /* Liquid Glass System Tokens - Dark Mode */
-  --glass-surface: rgba(18, 35, 30, 0.68);
-  --glass-surface-elevated: rgba(24, 42, 36, 0.76);
-  --glass-surface-subtle: rgba(15, 28, 25, 0.58);
-  --glass-border: rgba(190, 235, 215, 0.15);
-  --glass-border-subtle: rgba(190, 235, 215, 0.08);
-  --glass-highlight: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 100%);
-  --glass-blur: blur(20px) saturate(170%);
-  --glass-shadow: 0 10px 32px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.18), inset 0 0 20px rgba(22, 133, 117, 0.05);
-  --glass-shadow-elevated: 0 20px 48px rgba(0, 0, 0, 0.55), inset 0 1px 1.5px rgba(255, 255, 255, 0.24), inset 0 0 28px rgba(22, 133, 117, 0.08);
-  --ambient-gradient: radial-gradient(1200px circle at 15% 12%, rgba(22, 133, 117, 0.24), transparent 50%), radial-gradient(1300px circle at 85% 25%, rgba(139, 227, 90, 0.12), transparent 45%), radial-gradient(1100px circle at 40% 85%, rgba(17, 104, 92, 0.18), transparent 50%);
+  --glass-surface: rgba(6, 48, 43, 0.32);
+  --glass-surface-elevated: rgba(8, 69, 58, 0.38);
+  --glass-surface-subtle: rgba(6, 48, 43, 0.20);
+  --glass-border: rgba(170, 203, 196, 0.16);
+  --glass-border-subtle: rgba(170, 203, 196, 0.08);
+  --glass-highlight: linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.04) 40%, rgba(0, 223, 129, 0.08) 100%);
+  --glass-blur: blur(28px) saturate(160%);
+  --glass-shadow: 0 10px 32px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.22), 0 0 20px rgba(0, 223, 129, 0.04);
+  --glass-shadow-elevated: 0 20px 48px rgba(0, 0, 0, 0.65), inset 0 1px 1.5px rgba(255, 255, 255, 0.28), 0 0 28px rgba(0, 223, 129, 0.07);
+  --ambient-gradient: radial-gradient(1200px circle at 15% 12%, rgba(3, 98, 76, 0.35) 0%, transparent 55%), radial-gradient(1300px circle at 85% 25%, rgba(23, 135, 109, 0.30) 0%, transparent 50%), radial-gradient(1100px circle at 40% 85%, rgba(47, 169, 140, 0.25) 0%, transparent 55%);
 
   --background: var(--color-background);
   --canvas: var(--color-background);
@@ -164,32 +204,46 @@
   --border: var(--color-border);
   --line: var(--color-border);
   --accent: var(--color-accent);
-  --accent-hover: var(--color-primary-hover);
+  --accent-hover: #d2fb7d;
   --accent-soft: var(--color-accent-soft);
-  --brand: #2d8c7d;
-  --brand-hover: #34d399;
-  --brand-soft: rgba(45, 140, 125, 0.18);
-  --brand-dark: #073b35;
+  --brand: var(--color-primary);      /* Caribbean Green */
+  --brand-hover: var(--color-primary-hover);
+  --brand-soft: rgba(0, 223, 129, 0.14);
+  --brand-dark: var(--palette-bangladesh-green);
+  --lime-accent: var(--color-accent);
+  --lime-soft: var(--color-accent-soft);
+  --lime-contrast: var(--color-accent-contrast);
 
-  --input-bg: rgba(21, 36, 32, 0.95);
-  --input-border: rgba(255, 255, 255, 0.12);
-  --input-border-hover: #8be35a;
-  --input-bg-error: rgba(248, 113, 113, 0.12);
+  --input-bg: rgba(6, 48, 43, 0.88);
+  --input-border: rgba(170, 203, 196, 0.22);
+  --input-border-hover: var(--color-primary);
+  --input-bg-error: rgba(248, 113, 113, 0.16);
   --input-border-error: var(--danger);
   --input-focus-error-shadow: 0 0 0 3px rgba(248, 113, 113, 0.28);
 
   --success: #34d399;
-  --success-soft: rgba(52, 211, 153, 0.15);
+  --success-soft: rgba(52, 211, 153, 0.16);
   --warning: #fbbf24;
-  --warning-soft: rgba(251, 191, 36, 0.15);
+  --warning-soft: rgba(251, 191, 36, 0.16);
   --danger: #f87171;
-  --danger-soft: rgba(248, 113, 113, 0.15);
+  --danger-soft: rgba(248, 113, 113, 0.16);
 
-  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 3px 10px rgba(0, 0, 0, 0.4);
-  --shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 18px 42px rgba(0, 0, 0, 0.65);
-  --shadow-focus: 0 0 0 3px rgba(139, 227, 90, 0.28);
+  /* Spending Calendar Intensity Tokens - Dark */
+  --intensity-none: var(--glass-surface-subtle);
+  --intensity-low: rgba(0, 223, 129, 0.12);
+  --intensity-low-border: rgba(0, 223, 129, 0.22);
+  --intensity-moderate: rgba(0, 223, 129, 0.24);
+  --intensity-moderate-border: rgba(0, 223, 129, 0.38);
+  --intensity-high: rgba(0, 223, 129, 0.38);
+  --intensity-high-border: rgba(0, 223, 129, 0.55);
+  --intensity-very-high: rgba(0, 223, 129, 0.60);
+  --intensity-very-high-border: var(--palette-caribbean-green);
+
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 3px 10px rgba(0, 0, 0, 0.45);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 18px 42px rgba(0, 0, 0, 0.70);
+  --shadow-focus: 0 0 0 3px rgba(0, 223, 129, 0.28);
 }
 
 *, *::before, *::after {
@@ -570,13 +624,14 @@ p {
 
 .btn-primary {
   background: var(--brand);
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(18, 116, 87, 0.22);
+  color: var(--color-primary-contrast);
+  box-shadow: 0 4px 14px rgba(3, 98, 76, 0.22);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--brand-hover);
-  box-shadow: 0 6px 18px rgba(18, 116, 87, 0.3);
+  color: var(--color-primary-contrast);
+  box-shadow: 0 6px 18px rgba(3, 98, 76, 0.3);
   text-decoration: none;
   transform: translateY(-1px);
 }
