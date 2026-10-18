@@ -151,6 +151,8 @@ class DebtServiceTest {
 
         assertThat(settled.status()).isEqualTo(DebtStatus.SETTLED);
         assertThat(settled.linkedTransactionId()).isEqualTo(txId);
+        assertThat(settled.linkedTransactionAmount()).isEqualByComparingTo(new BigDecimal("2000.00"));
+        assertThat(settled.linkedTransactionDate()).isEqualTo(LocalDate.now());
 
         // Crucial: Incoming credit transaction must be reclassified so it doesn't count as salary/income!
         assertThat(incomingTx.getIncomeTier()).isEqualTo(IncomeTier.TIER_3_REFUND);
@@ -718,6 +720,8 @@ class DebtServiceTest {
 
         assertThat(result.status()).isEqualTo(DebtStatus.SETTLED);
         assertThat(result.linkedTransactionId()).isNotNull();
+        assertThat(result.linkedTransactionAmount()).isEqualByComparingTo(new BigDecimal("2500.00"));
+        assertThat(result.linkedTransactionDate()).isEqualTo(LocalDate.now(ZoneId.of("Asia/Kolkata")));
 
         org.mockito.ArgumentCaptor<Transaction> txCaptor = org.mockito.ArgumentCaptor.forClass(Transaction.class);
         verify(transactionRepository).save(txCaptor.capture());

@@ -517,6 +517,8 @@ export interface DebtDto {
   status: DebtStatus;
   settledAt?: string | null;
   linkedTransactionId?: string | null;
+  linkedTransactionAmount?: number | null;
+  linkedTransactionDate?: string | null;
   notes?: string | null;
   createdAt: string;
   overdue: boolean;
