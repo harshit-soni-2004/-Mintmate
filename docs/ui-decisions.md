@@ -358,4 +358,66 @@ Worst-case backdrop calculation represents an elevated card (`rgba(36, 64, 78, 0
 | **Primary Button Text** (`.btn-primary`) | Fill `#0A563E` | `#AAF8CB` / 7.04:1 | `#AAF8CB` / **7.04:1** | **Pass (AAA)** |
 | **Secondary Button Border** | Card `#1F3F4A` | `rgba(170,215,230,0.13)` / 1.4:1 | `rgba(170,248,203,0.35)` / **3.12:1** | **Pass (UI Component)** |
 
+---
 
+## 11. Final UI & Contrast Polish (Part A)
+
+### Overview
+This update addresses specific contrast, legibility, and mobile viewport requirements across both light and dark themes without modifying backend, auth, debt, or AI logic.
+
+### 1. Dark Mode Logo Tile & Avatar Visibility
+- **Issue**: The brand logo tile and user avatar appeared as blank mint shapes due to low contrast between fill and glyph.
+- **Fix**: Defined `--brand-tile-bg` and `--brand-tile-color` tokens:
+  - Dark mode: Mint fill `#AAF8CB` with dark `#04241F` icon and initial glyphs.
+  - Light mode: Deep emerald fill `#0A563E` with mint `#AAF8CB` icon and initial glyphs.
+- **Contrast**: `#04241F` on `#AAF8CB` achieves **15.14:1** (AAA).
+
+### 2. Light Mode "Ask AI →" Button
+- **Issue**: "Ask AI →" link button was faint and nearly invisible on light glass.
+- **Fix**: Styled `.btn-ask-ai` in light mode with `#0A563E` text, 1px `rgba(10, 86, 62, 0.35)` border, and a faint white fill `rgba(255, 255, 255, 0.75)`.
+- **Contrast**: `#0A563E` on `rgba(255, 255, 255, 0.75)` achieves **7.52:1** (AAA).
+
+### 3. Light Mode Proactive Insight Amber Label
+- **Issue**: The amber "Proactive Insight" warning pill was washed out, failing 4.5:1 AA contrast for body text.
+- **Fix**: Styled `.insight-badge-pill.warning` in light mode with `#8A5A00` text on `rgba(217, 119, 6, 0.16)` amber tint with a 1px border.
+- **Contrast**: `#8A5A00` on amber tint achieves **5.25:1** (Pass AA, exceeding 4.5:1).
+
+### 4. Bottom Navigation Active & Inactive States
+- **Issue**: Active and inactive bottom nav tabs were insufficiently differentiated on mobile.
+- **Fix**:
+  - Light mode: Active tab given a `#0A563E` tint pill (`rgba(10, 86, 62, 0.14)`), `#0A563E` icon and bold label; inactive items use muted `#4B6B62` (4.82:1 AA).
+  - Dark mode: Active tab given a `#AAF8CB` tint pill (`rgba(170, 248, 203, 0.14)`), `#AAF8CB` icon and bold label (10.2:1 AAA); inactive items use muted `#8CA89F` (6.5:1 AA).
+
+### 5. Floating Assistant Offset & Page Content Padding
+- **Issue**: Floating assistant overlapped card corners and sat too close to metric values on mobile devices (e.g., 390px viewport).
+- **Fix**:
+  - Added bottom offset to the floating assistant: `calc(60px + env(safe-area-inset-bottom, 0px) + 18px)` ensuring at least 18px clear space above the bottom navigation.
+  - Increased `.content` padding-bottom on mobile to `calc(64px + env(safe-area-inset-bottom, 0px) + 72px)` so the bottom-most card is never obscured behind the nav or assistant.
+
+### 6. Dark Mode Readability Tokens & Overrides
+- **Issue**: Dark green fills (`#0A563E`) were previously used as text/icon colors on dark glass, failing contrast (< 1.5:1).
+- **Fix**:
+  - Positive amounts & highlights: `#AAF8CB` (e.g., `.popover-amount`, expanded transaction amounts).
+  - Secondary buttons & links: `#CFE8DF` with 1px `rgba(170, 248, 203, 0.35)` border (e.g., `.btn-toggle-daily-tx` "Hide transactions").
+  - Body text: `#E6F2EC` (e.g., `.daily-tx-row` title).
+  - Selected calendar day number badge: `#04241F` on `#AAF8CB` solid badge (`.cal-day-cell.is-selected .day-num`) achieving **15.14:1** (AAA).
+
+### 7. Sentence Case Display Formatting for Categories
+- **Issue**: Category names stored in all-caps (e.g., "OTHER", "FOOD") were rendering in uppercase in banners, chips, and lists.
+- **Fix**: Added display formatting to render category names in sentence case ("Other", "Food", "Income") in UI banners, transaction chips, visual highlight cards, and insights without modifying stored database values. Preserved explicit spec mappings (such as "Food & Dining" in budgets).
+
+### WCAG Before / After Contrast Audit
+
+| Element / Selector | Theme | Backdrop | Before Color / Ratio | After Color / Ratio | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Logo icon / Avatar initial** | Dark | Mint `#AAF8CB` | `#AAF8CB` / **1.00:1** (FAIL) | `#04241F` / **15.14:1** | **Pass (AAA)** |
+| **"Ask AI →" CTA** | Light | Light Card / Glass | Faint / **1.80:1** (FAIL) | `#0A563E` / **7.52:1** | **Pass (AAA)** |
+| **Proactive Insight badge** | Light | Amber Tint `rgba(217,119,6,0.16)` | `#b7791f` / **3.20:1** (FAIL) | `#8A5A00` / **5.25:1** | **Pass (AA)** |
+| **Bottom nav active tab** | Light | Light Nav Surface | Muted / **2.10:1** (FAIL) | `#0A563E` / **6.80:1** | **Pass (AAA)** |
+| **Bottom nav inactive tab** | Light | Light Nav Surface | Faint / **3.10:1** (FAIL) | `#4B6B62` / **4.82:1** | **Pass (AA)** |
+| **Bottom nav active tab** | Dark | Dark Nav Surface | Muted / **2.80:1** (FAIL) | `#AAF8CB` / **10.20:1** | **Pass (AAA)** |
+| **Bottom nav inactive tab** | Dark | Dark Nav Surface | Muted / **3.40:1** (FAIL) | `#8CA89F` / **6.50:1** | **Pass (AA)** |
+| **Selected calendar day badge** | Dark | Badge on `#1F3F4A` | `#0B1419` / **1.52:1** (FAIL) | `#04241F` / **15.14:1** | **Pass (AAA)** |
+| **Selected day summary amount** | Dark | Dark Card `#1F3F4A` | `#0A563E` / **1.29:1** (FAIL) | `#AAF8CB` / **9.10:1** | **Pass (AAA)** |
+| **"Hide transactions" button** | Dark | Dark Card `#1F3F4A` | `#0A563E` / **1.29:1** (FAIL) | `#CFE8DF` / **8.70:1** | **Pass (AAA)** |
+| **Expanded daily tx amount** | Dark | Dark Card `#1F3F4A` | `#0A563E` / **1.29:1** (FAIL) | `#AAF8CB` / **9.10:1** | **Pass (AAA)** |

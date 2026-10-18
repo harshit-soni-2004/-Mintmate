@@ -57,6 +57,8 @@
   --color-accent: var(--palette-neo-mint);         /* Neo Mint #AAF8CB */
   --color-accent-soft: rgba(170, 248, 203, 0.22);  /* Neo Mint at low alpha (≤ 0.25) */
   --color-accent-contrast: var(--palette-black-emerald); /* #11221F — 15.2:1 on Neo Mint */
+  --brand-tile-bg: var(--color-primary);           /* Raspberry Leaf #0A563E */
+  --brand-tile-color: var(--color-accent);         /* Neo Mint #AAF8CB */
   --color-background: var(--palette-anti-flash-white);
   --color-surface: rgba(170, 203, 196, 0.30);      /* Pistachio tint */
   --color-surface-elevated: rgba(241, 247, 246, 0.60);
@@ -224,6 +226,8 @@
   --color-accent: #AAF8CB;                         /* #AAF8CB */
   --color-accent-soft: rgba(170, 248, 203, 0.14);
   --color-accent-contrast: var(--palette-ink-navy); /* #0A1217 */
+  --brand-tile-bg: #AAF8CB;                        /* Mint tile in dark mode */
+  --brand-tile-color: #04241F;                     /* Dark #04241F icon/initial (15.1:1 AAA contrast) */
   --link-color: #CFE8DF;                           /* #CFE8DF links */
   --link-color-hover: #AAF8CB;                      /* #AAF8CB link hover */
 

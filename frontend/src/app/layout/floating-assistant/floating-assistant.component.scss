@@ -9,8 +9,8 @@
   pointer-events: none;
 
   @media (max-width: 767px) {
-    bottom: 4.4rem;
-    right: 0.85rem;
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 18px);
+    right: 1rem;
 
     &.on-assistant-route {
       display: none !important;

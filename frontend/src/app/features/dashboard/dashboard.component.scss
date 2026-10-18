@@ -44,8 +44,15 @@
     white-space: nowrap;
 
     &.warning {
-      background: rgba(245, 158, 11, 0.12);
-      color: #f59e0b;
+      background: rgba(217, 119, 6, 0.16);
+      color: #8A5A00;
+      border: 1px solid rgba(138, 90, 0, 0.28);
+
+      [data-theme="dark"] & {
+        background: rgba(245, 158, 11, 0.16);
+        color: #FBBF24;
+        border: 1px solid rgba(251, 191, 36, 0.30);
+      }
     }
 
     &.critical {
@@ -93,21 +100,33 @@
       border-radius: 8px;
       font-size: 0.8rem;
       font-weight: 600;
-      color: var(--text-secondary-on-dark, #CFE8DF);
-      background: var(--glass-surface-subtle);
-      border: 1px solid var(--border-secondary-btn, rgba(170, 248, 203, 0.35));
+      color: #0A563E;
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(10, 86, 62, 0.35);
       cursor: pointer;
       transition: all 0.15s ease-in-out;
 
       &:hover {
-        background: rgba(170, 248, 203, 0.12);
-        border-color: var(--text-accent-on-dark, #AAF8CB);
-        color: var(--text-accent-on-dark, #AAF8CB);
+        background: rgba(255, 255, 255, 0.95);
+        border-color: #0A563E;
+        color: #0A563E;
         transform: translateY(-1px);
       }
 
       &:active {
         transform: translateY(0);
+      }
+
+      [data-theme="dark"] & {
+        color: #CFE8DF;
+        background: var(--glass-surface-subtle);
+        border: 1px solid rgba(170, 248, 203, 0.35);
+
+        &:hover {
+          background: rgba(170, 248, 203, 0.12);
+          border-color: #AAF8CB;
+          color: #AAF8CB;
+        }
       }
     }
 
@@ -1531,8 +1550,8 @@
       box-shadow: 0 0 0 1px #AAF8CB !important;
 
       .day-num {
-        background: rgba(170, 248, 203, 0.30) !important;
-        color: #ffffff !important;
+        background: #AAF8CB !important;
+        color: #04241F !important;
         width: 20px;
         height: 20px;
         border-radius: 50%;
@@ -1540,6 +1559,11 @@
         align-items: center;
         justify-content: center;
         font-weight: 700;
+
+        [data-theme="light"] & {
+          background: #0A563E !important;
+          color: #ffffff !important;
+        }
       }
 
       .day-spent {
@@ -1589,13 +1613,21 @@
 
       .popover-label {
         font-size: 0.8rem;
-        color: var(--color-text-muted);
+        color: var(--color-text-secondary);
+
+        [data-theme="dark"] & {
+          color: #E6F2EC;
+        }
       }
 
       .popover-amount {
         font-size: 0.95rem;
         font-weight: 700;
-        color: var(--text-accent-on-dark, #AAF8CB);
+        color: var(--color-primary);
+
+        [data-theme="dark"] & {
+          color: #AAF8CB;
+        }
       }
 
       .popover-tx-count {
@@ -1648,25 +1680,37 @@
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    background: var(--glass-surface-subtle);
-    border: 1px solid var(--border-secondary-btn, rgba(170, 248, 203, 0.35));
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(10, 86, 62, 0.35);
     border-radius: var(--radius-sm);
     padding: 0.3rem 0.65rem;
     font-size: 0.78rem;
     font-weight: 600;
-    color: var(--text-secondary-on-dark, #CFE8DF);
+    color: #0A563E;
     cursor: pointer;
     transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 
     &:hover {
-      background: rgba(170, 248, 203, 0.12);
-      border-color: var(--text-accent-on-dark, #AAF8CB);
-      color: var(--text-accent-on-dark, #AAF8CB);
+      background: rgba(255, 255, 255, 0.95);
+      border-color: #0A563E;
+      color: #0A563E;
     }
 
-    &:focus-visible {
-      outline: 2px solid var(--text-accent-on-dark, #AAF8CB);
-      outline-offset: 2px;
+    [data-theme="dark"] & {
+      background: var(--glass-surface-subtle);
+      border: 1px solid rgba(170, 248, 203, 0.35);
+      color: #CFE8DF;
+
+      &:hover {
+        background: rgba(170, 248, 203, 0.12);
+        border-color: #AAF8CB;
+        color: #AAF8CB;
+      }
+
+      &:focus-visible {
+        outline: 2px solid #AAF8CB;
+        outline-offset: 2px;
+      }
     }
 
     .chevron {
@@ -1808,16 +1852,24 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+
+        [data-theme="dark"] & {
+          color: #E6F2EC;
+        }
       }
     }
 
     .tx-item-amount {
       font-size: 0.88rem;
       font-weight: 700;
-      color: var(--text-accent-on-dark, #AAF8CB);
+      color: var(--color-text);
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
       flex-shrink: 0;
+
+      [data-theme="dark"] & {
+        color: #AAF8CB;
+      }
     }
   }
 }
