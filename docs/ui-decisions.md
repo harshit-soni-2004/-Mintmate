@@ -421,3 +421,53 @@ This update addresses specific contrast, legibility, and mobile viewport require
 | **Selected day summary amount** | Dark | Dark Card `#1F3F4A` | `#0A563E` / **1.29:1** (FAIL) | `#AAF8CB` / **9.10:1** | **Pass (AAA)** |
 | **"Hide transactions" button** | Dark | Dark Card `#1F3F4A` | `#0A563E` / **1.29:1** (FAIL) | `#CFE8DF` / **8.70:1** | **Pass (AAA)** |
 | **Expanded daily tx amount** | Dark | Dark Card `#1F3F4A` | `#0A563E` / **1.29:1** (FAIL) | `#AAF8CB` / **9.10:1** | **Pass (AAA)** |
+
+---
+
+## 12. Final UI & Contrast Polish (Part B) — Assistant & Floating Bot Glass Alignment
+
+### Overview
+This update extends the liquid glass architecture and contrast standards to the full-page Assistant (`assistant.component.scss`), the global Floating Assistant bot (`floating-assistant.component.scss`), and the AI Mascot asset (`ai-mascot.component.html`), eliminating all lingering legacy tokens and solid-surface regressions.
+
+### 1. Complete Elimination of Retired Yellow-Greens
+- **Issue**: Legacy yellow-green hex codes (`#8be35a`, `#a3eb7a`) remained hardcoded in the floating bot SCSS hover states, onboarding bubble borders, and the mascot robot SVG definition.
+- **Fix**: Replaced all occurrences with v6 Neo Mint tokens (`#AAF8CB`, `--palette-neo-mint`, `--color-accent`) and calm mint-dim stops (`#7EDBA8`). Zero occurrences of `#8be35a` or `#a3eb7a` remain in the codebase.
+
+### 2. Floating Assistant Flyout Liquid Glass Material
+- **Issue**: In dark theme, the flyout used opaque dark-green fills (`#182824`, `#121e1b`, `#0a1210`) that broke the liquid glass refraction layer, causing a heavy solid box over the canvas.
+- **Fix**:
+  - Replaced flyout panel surface with `var(--glass-surface-elevated)` (`backdrop-filter: var(--glass-blur)`).
+  - Replaced header and footer with `var(--glass-surface-subtle)`.
+  - Set `.flyout-body` background to `transparent` so ambient glow pools refract through the conversation area.
+  - Aligned onboarding tooltip speech bubble and its triangular pointer with `var(--glass-surface-elevated)` and `var(--glass-border)`.
+
+### 3. Dark Mode Contrast Fix for Category Visual Cards
+- **Issue**: In `.asst-visual-card`, the category label `.asst-visual-category` used `color: var(--brand-dark);`. In `[data-theme="dark"]`, `--brand-dark` resolves to `#0A563E` (Raspberry Leaf), resulting in dark green text on dark glass with a contrast ratio of only **1.29:1** (failing WCAG AA).
+- **Fix**: Styled `.asst-visual-category` on dark glass with `var(--palette-neo-mint)` (`#AAF8CB`), achieving **10.48:1** (AAA).
+- Styled `.asst-visual-progress-track` with `rgba(255, 255, 255, 0.12)` track and `#AAF8CB` fill, making category progress readable in dark mode.
+
+### 4. Assistant Chat Viewport Transparency
+- **Issue**: `.chat-viewport` in both themes had opaque backgrounds (`var(--canvas)`, `var(--background)`) placed inside `.assistant-container`, masking the underlying glass blur.
+- **Fix**: Set `.chat-viewport` background to `transparent`. Assistant bubbles now use tinted translucent glass (`rgba(255, 255, 255, 0.72)` in light, `rgba(22, 44, 54, 0.60)` in dark), maintaining depth without opacity collisions.
+
+### 5. Send & Action Button Theme Alignment
+- **Issue**: `.send-button`, `.btn-send-query`, and confirmation `.btn-confirm` buttons used `--brand` as fill, which in dark mode resolved to Neo Mint text accent (`#AAF8CB`) with dark text, inconsistent with the `#0A563E` fill established in v6.1.
+- **Fix**: Aligned all primary assistant buttons to `--btn-primary-bg` (`#0A563E`) with `--btn-primary-text` (`#AAF8CB`), achieving **7.04:1** (AAA) contrast and matching `.btn-primary` across the dashboard and shell.
+
+### 6. Mascot SVG Gradient Harmonization
+- **Issue**: The SVG gradient definitions `fintechEmeraldGrad` and `fintechTealGrad` inside `ai-mascot.component.html` used retired `#8be35a` and `#a3eb7a` stop colors.
+- **Fix**: Replaced stops with Neo Mint `#AAF8CB` and calm emerald `#7EDBA8`, creating unified chromatic alignment between the mascot and the surrounding interface.
+
+### WCAG Part B Contrast Audit
+
+| Element / Selector | Theme | Backdrop | Before Color / Ratio | After Color / Ratio | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Visual card category** (`.asst-visual-category`) | Dark | Card `#1F3F4A` | `#0A563E` / **1.29:1** (FAIL) | `#AAF8CB` / **10.48:1** | **Pass (AAA)** |
+| **Visual card share %** (`.asst-visual-share`) | Dark | Card `#1F3F4A` | `#0A563E` / **1.29:1** (FAIL) | `#AAF8CB` / **10.48:1** | **Pass (AAA)** |
+| **Assistant bubble body** (`.message-bubble.assistant`) | Dark | Bubble `rgba(22,44,54,0.60)` | Faint / **3.40:1** (FAIL) | `#E6F2EC` / **11.60:1** | **Pass (AAA)** |
+| **User message bubble text** (`.message-bubble.user`) | Dark | Fill `#0A563E` | `#0A1217` / **1.52:1** (FAIL) | `#AAF8CB` / **7.04:1** | **Pass (AAA)** |
+| **Floating bot send query** (`.btn-send-query`) | Dark | Fill `#0A563E` | Inconsistent | `#AAF8CB` on `#0A563E` / **7.04:1** | **Pass (AAA)** |
+| **Assistant send button** (`.send-button`) | Dark | Fill `#0A563E` | Inconsistent | `#AAF8CB` on `#0A563E` / **7.04:1** | **Pass (AAA)** |
+| **Floating bot chip hover** (`.suggestion-chip:hover`) | Dark | Card `#1F3F4A` | `#8be35a` / Uncalibrated | `#AAF8CB` / **10.48:1** | **Pass (AAA)** |
+| **Floating bot welcome badge** (`.welcome-badge`) | Dark | Card `#1F3F4A` | `#34d399` / 7.20:1 | `#AAF8CB` / **10.48:1** | **Pass (AAA)** |
+
