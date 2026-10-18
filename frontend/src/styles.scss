@@ -8,11 +8,11 @@
   --palette-dark-green: #0B1C19;          /* Deepest dark green surface */
 
   /* Ink blue-slate — dark mode canvas & glass */
-  --palette-ink-navy: #0B1419;            /* Dark canvas base */
-  --palette-ink-deep: #0F1F28;            /* Dark canvas gradient end */
-  --palette-slate-700: #1A303A;           /* Glass card top tint */
-  --palette-slate-800: #0A161C;           /* Glass card bottom tint */
-  --palette-slate-600: #1E2F38;           /* Elevated surface tint */
+  --palette-ink-navy: #0A1217;            /* Dark canvas base (widened) */
+  --palette-ink-deep: #112430;            /* Dark canvas gradient end */
+  --palette-slate-700: #1E3844;           /* Glass card top tint */
+  --palette-slate-800: #0C1A21;           /* Glass card bottom tint */
+  --palette-slate-600: #24404E;           /* Elevated surface tint */
   --palette-deep-blue: #1E4D6B;           /* Glow pool — deep blue */
 
   /* Brand greens — Raspberry Leaf family */
@@ -157,7 +157,7 @@
   --food: #d97706;
   --travel: #2563eb;
   --shopping: #7c3aed;
-  --bills: #0A563E;
+  --bills: #3b9c94;
   --other: #345C55;
 
   /* Apple-like Radii */
@@ -191,59 +191,74 @@
    ======================================================================== */
 [data-theme="dark"] {
   color-scheme: dark;
-  --color-background: var(--palette-ink-navy);      /* #0B1419 — ink blue-slate canvas */
-  /* Blue-slate card surfaces — no green tint */
-  --color-surface: rgba(26, 48, 58, 0.36);          /* slate-700 tint */
-  --color-surface-elevated: rgba(30, 55, 66, 0.42); /* slate-600 tint */
-  --color-surface-muted: rgba(26, 48, 58, 0.22);
-  --color-surface-subtle: rgba(26, 48, 58, 0.14);
-  --color-text: var(--palette-anti-flash-white);    /* #F1F7F6 — 15.5:1 on #0B1419 */
-  --color-text-secondary: var(--palette-pale-text); /* #CFE8DF — 9.4:1 on #0B1419 */
-  --color-text-muted: #A8C4CE;                      /* 7.1:1 on #0B1419 — WCAG AA */
-  --color-border: rgba(170, 215, 230, 0.13);        /* Blue-slate rim tint */
-  --color-border-subtle: rgba(170, 215, 230, 0.06);
+  --color-background: var(--palette-ink-navy);      /* #0A1217 — widened canvas base */
+  /* Blue-slate card surfaces — slightly lighter than backdrop so card edges read clearly */
+  --color-surface: rgba(30, 56, 68, 0.46);          /* top card tint (spec: about rgba(30,56,68,0.46)) */
+  --color-surface-elevated: rgba(36, 64, 78, 0.50); /* elevated card tint */
+  --color-surface-muted: rgba(30, 56, 68, 0.25);
+  --color-surface-subtle: rgba(30, 56, 68, 0.16);
+  --color-text: #E6F2EC;                           /* neutral body text */
+  --color-text-secondary: #CFE8DF;                 /* links, secondary buttons, labels */
+  --color-text-muted: #9FB8B0;                     /* muted labels no darker than #9FB8B0 */
+  --color-border: rgba(170, 215, 230, 0.15);        /* Blue-slate rim tint */
+  --color-border-subtle: rgba(170, 215, 230, 0.08);
 
-  /* Primary buttons & brand: Raspberry Leaf fill with Neo Mint text */
-  --color-primary: var(--palette-raspberry-leaf);     /* #0A563E fill */
-  --color-primary-hover: var(--palette-raspberry-leaf-mid); /* #0D6B4F */
-  --color-primary-contrast: var(--palette-neo-mint);  /* #AAF8CB text (7.04:1 on #0A563E) */
-  --color-secondary: var(--palette-pale-text);      /* #CFE8DF for labels/links */
-  --color-accent: var(--palette-neo-mint);          /* Neo Mint #AAF8CB — accent only */
+  /* Separate Fill vs Text Accent tokens — dark fills can NEVER be used as text */
+  --fill-accent: var(--palette-raspberry-leaf);     /* #0A563E — button & pill backgrounds ONLY */
+  --fill-accent-hover: var(--palette-raspberry-leaf-mid); /* #0D6B4F */
+  --fill-primary: var(--fill-accent);
+  --fill-primary-hover: var(--fill-accent-hover);
+  --btn-primary-bg: var(--fill-accent);
+  --btn-primary-hover: var(--fill-accent-hover);
+  --btn-primary-text: #AAF8CB;                     /* #AAF8CB text on #0A563E fill (7.04:1 AAA) */
+
+  --text-accent-on-dark: #AAF8CB;                  /* positive amounts and highlights */
+  --text-secondary-on-dark: #CFE8DF;               /* links, secondary buttons, labels */
+  --border-secondary-btn: rgba(170, 248, 203, 0.35); /* 1px border for secondary buttons and links */
+
+  /* Safe text accents — NEVER a dark fill */
+  --color-primary: var(--text-accent-on-dark);     /* #AAF8CB safe accent for text, icons, highlights */
+  --color-primary-hover: var(--palette-neo-mint-dim);
+  --color-primary-contrast: var(--palette-ink-navy); /* #0A1217 */
+  --color-secondary: #CFE8DF;                      /* #CFE8DF for labels/links */
+  --color-accent: #AAF8CB;                         /* #AAF8CB */
   --color-accent-soft: rgba(170, 248, 203, 0.14);
-  --color-accent-contrast: var(--palette-ink-navy); /* #0B1419 */
-  --link-color: var(--palette-pale-text);           /* #CFE8DF links */
-  --link-color-hover: var(--palette-neo-mint);      /* #AAF8CB link hover */
+  --color-accent-contrast: var(--palette-ink-navy); /* #0A1217 */
+  --link-color: #CFE8DF;                           /* #CFE8DF links */
+  --link-color-hover: #AAF8CB;                      /* #AAF8CB link hover */
 
-  /* Liquid Glass System Tokens - Dark v6
-     Blur, rim lights and shadow VALUES are unchanged.
-     Only the TINT colour inside glass surfaces changes to blue-slate. */
-  --glass-surface: linear-gradient(180deg, rgba(26, 48, 58, 0.42) 0%, rgba(10, 22, 28, 0.46) 100%);
-  --glass-surface-elevated: linear-gradient(180deg, rgba(30, 55, 66, 0.46) 0%, rgba(10, 22, 28, 0.50) 100%);
-  --glass-surface-subtle: rgba(26, 48, 58, 0.22);
-  --glass-border: rgba(170, 215, 230, 0.13);
-  --glass-border-subtle: rgba(170, 215, 230, 0.06);
+  /* Liquid Glass System Tokens - Dark v6.1
+     Card tint slightly lighter than backdrop so card edges read clearly:
+     top rgba(30, 56, 68, 0.46) to bottom rgba(12, 26, 33, 0.50).
+     Blur, rim lights and shadow VALUES are unchanged. */
+  --glass-surface: linear-gradient(180deg, rgba(30, 56, 68, 0.46) 0%, rgba(12, 26, 33, 0.50) 100%);
+  --glass-surface-elevated: linear-gradient(180deg, rgba(36, 64, 78, 0.50) 0%, rgba(14, 30, 38, 0.54) 100%);
+  --glass-surface-subtle: rgba(30, 56, 68, 0.25);
+  --glass-border: rgba(170, 215, 230, 0.15);
+  --glass-border-subtle: rgba(170, 215, 230, 0.08);
   /* Rim light and shadow unchanged */
   --glass-highlight: linear-gradient(135deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.04) 40%, rgba(170, 248, 203, 0.07) 100%);
   --glass-blur: blur(28px) saturate(160%);
   --glass-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.22), inset 0 1px 0 0 rgba(255, 255, 255, 0.18), inset -1px -1px 0 0 rgba(0, 0, 0, 0.40), 0 12px 36px rgba(0, 0, 0, 0.52), 0 0 20px rgba(30, 77, 107, 0.18);
   --glass-shadow-elevated: inset 1px 1.5px 0 0 rgba(255, 255, 255, 0.32), inset 0 1.5px 0 0 rgba(255, 255, 255, 0.25), inset -1px -1px 0 0 rgba(0, 0, 0, 0.46), 0 20px 52px rgba(0, 0, 0, 0.65), 0 0 28px rgba(30, 77, 107, 0.22);
   /* Modal/tooltip: blue-slate opaque */
-  --modal-surface: rgba(15, 31, 40, 0.93);
-  --dropdown-surface: rgba(15, 31, 40, 0.93);
-  --tooltip-surface: rgba(15, 31, 40, 0.95);
+  --modal-surface: rgba(16, 34, 44, 0.94);
+  --dropdown-surface: rgba(16, 34, 44, 0.94);
+  --tooltip-surface: rgba(16, 34, 44, 0.96);
 
   /* Ink Blue-Slate sidebar glass */
-  --sidebar-surface: rgba(15, 32, 40, 0.50);
+  --sidebar-surface: rgba(16, 32, 42, 0.52);
 
-  /* Ambient gradient — Option A: Ink Blue-Slate
-     Deep Blue glow pools + Muted Teal variation + ONE small Raspberry Leaf brand pool */
+  /* Ambient gradient — Option A: Ink Blue-Slate (Contrast Boosted by ~25%)
+     Deep Blue glow pools (0.38-0.45) + Muted Teal (0.24-0.30) + ONE small Raspberry Leaf pool (0.16-0.20)
+     Base: linear gradient #0A1217 to #112430 (no vignette blotches) */
   --ambient-gradient:
-    radial-gradient(660px circle at 12% 8%,   rgba(30, 77, 107, 0.32) 0%, rgba(30, 77, 107, 0.10) 50%, transparent 70%),
-    radial-gradient(580px circle at 88% 18%,  rgba(47, 127, 123, 0.22) 0%, rgba(47, 127, 123, 0.06) 52%, transparent 72%),
-    radial-gradient(700px circle at 14% 58%,  rgba(30, 77, 107, 0.28) 0%, rgba(30, 77, 107, 0.08) 50%, transparent 72%),
-    radial-gradient(620px circle at 82% 66%,  rgba(47, 127, 123, 0.20) 0%, rgba(47, 127, 123, 0.05) 52%, transparent 74%),
-    radial-gradient(420px circle at 50% 48%,  rgba(10, 86, 62,  0.14) 0%, rgba(10, 86, 62,  0.04) 50%, transparent 70%),
-    linear-gradient(160deg, #0B1419 0%, #0F1F28 100%);
+    radial-gradient(660px circle at 12% 8%,   rgba(30, 77, 107, 0.40) 0%, rgba(30, 77, 107, 0.12) 50%, transparent 70%),
+    radial-gradient(580px circle at 88% 18%,  rgba(47, 127, 123, 0.28) 0%, rgba(47, 127, 123, 0.08) 52%, transparent 72%),
+    radial-gradient(700px circle at 14% 58%,  rgba(30, 77, 107, 0.36) 0%, rgba(30, 77, 107, 0.10) 50%, transparent 72%),
+    radial-gradient(620px circle at 82% 66%,  rgba(47, 127, 123, 0.25) 0%, rgba(47, 127, 123, 0.06) 52%, transparent 74%),
+    radial-gradient(420px circle at 50% 48%,  rgba(10, 86, 62,  0.18) 0%, rgba(10, 86, 62,  0.05) 50%, transparent 70%),
+    linear-gradient(160deg, #0A1217 0%, #112430 100%);
 
   --background: var(--color-background);
   --canvas: var(--color-background);
@@ -265,17 +280,19 @@
   --accent: var(--color-accent);           /* Neo Mint #AAF8CB */
   --accent-hover: var(--palette-neo-mint-dim);
   --accent-soft: var(--color-accent-soft);
-  --brand: var(--color-primary);           /* Neo Mint */
-  --brand-hover: var(--color-primary-hover);
+  --brand: var(--color-primary);           /* Neo Mint #AAF8CB — safe text & icon accent */
+  --brand-hover: var(--palette-neo-mint-dim);
   --brand-soft: rgba(170, 248, 203, 0.12);
   --brand-dark: var(--palette-raspberry-leaf);
+  --brand-fill: var(--fill-primary);       /* #0A563E — background fill only */
+  --brand-text: var(--text-accent-on-dark);/* #AAF8CB — readable text */
   --lime-accent: var(--color-accent);
   --lime-soft: var(--color-accent-soft);
   --lime-contrast: var(--color-accent-contrast);
 
-  --input-bg: rgba(15, 31, 40, 0.88);     /* blue-slate input surface */
-  --input-border: rgba(170, 215, 230, 0.20);
-  --input-border-hover: var(--color-primary);
+  --input-bg: rgba(16, 34, 44, 0.88);     /* blue-slate input surface */
+  --input-border: rgba(170, 215, 230, 0.22);
+  --input-border-hover: var(--color-accent);
   --input-bg-error: rgba(248, 113, 113, 0.16);
   --input-border-error: var(--danger);
   --input-focus-error-shadow: 0 0 0 3px rgba(248, 113, 113, 0.28);
@@ -702,7 +719,7 @@ p {
   font-weight: 600;
   background: var(--glass-surface-subtle);
   border: 1px solid var(--glass-border-subtle);
-  color: var(--color-primary);
+  color: var(--color-text-secondary);
 }
 
 .page {
@@ -725,15 +742,27 @@ p {
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.btn-primary {
-  background: var(--brand);
-  color: var(--color-primary-contrast);
+.btn-primary,
+.add-btn,
+.add-tx-btn,
+.btn-create-goal,
+.btn-upload,
+.btn-save,
+.btn-send-query {
+  background: var(--btn-primary-bg, var(--brand-fill, var(--brand)));
+  color: var(--btn-primary-text, var(--color-primary-contrast));
   box-shadow: 0 4px 14px rgba(3, 98, 76, 0.22);
 }
 
-.btn-primary:hover:not(:disabled) {
-  background: var(--brand-hover);
-  color: var(--color-primary-contrast);
+.btn-primary:hover:not(:disabled),
+.add-btn:hover:not(:disabled),
+.add-tx-btn:hover:not(:disabled),
+.btn-create-goal:hover:not(:disabled),
+.btn-upload:hover:not(:disabled),
+.btn-save:hover:not(:disabled),
+.btn-send-query:hover:not(:disabled) {
+  background: var(--btn-primary-hover, var(--brand-hover));
+  color: var(--btn-primary-text, var(--color-primary-contrast));
   box-shadow: 0 6px 18px rgba(3, 98, 76, 0.3);
   text-decoration: none;
   transform: translateY(-1px);
@@ -758,6 +787,18 @@ p {
   background: var(--surface-subtle);
   border-color: var(--muted-light);
   text-decoration: none;
+}
+
+[data-theme="dark"] .btn-secondary {
+  background: var(--glass-surface-subtle);
+  color: var(--text-secondary-on-dark, #CFE8DF);
+  border: 1px solid var(--border-secondary-btn, rgba(170, 248, 203, 0.35));
+
+  &:hover:not(:disabled) {
+    background: rgba(170, 248, 203, 0.12);
+    border-color: #AAF8CB;
+    color: #AAF8CB;
+  }
 }
 
 .screen-reader {

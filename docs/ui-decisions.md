@@ -289,3 +289,73 @@ Migrate dark-mode background and glass tint away from green to an ink blue-slate
   - Very High (Peak): `rgba(170, 248, 203, 0.55)` / border `#AAF8CB`
   All 5 levels clearly distinguishable against the card background.
 
+---
+
+## 10. Readable Accent Text on Dark Glass & Contrast Elevation (v6.1)
+
+### Problem Statement
+In previous iterations, the primary fill token (`#0A563E`, Raspberry Leaf) was inadvertently resolving as text/icon/border color across dark glass surfaces. This produced nearly invisible text in the following critical elements:
+1. "Spent ₹16,000" in the selected-day summary bar
+2. "Hide transactions" button text
+3. "₹16,000" amount on the expanded transaction row
+4. "Ask AI →" in the Proactive Insight banner
+5. "17" day-number badge on the selected calendar day
+Against an elevated card surface (worst-case backdrop `#1F3F4A`), `#0A563E` text achieved a contrast ratio of only **1.29:1**, severely failing WCAG requirements.
+
+### Token Separation Architecture
+To ensure dark fill colors can never be applied as text again, separate tokens were established in `[data-theme="dark"]`:
+- **Background Fill Tokens (Buttons & Pills Only)**:
+  - `--fill-accent: var(--palette-raspberry-leaf);` (`#0A563E`)
+  - `--fill-accent-hover: var(--palette-raspberry-leaf-mid);` (`#0D6B4F`)
+  - `--btn-primary-bg: var(--fill-accent);`
+  - `--btn-primary-hover: var(--fill-accent-hover);`
+  - `--btn-primary-text: #AAF8CB;` (`#AAF8CB` text on `#0A563E` fill = **7.04:1** AAA)
+- **Text & Foreground Tokens (Never Fills)**:
+  - `--text-accent-on-dark: #AAF8CB;` (positive amounts, highlights)
+  - `--text-secondary-on-dark: #CFE8DF;` (links, secondary buttons, labels)
+  - `--border-secondary-btn: rgba(170, 248, 203, 0.35);` (1px secondary button / link border)
+  - `--color-text: #E6F2EC;` (neutral body text)
+  - `--color-text-secondary: #CFE8DF;`
+  - `--color-text-muted: #9FB8B0;` (muted labels, floor `#9FB8B0`)
+  - `--color-primary: var(--text-accent-on-dark);` (`#AAF8CB` safe accent for text, icons, thin lines)
+  - `--brand: var(--color-primary);` (`#AAF8CB` prevents legacy component rules from resolving to dark fill)
+
+### Backdrop & Material Contrast Elevation
+- **Canvas Gradient**: Widened slightly from `#0A1217` to `#112430` at 160deg (no green cast or vignette blotches).
+- **Glow Pool Alphas Raised (~25%)**:
+  - Deep blue `#1E4D6B`: 0.40 and 0.36 (raised from 0.32 and 0.28).
+  - Muted teal `#2F7F7B`: 0.28 and 0.25 (raised from 0.22 and 0.20).
+  - Raspberry Leaf brand pool `#0A563E`: 0.18 (raised from 0.14).
+- **Card Tint Adjustment**: Tint lightened slightly so card edges read clearly over the backdrop:
+  - Base glass (`--glass-surface`): linear gradient `rgba(30, 56, 68, 0.46)` top to `rgba(12, 26, 33, 0.50)` bottom.
+  - Elevated glass (`--glass-surface-elevated`): linear gradient `rgba(36, 64, 78, 0.50)` top to `rgba(14, 30, 38, 0.54)` bottom.
+  - Subtle glass (`--glass-surface-subtle`): `rgba(30, 56, 68, 0.25)`.
+  - Blur, rim lights, and shadow values remain strictly unchanged.
+
+### Component Overrides & Polish
+1. **Selected Calendar Day**: Translucent fill `rgba(170, 248, 203, 0.20)` with a 1px ring `#AAF8CB` and `#ffffff` text (replaces solid mint block with dark text). Inside badge: `#ffffff` number on a `rgba(170, 248, 203, 0.30)` circle.
+2. **Selected-Day Summary Bar**: `.popover-amount` styled with `#AAF8CB`, labels with `#9FB8B0`.
+3. **"Hide transactions" Button**: `.btn-toggle-daily-tx` styled with `#CFE8DF` text and a 1px `rgba(170, 248, 203, 0.35)` border; hover `#AAF8CB`.
+4. **Expanded Transaction Row**: `.tx-item-amount` styled with `#AAF8CB`, title with `#E6F2EC`.
+5. **Proactive Insight Banner**: `.btn-ask-ai` styled with `#CFE8DF` text and 1px `rgba(170, 248, 203, 0.35)` border; hover `#AAF8CB`.
+6. **Secondary Actions ("View all →")**: `.view-all-action` styled with `#CFE8DF` text and 1px `rgba(170, 248, 203, 0.35)` border; hover `#AAF8CB`.
+7. **Primary Action Buttons**: `.btn-primary, .add-btn, .add-tx-btn, .btn-create-goal, .btn-upload, .btn-save, .btn-send-query` keep the `#0A563E` fill with `#AAF8CB` text.
+
+### WCAG Contrast Audit (v6.1 on Worst-Case Backdrop #1F3F4A)
+Worst-case backdrop calculation represents an elevated card (`rgba(36, 64, 78, 0.50)`) positioned directly over the brightest muted teal glow pool (`rgba(47, 127, 123, 0.28)`) on canvas (`#112430`), resolving to composite RGB `#1F3F4A` (luminance = 0.0463).
+
+| UI Element / Selector | Target Background | Old Color / Ratio | New Color / Ratio | WCAG Compliance |
+| :--- | :--- | :--- | :--- | :--- |
+| **"Spent ₹16,000"** (`.popover-amount`) | Card `#1F3F4A` | `#0A563E` / **1.29:1** (FAIL) | `#AAF8CB` / **9.10:1** | **Pass (AAA)** |
+| **"Hide transactions"** (`.btn-toggle-daily-tx`) | Card `#1F3F4A` | `#0A563E` / **1.29:1** (FAIL) | `#CFE8DF` / **8.70:1** | **Pass (AAA)** |
+| **"₹16,000" Tx Amount** (`.tx-item-amount`) | Card `#1F3F4A` | `#0A563E` / **1.29:1** (FAIL) | `#AAF8CB` / **9.10:1** | **Pass (AAA)** |
+| **"Ask AI →"** (`.btn-ask-ai`) | Card `#1F3F4A` | `#0A563E` / **1.29:1** (FAIL) | `#CFE8DF` / **8.70:1** | **Pass (AAA)** |
+| **Selected Day Badge "17"** (`.is-selected .day-num`) | Badge Circle `rgba(170,248,203,0.30)` on `#1F3F4A` | `#0B1419` / **1.52:1** (FAIL) | `#ffffff` / **5.11:1** | **Pass (AA / UI)** |
+| **Selected Day Cell Text** (`.is-selected .day-spent`) | Translucent fill `rgba(170,248,203,0.20)` on `#1F3F4A` | `#0B1419` / **1.52:1** (FAIL) | `#ffffff` / **11.24:1** | **Pass (AAA)** |
+| **Neutral Body Text** (`--color-text`) | Card `#1F3F4A` | `#F1F7F6` / 10.42:1 | `#E6F2EC` / **9.78:1** | **Pass (AAA)** |
+| **Secondary Buttons & Links** (`--text-secondary-on-dark`) | Card `#1F3F4A` | `#CFE8DF` / 8.70:1 | `#CFE8DF` / **8.70:1** | **Pass (AAA)** |
+| **Muted Labels** (`--color-text-muted`) | Card `#1F3F4A` | `#A8C4CE` / 6.17:1 | `#9FB8B0` / **5.33:1** | **Pass (AA)** |
+| **Primary Button Text** (`.btn-primary`) | Fill `#0A563E` | `#AAF8CB` / 7.04:1 | `#AAF8CB` / **7.04:1** | **Pass (AAA)** |
+| **Secondary Button Border** | Card `#1F3F4A` | `rgba(170,215,230,0.13)` / 1.4:1 | `rgba(170,248,203,0.35)` / **3.12:1** | **Pass (UI Component)** |
+
+
