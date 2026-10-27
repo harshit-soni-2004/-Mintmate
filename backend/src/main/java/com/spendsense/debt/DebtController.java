@@ -2,6 +2,7 @@ package com.spendsense.debt;
 
 import com.spendsense.common.api.ApiResponse;
 import com.spendsense.debt.dto.CreateDebtRequest;
+import com.spendsense.debt.dto.DebtCandidateTransactionDto;
 import com.spendsense.debt.dto.DebtDto;
 import com.spendsense.debt.dto.DebtSummaryDto;
 import com.spendsense.debt.dto.SettleDebtRequest;
@@ -48,12 +49,43 @@ public class DebtController {
         return ResponseEntity.ok(ApiResponse.of(debt));
     }
 
+    @GetMapping("/{id}/candidates")
+    public ResponseEntity<ApiResponse<List<DebtCandidateTransactionDto>>> getCandidateTransactions(
+            @PathVariable("id") UUID id) {
+        List<DebtCandidateTransactionDto> candidates = debtService.getCandidateTransactions(id);
+        return ResponseEntity.ok(ApiResponse.of(candidates));
+    }
+
     @PostMapping("/{id}/settle")
     public ResponseEntity<ApiResponse<DebtDto>> settleDebt(
             @PathVariable("id") UUID id,
             @RequestBody(required = false) SettleDebtRequest request) {
         DebtDto settled = debtService.settleDebt(id, request);
         return ResponseEntity.ok(ApiResponse.of(settled));
+    }
+
+    @PostMapping("/{id}/record-payment-and-settle")
+    public ResponseEntity<ApiResponse<DebtDto>> recordPaymentAndSettle(
+            @PathVariable("id") UUID id,
+            @Valid @RequestBody com.spendsense.debt.dto.RecordPaymentAndSettleRequest request) {
+        DebtDto settled = debtService.recordPaymentAndSettle(id, request);
+        return ResponseEntity.ok(ApiResponse.of(settled));
+    }
+
+    @PostMapping("/{id}/link-transaction")
+    public ResponseEntity<ApiResponse<DebtDto>> linkTransactionToSettledDebt(
+            @PathVariable("id") UUID id,
+            @RequestBody SettleDebtRequest request) {
+        DebtDto linked = debtService.linkTransactionToSettledDebt(id, request);
+        return ResponseEntity.ok(ApiResponse.of(linked));
+    }
+
+    @PostMapping("/{id}/candidates/{transactionId}/dismiss")
+    public ResponseEntity<ApiResponse<Void>> dismissCandidate(
+            @PathVariable("id") UUID id,
+            @PathVariable("transactionId") UUID transactionId) {
+        debtService.dismissCandidate(id, transactionId);
+        return ResponseEntity.ok(ApiResponse.of(null));
     }
 
     @PostMapping("/{id}/cancel")

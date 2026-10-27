@@ -50,9 +50,9 @@
 .step-indicator {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--muted);
-  background: var(--surface);
-  border: 1px solid var(--border);
+  color: var(--color-text-secondary);
+  background: var(--glass-surface-subtle);
+  border: 1px solid var(--glass-border-subtle);
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
 }
@@ -93,11 +93,15 @@
 
 /* Main Card */
 .wizard-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  position: relative;
+  background: var(--glass-surface-elevated);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   padding: 2.2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--glass-shadow-elevated);
+  overflow: hidden;
 }
 
 .step-lead {
@@ -500,7 +504,7 @@
 
 .btn-primary {
   background: var(--brand);
-  color: #fff;
+  color: var(--color-primary-contrast);
   border: 0;
   padding: 0.75rem 1.4rem;
   border-radius: var(--radius-sm);
@@ -521,8 +525,8 @@
 }
 
 .btn-complete {
-  background: linear-gradient(135deg, var(--brand), #1a9667);
-  box-shadow: 0 4px 14px rgba(18, 116, 87, 0.3);
+  background: var(--brand);
+  box-shadow: 0 4px 14px var(--brand-soft);
 }
 
 .btn-secondary {

@@ -180,4 +180,99 @@ class DeduplicationServiceTest {
         assertFalse(result.isExactDuplicate());
         assertFalse(result.isProbableDuplicate());
     }
+
+    @Test
+    @DisplayName("Debt repayment guard: should flag probable duplicate for manual repayment within 2 days")
+    void shouldFlagProbableDuplicateForManualDebtRepaymentWithinTwoDays() {
+        LocalDate debtTxDate = LocalDate.of(2026, 3, 15);
+        BigDecimal amount = new BigDecimal("2500.00");
+
+        Transaction manualRepayment = new Transaction(
+                testUser, amount, "Alice", "Repayment from Alice",
+                TransactionCategory.OTHER, TransactionType.TRANSFER, PaymentMethod.OTHER, debtTxDate, "Repayment from Alice"
+        );
+        manualRepayment.setSourceType(com.spendsense.transaction.TransactionSourceType.MANUAL);
+        manualRepayment.setSourceReference("debt:repayment:" + UUID.randomUUID());
+        manualRepayment.setTransferDirection(com.spendsense.transaction.TransferDirection.IN);
+
+        // Candidate 2 days later, INCOME (credit), exact amount
+        TransactionCandidate candidate = createCandidate(debtTxDate.plusDays(2), amount, "UPI-ALICE-CREDIT", TransactionType.INCOME, null);
+
+        DuplicateCheckResult result = deduplicationService.checkDuplicate(
+                candidate, List.of(manualRepayment), new HashSet<>());
+
+        assertFalse(result.isExactDuplicate(), "Should NOT be treated as exact duplicate / dropped");
+        assertTrue(result.isProbableDuplicate(), "Should be flagged as probable duplicate for user confirmation");
+        assertEquals(manualRepayment, result.matchedExistingTransaction());
+    }
+
+    @Test
+    @DisplayName("Debt repayment guard: should NOT flag when amount is a near miss")
+    void shouldNotFlagManualDebtRepaymentWhenNearMissAmount() {
+        LocalDate debtTxDate = LocalDate.of(2026, 3, 15);
+
+        Transaction manualRepayment = new Transaction(
+                testUser, new BigDecimal("2500.00"), "Alice", "Repayment from Alice",
+                TransactionCategory.OTHER, TransactionType.TRANSFER, PaymentMethod.OTHER, debtTxDate, "Repayment from Alice"
+        );
+        manualRepayment.setSourceType(com.spendsense.transaction.TransactionSourceType.MANUAL);
+        manualRepayment.setSourceReference("debt:repayment:" + UUID.randomUUID());
+        manualRepayment.setTransferDirection(com.spendsense.transaction.TransferDirection.IN);
+
+        TransactionCandidate candidate = createCandidate(debtTxDate, new BigDecimal("2499.00"), "UPI-ALICE-CREDIT", TransactionType.INCOME, null);
+
+        DuplicateCheckResult result = deduplicationService.checkDuplicate(
+                candidate, List.of(manualRepayment), new HashSet<>());
+
+        assertFalse(result.isExactDuplicate());
+        assertFalse(result.isProbableDuplicate());
+    }
+
+    @Test
+    @DisplayName("Debt repayment guard: should NOT flag when direction does not match")
+    void shouldNotFlagManualDebtRepaymentWhenWrongDirection() {
+        LocalDate debtTxDate = LocalDate.of(2026, 3, 15);
+        BigDecimal amount = new BigDecimal("2500.00");
+
+        Transaction manualRepayment = new Transaction(
+                testUser, amount, "Alice", "Repayment from Alice",
+                TransactionCategory.OTHER, TransactionType.TRANSFER, PaymentMethod.OTHER, debtTxDate, "Repayment from Alice"
+        );
+        manualRepayment.setSourceType(com.spendsense.transaction.TransactionSourceType.MANUAL);
+        manualRepayment.setSourceReference("debt:repayment:" + UUID.randomUUID());
+        manualRepayment.setTransferDirection(com.spendsense.transaction.TransferDirection.IN);
+
+        // Candidate is EXPENSE instead of INCOME
+        TransactionCandidate candidate = createCandidate(debtTxDate, amount, "UPI-ALICE", TransactionType.EXPENSE, null);
+
+        DuplicateCheckResult result = deduplicationService.checkDuplicate(
+                candidate, List.of(manualRepayment), new HashSet<>());
+
+        assertFalse(result.isExactDuplicate());
+        assertFalse(result.isProbableDuplicate());
+    }
+
+    @Test
+    @DisplayName("Debt repayment guard: should NOT flag when date diff is > 2 days")
+    void shouldNotFlagManualDebtRepaymentWhenDateDiffGreaterThanTwoDays() {
+        LocalDate debtTxDate = LocalDate.of(2026, 3, 15);
+        BigDecimal amount = new BigDecimal("2500.00");
+
+        Transaction manualRepayment = new Transaction(
+                testUser, amount, "Alice", "Repayment from Alice",
+                TransactionCategory.OTHER, TransactionType.TRANSFER, PaymentMethod.OTHER, debtTxDate, "Repayment from Alice"
+        );
+        manualRepayment.setSourceType(com.spendsense.transaction.TransactionSourceType.MANUAL);
+        manualRepayment.setSourceReference("debt:repayment:" + UUID.randomUUID());
+        manualRepayment.setTransferDirection(com.spendsense.transaction.TransferDirection.IN);
+
+        // Candidate is 3 days later
+        TransactionCandidate candidate = createCandidate(debtTxDate.plusDays(3), amount, "UPI-ALICE-CREDIT", TransactionType.INCOME, null);
+
+        DuplicateCheckResult result = deduplicationService.checkDuplicate(
+                candidate, List.of(manualRepayment), new HashSet<>());
+
+        assertFalse(result.isExactDuplicate());
+        assertFalse(result.isProbableDuplicate());
+    }
 }

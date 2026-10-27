@@ -78,6 +78,43 @@
       </div>
     }
 
+    <!-- Debt Reminder Combined Banner (Overdue / Due within 3 days) -->
+    @if (showDebtBanner && debtReminderBanner) {
+      <div
+        class="debt-reminder-banner"
+        [class.status-overdue]="debtReminderBanner.severity === 'danger'"
+        [class.status-due-soon]="debtReminderBanner.severity === 'warning'"
+        role="alert"
+        aria-live="polite"
+        id="debt-reminder-banner"
+      >
+        <div class="banner-lead">
+          <span class="banner-badge-icon" aria-hidden="true">{{ debtReminderBanner.severity === 'danger' ? '⚠️' : '⏰' }}</span>
+          <div class="banner-text">
+            <strong class="banner-title" id="debt-banner-title">{{ debtReminderBanner.title }}</strong>
+            <span class="banner-sub" id="debt-banner-sub">{{ debtReminderBanner.subtitle }}</span>
+          </div>
+        </div>
+
+        <div class="banner-actions">
+          <a routerLink="/app/debts" class="btn-banner-link" id="btn-debt-banner-link">
+            <span>View in IOUs</span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </a>
+          <button
+            type="button"
+            class="btn-banner-dismiss"
+            id="btn-dismiss-debt-banner"
+            (click)="dismissDebtBanner()"
+            title="Dismiss reminder for 24 hours"
+            aria-label="Dismiss reminder for 24 hours"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    }
+
     <!-- Section 2: ONE Primary Financial Hero Card -->
     <section class="hero-financial-section" aria-label="Primary Financial Summary">
       <div class="hero-card">
@@ -131,8 +168,8 @@
             >
               <defs>
                 <linearGradient id="sparklineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="#8be35a" stop-opacity="0.38"/>
-                  <stop offset="100%" stop-color="#8be35a" stop-opacity="0.0"/>
+                  <stop offset="0%" stop-color="#AAF8CB" stop-opacity="0.38"/>
+                  <stop offset="100%" stop-color="#AAF8CB" stop-opacity="0.0"/>
                 </linearGradient>
               </defs>
 

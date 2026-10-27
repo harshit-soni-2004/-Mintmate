@@ -3,7 +3,7 @@ import { Injectable, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ApiResponse, AuthResponse, User } from '../api/api.types';
+import { ApiResponse, AuthResponse, OtpResponse, User } from '../api/api.types';
 
 const TOKEN_KEY = 'mintmate.token';
 const USER_KEY = 'mintmate.user';
@@ -40,6 +40,28 @@ export class AuthService {
       .pipe(tap((response) => this.persist(response.data)));
   }
 
+  loginWithGoogle(idToken: string): Observable<ApiResponse<AuthResponse>> {
+    return this.http
+      .post<ApiResponse<AuthResponse>>(`${environment.apiUrl}/auth/google`, { idToken })
+      .pipe(tap((response) => this.persist(response.data)));
+  }
+
+  sendOtp(email: string, purpose = 'EMAIL_VERIFICATION'): Observable<ApiResponse<OtpResponse>> {
+    return this.http.post<ApiResponse<OtpResponse>>(`${environment.apiUrl}/auth/otp/send`, { email, purpose });
+  }
+
+  verifyOtp(email: string, code: string, purpose = 'EMAIL_VERIFICATION'): Observable<ApiResponse<OtpResponse>> {
+    return this.http.post<ApiResponse<OtpResponse>>(`${environment.apiUrl}/auth/otp/verify`, { email, code, purpose });
+  }
+
+  forgotPassword(email: string): Observable<ApiResponse<OtpResponse>> {
+    return this.http.post<ApiResponse<OtpResponse>>(`${environment.apiUrl}/auth/password/forgot`, { email });
+  }
+
+  resetPassword(payload: { email: string; code: string; newPassword: string }): Observable<ApiResponse<OtpResponse>> {
+    return this.http.post<ApiResponse<OtpResponse>>(`${environment.apiUrl}/auth/password/reset`, payload);
+  }
+
   logout(): void {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
@@ -51,7 +73,7 @@ export class AuthService {
   }
 
   private persist(data: AuthResponse | null): void {
-    if (!data) {
+    if (!data || !data.accessToken) {
       return;
     }
     localStorage.setItem(TOKEN_KEY, data.accessToken);

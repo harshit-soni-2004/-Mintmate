@@ -1,0 +1,129 @@
+<main class="auth-page">
+  <div class="auth-shell">
+    <aside class="auth-visual-col" aria-label="Mintmate product tour">
+      <app-onboarding-hero />
+    </aside>
+
+    <section class="auth-form-col" aria-labelledby="verify-heading">
+      <div class="form-container">
+        <div class="mobile-brand" aria-hidden="true">
+          <span class="brand-gem"></span>
+          <span class="brand-title">Mintmate</span>
+        </div>
+
+        <header class="form-header">
+          <p class="eyebrow">Security Verification</p>
+          <h1 id="verify-heading">Verify Your Email</h1>
+          <p class="lede">Enter the 6-digit code sent to your email to activate your account.</p>
+        </header>
+
+        @if (errorMessage) {
+          <div class="alert alert-error" role="alert" aria-live="polite">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>{{ errorMessage }}</span>
+          </div>
+        }
+
+        @if (successMessage) {
+          <div class="alert alert-success" role="status" aria-live="polite" style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); color: #22c55e; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            <span>{{ successMessage }}</span>
+          </div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form" novalidate>
+          <!-- Email Field -->
+          <div class="field-group" [class.has-error]="isFieldInvalid('email')">
+            <label for="verify-email-input" class="field-label">
+              Email Address <span class="req">*</span>
+            </label>
+            <div class="input-wrapper">
+              <span class="input-icon" aria-hidden="true">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </span>
+              <input
+                id="verify-email-input"
+                type="email"
+                formControlName="email"
+                placeholder="name@example.com"
+                class="form-input"
+                [attr.aria-invalid]="isFieldInvalid('email')"
+              />
+            </div>
+            @if (isFieldInvalid('email')) {
+              <p class="field-error" role="alert">Please enter a valid email address.</p>
+            }
+          </div>
+
+          <!-- 6-digit Code Field -->
+          <div class="field-group" [class.has-error]="isFieldInvalid('code')">
+            <div class="field-label-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+              <label for="otp-code-input" class="field-label" style="margin-bottom: 0;">
+                6-Digit Verification Code <span class="req">*</span>
+              </label>
+              <button
+                type="button"
+                id="btn-resend-otp"
+                (click)="resendCode()"
+                [disabled]="resending || cooldownSeconds > 0"
+                style="background: none; border: none; font-size: 0.8125rem; color: var(--color-primary, #6366f1); cursor: pointer; padding: 0; text-decoration: underline;"
+              >
+                @if (cooldownSeconds > 0) {
+                  Resend in {{ cooldownSeconds }}s
+                } @else if (resending) {
+                  Sending...
+                } @else {
+                  Resend Code
+                }
+              </button>
+            </div>
+            <div class="input-wrapper">
+              <span class="input-icon" aria-hidden="true">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <input
+                id="otp-code-input"
+                type="text"
+                formControlName="code"
+                placeholder="123456"
+                maxlength="6"
+                class="form-input"
+                style="letter-spacing: 0.25em; font-weight: 600; font-size: 1.125rem;"
+                [attr.aria-invalid]="isFieldInvalid('code')"
+              />
+            </div>
+            @if (isFieldInvalid('code')) {
+              <p class="field-error" role="alert">Please enter the 6-digit code.</p>
+            }
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            type="submit"
+            class="btn-primary"
+            id="btn-verify-otp"
+            [disabled]="submitting"
+          >
+            @if (submitting) {
+              <span class="spinner" aria-hidden="true"></span>
+              <span>Verifying...</span>
+            } @else {
+              <span>Confirm & Verify</span>
+            }
+          </button>
+        </form>
+
+        <footer class="form-footer">
+          <p class="footer-text">
+            Already verified?
+            <a routerLink="/login" class="inline-link">Sign In</a>
+          </p>
+        </footer>
+      </div>
+    </section>
+  </div>
+</main>

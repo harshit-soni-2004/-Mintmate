@@ -313,16 +313,17 @@ export class TransactionsComponent implements OnInit {
 
   categoryLabel(category?: string | null): string {
     if (!category) return 'Other';
-    switch (category) {
-      case 'FOOD': return 'Food & Dining';
-      case 'TRAVEL': return 'Travel & Commute';
+    const c = category.trim();
+    switch (c.toUpperCase()) {
+      case 'FOOD': return 'Food';
+      case 'TRAVEL': return 'Travel';
       case 'SHOPPING': return 'Shopping';
       case 'ENTERTAINMENT': return 'Entertainment';
-      case 'BILLS': return 'Bills & Utilities';
-      case 'HEALTH': return 'Health & Wellness';
+      case 'BILLS': return 'Bills';
+      case 'HEALTH': return 'Health';
       case 'EDUCATION': return 'Education';
-      case 'PERSONAL': return 'Personal Care';
-      default: return 'Other';
+      case 'PERSONAL': return 'Personal';
+      default: return c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();
     }
   }
 

@@ -37,4 +37,7 @@ public interface DebtRepository extends JpaRepository<Debt, UUID> {
     List<Debt> findActiveByUserIdAndAmount(
             @Param("userId") UUID userId,
             @Param("amount") BigDecimal amount);
+
+    @Query("SELECT d.linkedTransaction.id FROM Debt d WHERE d.user.id = :userId AND d.linkedTransaction IS NOT NULL")
+    List<UUID> findLinkedTransactionIdsByUserId(@Param("userId") UUID userId);
 }

@@ -24,6 +24,23 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface SendOtpRequest {
+  email: string;
+  purpose?: string;
+}
+
+export interface VerifyOtpRequest {
+  email: string;
+  code: string;
+  purpose?: string;
+}
+
+export interface OtpResponse {
+  success: boolean;
+  message: string;
+  resendCooldownSeconds: number;
+}
+
 export type TransactionCategory = 'FOOD' | 'TRAVEL' | 'SHOPPING' | 'ENTERTAINMENT' | 'BILLS' | 'HEALTH' | 'EDUCATION' | 'PERSONAL' | 'OTHER';
 export type TransactionType = 'EXPENSE' | 'INCOME' | 'TRANSFER' | 'INVESTMENT' | 'CASH_WITHDRAWAL';
 export type TransferDirection = 'IN' | 'OUT';
@@ -517,6 +534,8 @@ export interface DebtDto {
   status: DebtStatus;
   settledAt?: string | null;
   linkedTransactionId?: string | null;
+  linkedTransactionAmount?: number | null;
+  linkedTransactionDate?: string | null;
   notes?: string | null;
   createdAt: string;
   overdue: boolean;
@@ -543,6 +562,39 @@ export interface CreateDebtRequest {
 export interface SettleDebtRequest {
   linkedTransactionId?: string | null;
 }
+export interface GoogleLoginRequest {
+  idToken: string;
+}
 
+export interface DebtCandidateTransactionDto {
+  id: string;
+  amount: number;
+  description?: string | null;
+  merchant?: string | null;
+  transactionDate: string;
+  transactionType: TransactionType;
+  transferDirection?: TransferDirection | null;
+  isTopMatch: boolean;
+  isStrongMatch: boolean;
+  exactAmount: boolean;
+  matchReason?: string | null;
+  score: number;
+}
 
+export interface RecordPaymentAndSettleRequest {
+  amount: number;
+  transactionDate: string;
+  accountId?: string | null;
+  notes?: string | null;
+}
 
+export interface FinancialAccountResponse {
+  id: string;
+  name: string;
+  institutionName?: string | null;
+  accountType: string;
+  accountNumberLast4?: string | null;
+  currency: string;
+  active: boolean;
+  primary: boolean;
+}

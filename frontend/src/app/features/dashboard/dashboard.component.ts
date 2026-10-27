@@ -9,6 +9,8 @@ import {
   CategorySpending,
   DailySpending,
   DashboardData,
+  DebtDto,
+  DebtSummaryDto,
   FinancialInsight,
   ProactiveInsightDto,
   SpendingAnomaly,
@@ -64,6 +66,16 @@ export interface DonutSegment {
   color: string;
 }
 
+export interface DebtReminderBannerState {
+  severity: 'danger' | 'warning';
+  title: string;
+  subtitle: string;
+  overdueCount: number;
+  dueSoonCount: number;
+  totalAttentionCount: number;
+  amount: number;
+}
+
 const CATEGORY_COLORS: Record<TransactionCategory, string> = {
   FOOD: '#e67e3d',
   TRAVEL: '#5579d8',
@@ -111,6 +123,42 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   // Selected period: "YYYY-MM"
   currentYearMonth = new Date().toISOString().slice(0, 7);
+
+  // Debt Reminder Banner State (overdue / due within 3 days)
+  debtSummary: DebtSummaryDto | null = null;
+  debtReminderBanner: DebtReminderBannerState | null = null;
+  isDebtBannerDismissed = false;
+
+  get isDebtBannerSnoozed(): boolean {
+    const userId = this.auth.currentUser()?.id || this.auth.currentUser()?.email || 'default';
+    const snoozedAtStr = localStorage.getItem(`spendsense_debt_banner_snooze_${userId}`);
+    if (!snoozedAtStr) return false;
+    const snoozedAt = Number(snoozedAtStr);
+    if (isNaN(snoozedAt)) return false;
+    return Date.now() - snoozedAt < 24 * 60 * 60 * 1000;
+  }
+
+  get showDebtBanner(): boolean {
+    return !!this.debtReminderBanner && !this.isDebtBannerDismissed && !this.isDebtBannerSnoozed;
+  }
+
+  dismissDebtBanner(): void {
+    const userId = this.auth.currentUser()?.id || this.auth.currentUser()?.email || 'default';
+    localStorage.setItem(`spendsense_debt_banner_snooze_${userId}`, String(Date.now()));
+    this.isDebtBannerDismissed = true;
+  }
+
+  getTodayIST(): string {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+  }
+
+  getDaysUntilDueIST(dueDateStr: string, todayStr: string): number {
+    const [y1, m1, d1] = todayStr.split('-').map(Number);
+    const [y2, m2, d2] = dueDateStr.split('-').map(Number);
+    const todayUtc = Date.UTC(y1, m1 - 1, d1);
+    const dueUtc = Date.UTC(y2, m2 - 1, d2);
+    return Math.round((dueUtc - todayUtc) / (24 * 60 * 60 * 1000));
+  }
 
   // Available Balance & Cashflow dynamic chart state
   cashflowPoints: CashflowPoint[] = [];
@@ -356,6 +404,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.loadBudgets();
     this.loadInsights();
     this.loadProactiveInsights();
+    this.loadDebtSummary();
 
     // Automatically refresh dashboard, budgets, and insights whenever any transaction is mutated
     const sub1 = this.transactionService.onTransactionMutated$.subscribe(() => {
@@ -376,12 +425,100 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     const sub3 = this.debtService.onDebtMutated$.subscribe(() => {
       this.loadDashboard(false);
+      this.loadDebtSummary();
     });
 
     this.mutationSub = new Subscription();
     this.mutationSub.add(sub1);
     this.mutationSub.add(sub2);
     this.mutationSub.add(sub3);
+  }
+
+  loadDebtSummary(): void {
+    this.isDebtBannerDismissed = this.isDebtBannerSnoozed;
+    this.debtService.getSummary().subscribe({
+      next: (res) => {
+        if (res.data) {
+          this.debtSummary = res.data;
+          this.updateDebtReminderBanner(res.data);
+        } else {
+          this.debtSummary = null;
+          this.debtReminderBanner = null;
+        }
+      },
+      error: () => {
+        this.debtSummary = null;
+        this.debtReminderBanner = null;
+      },
+    });
+  }
+
+  updateDebtReminderBanner(summary: DebtSummaryDto): void {
+    const todayIST = this.getTodayIST();
+
+    const allDebts = [...(summary.overdueDebts || []), ...(summary.upcomingDebts || [])];
+    const uniqueDebts = Array.from(new Map(allDebts.map((d) => [d.id, d])).values());
+
+    const overdueList: DebtDto[] = [];
+    const dueSoonList: DebtDto[] = [];
+
+    for (const d of uniqueDebts) {
+      if (d.status !== 'ACTIVE' || !d.dueDate) continue;
+      const daysUntil = this.getDaysUntilDueIST(d.dueDate, todayIST);
+      if (daysUntil < 0) {
+        overdueList.push(d);
+      } else if (daysUntil <= 3) {
+        dueSoonList.push(d);
+      }
+    }
+
+    const overdueCount = overdueList.length;
+    const dueSoonCount = dueSoonList.length;
+    const totalCount = overdueCount + dueSoonCount;
+
+    if (totalCount === 0) {
+      this.debtReminderBanner = null;
+      return;
+    }
+
+    if (overdueCount > 0) {
+      const overdueAmount = overdueList.reduce((sum, d) => sum + (d.amount || 0), 0);
+      const title =
+        totalCount === 1
+          ? `1 debt needs attention · ₹${overdueAmount.toLocaleString('en-IN')} overdue`
+          : `${totalCount} debts need attention · ₹${overdueAmount.toLocaleString('en-IN')} overdue`;
+      const subtitle =
+        dueSoonCount > 0
+          ? `${overdueCount} overdue, ${dueSoonCount} due within 3 days`
+          : `${overdueCount} overdue`;
+
+      this.debtReminderBanner = {
+        severity: 'danger',
+        title,
+        subtitle,
+        overdueCount,
+        dueSoonCount,
+        totalAttentionCount: totalCount,
+        amount: overdueAmount,
+      };
+    } else {
+      const dueSoonAmount = dueSoonList.reduce((sum, d) => sum + (d.amount || 0), 0);
+      const title =
+        dueSoonCount === 1
+          ? `1 debt due soon · ₹${dueSoonAmount.toLocaleString('en-IN')} due`
+          : `${dueSoonCount} debts due soon · ₹${dueSoonAmount.toLocaleString('en-IN')} due`;
+      const subtitle = 'Due within 3 days';
+
+      this.debtReminderBanner = {
+        severity: 'warning',
+        title,
+        subtitle,
+        overdueCount: 0,
+        dueSoonCount,
+        totalAttentionCount: totalCount,
+        amount: dueSoonAmount,
+      };
+    }
   }
 
   loadProactiveInsights(): void {
@@ -1000,7 +1137,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  categoryLabel(category: string): string {
-    return category.charAt(0) + category.slice(1).toLowerCase();
+  categoryLabel(category?: string | null): string {
+    if (!category) return 'Other';
+    const c = category.trim();
+    return c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();
   }
 }

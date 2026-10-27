@@ -25,13 +25,7 @@ import java.util.stream.Collectors;
 
 @SpringBootTest
 @ActiveProfiles("dev")
-@TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:mysql://localhost:3306/spendsense?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8",
-        "spring.datasource.username=root",
-        "spring.datasource.password=Harshit#$04",
-        "spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver",
-        "spring.flyway.enabled=true"
-})
+
 class September2026AnalyticsReconciliationTest {
 
     @Autowired
