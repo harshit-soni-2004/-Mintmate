@@ -73,6 +73,47 @@
     </div>
   } @else if (overview) {
     <!-- ============================================== -->
+    <!-- CATEGORIZATION QUALITY & CONFIDENCE HEALTH     -->
+    <!-- ============================================== -->
+    @if (overview.categories && (overview.categories.totalTransactions || 0) > 0) {
+      <section class="categorization-health-card" aria-label="Categorization quality and review status">
+        <div class="health-meta-group">
+          <div class="health-header-badge">
+            <span class="health-sparkle">✦</span>
+            <span class="health-badge-text">Categorization Health</span>
+          </div>
+          <div class="health-stats-row">
+            <span class="stat-auto">
+              <strong>{{ overview.categories.autoClassifiedPercentage || 0 }}%</strong> Confidently auto-classified
+              <span class="stat-count">({{ overview.categories.autoClassifiedCount || 0 }} of {{ overview.categories.totalTransactions }} transactions)</span>
+            </span>
+            <span class="stat-divider">•</span>
+            <span class="stat-review">
+              <strong>{{ overview.categories.requiresReviewPercentage || 0 }}%</strong> Flagged for review
+              <span class="stat-count">({{ overview.categories.requiresReviewCount || 0 }} transactions)</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="health-progress-wrap" role="progressbar" [attr.aria-valuenow]="overview.categories.autoClassifiedPercentage" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-bar-auto" [style.width.%]="overview.categories.autoClassifiedPercentage || 0" title="Confidently Auto-Classified"></div>
+          <div class="progress-bar-review" [style.width.%]="overview.categories.requiresReviewPercentage || 0" title="Flagged for Review"></div>
+        </div>
+
+        @if ((overview.categories.requiresReviewCount || 0) > 0) {
+          <div class="health-action-row">
+            <p class="health-notice">
+              Uncertain & low-confidence transactions are isolated in <strong>Other</strong> to prevent distorted analytics until confirmed.
+            </p>
+            <a routerLink="/app/transactions" [queryParams]="{ needsReview: 'true' }" class="btn-review-link">
+              Review {{ overview.categories.requiresReviewCount }} transactions →
+            </a>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- ============================================== -->
     <!-- FIRST VIEW: PRIORITY INSIGHTS HERO GRID        -->
     <!-- ============================================== -->
     <div class="priority-insights-grid">
@@ -83,14 +124,20 @@
             <span class="card-eyebrow">Spending this {{ rangePreset === 'this-month' ? 'month' : 'period' }}</span>
             <div class="hero-amount-group">
               <span class="hero-amount">{{ overview.summary.totalExpenses | currency:'INR':'symbol-narrow':'1.0-0' }}</span>
-              <span
-                class="trend-change-badge"
-                [class.favorable]="overview.comparison.expenses.direction === 'DECREASED'"
-                [class.unfavorable]="overview.comparison.expenses.direction === 'INCREASED'"
-              >
-                {{ overview.comparison.expenses.percentageChange >= 0 ? '↑' : '↓' }}
-                {{ overview.comparison.expenses.percentageChange | number:'1.0-1' }}% vs prior period
-              </span>
+              @if (overview.comparison.hasPriorPeriodData && overview.comparison.expenses.percentageChange != null) {
+                <span
+                  class="trend-change-badge"
+                  [class.favorable]="overview.comparison.expenses.direction === 'DECREASED'"
+                  [class.unfavorable]="overview.comparison.expenses.direction === 'INCREASED'"
+                >
+                  {{ (overview.comparison.expenses.percentageChange || 0) >= 0 ? '↑' : '↓' }}
+                  {{ overview.comparison.expenses.percentageChange | number:'1.0-1' }}% vs prior period
+                </span>
+              } @else {
+                <span class="trend-change-badge neutral">
+                  Not enough data yet
+                </span>
+              }
             </div>
           </div>
 
@@ -199,6 +246,16 @@
                 <div class="cat-identity">
                   <span class="cat-bullet" [style.background-color]="cat.color"></span>
                   <span class="cat-title">{{ cat.label }}</span>
+                  @if (cat.requiresReviewCount && cat.requiresReviewCount > 0) {
+                    <a
+                      routerLink="/app/transactions"
+                      [queryParams]="{ needsReview: 'true', category: cat.category }"
+                      class="cat-review-pill"
+                      [title]="cat.requiresReviewCount + ' transactions need review'"
+                    >
+                      {{ cat.requiresReviewCount }} need review
+                    </a>
+                  }
                 </div>
                 <div class="cat-values">
                   <span class="cat-pct">{{ cat.percentage }}%</span>
@@ -229,12 +286,19 @@
                 <span class="dot" [style.background-color]="getCategoryColor(topCategoryShift.category)"></span>
                 <strong>{{ categoryLabel(topCategoryShift.category) }}</strong>
               </div>
-              <p class="shift-summary">
-                {{ categoryLabel(topCategoryShift.category) }} spending
-                {{ topCategoryShift.percentageChange >= 0 ? 'increased' : 'decreased' }}
-                <strong>{{ topCategoryShift.percentageChange >= 0 ? '+' : '' }}{{ topCategoryShift.percentageChange }}%</strong>
-                vs prior period.
-              </p>
+              @if (topCategoryShift.percentageChange != null && (topCategoryShift.previousAmount || 0) > 0) {
+                <p class="shift-summary">
+                  {{ categoryLabel(topCategoryShift.category) }} spending
+                  {{ topCategoryShift.percentageChange >= 0 ? 'increased' : 'decreased' }}
+                  <strong>{{ topCategoryShift.percentageChange >= 0 ? '+' : '' }}{{ topCategoryShift.percentageChange }}%</strong>
+                  vs prior period.
+                </p>
+              } @else {
+                <p class="shift-summary">
+                  {{ categoryLabel(topCategoryShift.category) }} spending is {{ topCategoryShift.amount | currency:'INR':'symbol-narrow':'1.0-0' }} ({{ topCategoryShift.percentage }}% of total).
+                  <span class="shift-subtext">Not enough prior period data yet for comparison.</span>
+                </p>
+              }
             </div>
           }
 
@@ -345,6 +409,7 @@
                   <th class="text-right">Spent</th>
                   <th class="text-right">% of Total</th>
                   <th class="text-right">Change vs Prev</th>
+                  <th class="text-right">Review Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -359,9 +424,27 @@
                     <td class="text-right font-mono">{{ cat.amount | currency:'INR':'symbol-narrow':'1.0-0' }}</td>
                     <td class="text-right font-mono">{{ cat.percentage }}%</td>
                     <td class="text-right">
-                      <span class="change-tag" [ngClass]="cat.direction.toLowerCase()">
-                        {{ cat.percentageChange >= 0 ? '+' : '' }}{{ cat.percentageChange }}%
-                      </span>
+                      @if (cat.percentageChange != null && (cat.previousAmount || 0) > 0) {
+                        <span class="change-tag" [ngClass]="cat.direction.toLowerCase()">
+                          {{ cat.percentageChange >= 0 ? '+' : '' }}{{ cat.percentageChange }}%
+                        </span>
+                      } @else {
+                        <span class="change-tag neutral" title="Not enough prior period data">—</span>
+                      }
+                    </td>
+                    <td class="text-right">
+                      @if (cat.requiresReviewCount && cat.requiresReviewCount > 0) {
+                        <a
+                          routerLink="/app/transactions"
+                          [queryParams]="{ needsReview: 'true', category: cat.category }"
+                          class="table-review-link"
+                          title="Click to review flagged transactions"
+                        >
+                          <span class="review-tag">{{ cat.requiresReviewCount }} flagged</span>
+                        </a>
+                      } @else {
+                        <span class="verified-tag">Auto-classified</span>
+                      }
                     </td>
                   </tr>
                 }
@@ -384,9 +467,13 @@
                 <span class="val-current">{{ overview.comparison.expenses.currentAmount | currency:'INR':'symbol-narrow':'1.0-0' }}</span>
                 <span class="val-previous">prev: {{ overview.comparison.expenses.previousAmount | currency:'INR':'symbol-narrow':'1.0-0' }}</span>
               </div>
-              <div class="comp-badge" [ngClass]="overview.comparison.expenses.direction.toLowerCase()">
-                {{ overview.comparison.expenses.percentageChange >= 0 ? '+' : '' }}{{ overview.comparison.expenses.percentageChange }}%
-              </div>
+              @if (overview.comparison.expenses.percentageChange != null && (overview.comparison.expenses.previousAmount || 0) > 0) {
+                <div class="comp-badge" [ngClass]="overview.comparison.expenses.direction.toLowerCase()">
+                  {{ overview.comparison.expenses.percentageChange >= 0 ? '+' : '' }}{{ overview.comparison.expenses.percentageChange }}%
+                </div>
+              } @else {
+                <div class="comp-badge neutral" title="Not enough prior period data">—</div>
+              }
             </div>
 
             <div class="comparison-row">
@@ -395,9 +482,13 @@
                 <span class="val-current">{{ overview.comparison.income.currentAmount | currency:'INR':'symbol-narrow':'1.0-0' }}</span>
                 <span class="val-previous">prev: {{ overview.comparison.income.previousAmount | currency:'INR':'symbol-narrow':'1.0-0' }}</span>
               </div>
-              <div class="comp-badge" [ngClass]="overview.comparison.income.direction.toLowerCase()">
-                {{ overview.comparison.income.percentageChange >= 0 ? '+' : '' }}{{ overview.comparison.income.percentageChange }}%
-              </div>
+              @if (overview.comparison.income.percentageChange != null && (overview.comparison.income.previousAmount || 0) > 0) {
+                <div class="comp-badge" [ngClass]="overview.comparison.income.direction.toLowerCase()">
+                  {{ overview.comparison.income.percentageChange >= 0 ? '+' : '' }}{{ overview.comparison.income.percentageChange }}%
+                </div>
+              } @else {
+                <div class="comp-badge neutral" title="Not enough prior period data">—</div>
+              }
             </div>
 
             <div class="comparison-row">
@@ -406,9 +497,13 @@
                 <span class="val-current">{{ overview.comparison.currentSavingsRate }}%</span>
                 <span class="val-previous">prev: {{ overview.comparison.previousSavingsRate }}%</span>
               </div>
-              <div class="comp-badge" [class.increased]="overview.comparison.savingsRateChange >= 0" [class.decreased]="overview.comparison.savingsRateChange < 0">
-                {{ overview.comparison.savingsRateChange >= 0 ? '+' : '' }}{{ overview.comparison.savingsRateChange }}% pts
-              </div>
+              @if (overview.comparison.hasPriorPeriodData && (overview.comparison.income.previousAmount || 0) > 0) {
+                <div class="comp-badge" [class.increased]="overview.comparison.savingsRateChange >= 0" [class.decreased]="overview.comparison.savingsRateChange < 0">
+                  {{ overview.comparison.savingsRateChange >= 0 ? '+' : '' }}{{ overview.comparison.savingsRateChange }}% pts
+                </div>
+              } @else {
+                <div class="comp-badge neutral" title="Not enough prior period data">—</div>
+              }
             </div>
           </div>
         </div>

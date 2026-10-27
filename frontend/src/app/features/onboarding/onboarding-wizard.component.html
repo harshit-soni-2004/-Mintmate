@@ -1,0 +1,348 @@
+<div class="onboarding-container">
+  <!-- Top Progress & Header Bar -->
+  <header class="wizard-header">
+    <div class="header-branding">
+      <div class="brand-chip">
+        <span class="brand-gem"></span>
+        <span class="brand-name">SpendSense Setup</span>
+      </div>
+      <p class="wizard-eyebrow">Financial Profile & Baseline Setup</p>
+    </div>
+
+    <div class="header-actions">
+      <span class="step-indicator">Step {{ currentStep }} of {{ totalSteps }}</span>
+      <button type="button" class="btn-skip" (click)="skip()" aria-label="Skip onboarding for now">
+        Skip for now &rarr;
+      </button>
+    </div>
+  </header>
+
+  <!-- Progress Bar Track -->
+  <div class="progress-bar-wrap" role="progressbar" [attr.aria-valuenow]="currentStep" aria-valuemin="1" [attr.aria-valuemax]="totalSteps">
+    <div class="progress-bar-fill" [style.width.%]="(currentStep / totalSteps) * 100"></div>
+  </div>
+
+  <!-- Wizard Content Card -->
+  <main class="wizard-card">
+    @if (errorMessage) {
+      <div class="alert alert-danger" role="alert">
+        <span>⚠ {{ errorMessage }}</span>
+      </div>
+    }
+
+    <!-- STEP 1: Persona Selection -->
+    @if (currentStep === 1) {
+      <section class="wizard-step" aria-labelledby="step1-heading">
+        <div class="step-lead">
+          <span class="step-badge">Phase 1</span>
+          <h1 id="step1-heading" class="step-title">Select your financial profile</h1>
+          <p class="step-desc">
+            Tell us about your earning style so SpendSense can calibrate intelligent salary tracking, period baselines, and spending anomalies for you.
+          </p>
+        </div>
+
+        <div class="personas-grid" role="radiogroup" aria-label="Select persona">
+          @for (p of personas; track p.key) {
+            <div
+              class="persona-card"
+              [class.active]="form.value.persona === p.key"
+              (click)="selectPersona(p.key)"
+              role="radio"
+              [attr.aria-checked]="form.value.persona === p.key"
+              tabindex="0"
+              (keydown.enter)="selectPersona(p.key)"
+              (keydown.space)="selectPersona(p.key)"
+            >
+              <div class="persona-icon-wrap">{{ p.icon }}</div>
+              <div class="persona-content">
+                <h3 class="persona-name">{{ p.title }}</h3>
+                <p class="persona-desc">{{ p.subtitle }}</p>
+              </div>
+              <div class="persona-radio-dot"></div>
+            </div>
+          }
+        </div>
+
+        <div class="wizard-actions">
+          <div></div>
+          <button type="button" class="btn-primary" (click)="nextStep()">
+            Continue to Income Sources &rarr;
+          </button>
+        </div>
+      </section>
+    }
+
+    <!-- STEP 2: Income Source Declaration -->
+    @if (currentStep === 2) {
+      <section class="wizard-step" aria-labelledby="step2-heading">
+        <div class="step-lead">
+          <span class="step-badge">Phase 2</span>
+          <h1 id="step2-heading" class="step-title">Declare your income sources</h1>
+          <p class="step-desc">
+            Define your expected income so SpendSense can identify salary deposits and measure genuine savings rates from day one.
+          </p>
+        </div>
+
+        <!-- Multi-income Toggle -->
+        <div class="toggle-card">
+          <div class="toggle-meta">
+            <strong>Multiple Income Streams</strong>
+            <p>Enable if you receive income from multiple employers, clients, or investments.</p>
+          </div>
+          <button
+            type="button"
+            class="switch-btn"
+            [class.checked]="form.value.hasMultipleIncome"
+            (click)="toggleMultipleIncome()"
+            role="switch"
+            [attr.aria-checked]="form.value.hasMultipleIncome"
+          >
+            <span class="switch-thumb"></span>
+          </button>
+        </div>
+
+        <!-- Income Sources Form Array -->
+        <div class="income-sources-list">
+          @for (ctrl of incomeSourcesArray.controls; track $index; let idx = $index) {
+            <div class="source-card" [formGroup]="ctrl">
+              <div class="source-card-header">
+                <span class="source-card-title">
+                  {{ idx === 0 ? 'Primary Income Source' : 'Additional Income Source #' + (idx + 1) }}
+                </span>
+                @if (idx > 0) {
+                  <button type="button" class="btn-remove-source" (click)="removeIncomeSource(idx)">
+                    Remove
+                  </button>
+                }
+              </div>
+
+              <div class="form-grid-2">
+                <!-- Source Name -->
+                <div class="field-group" [class.has-error]="ctrl.get('sourceName')?.invalid && ctrl.get('sourceName')?.touched">
+                  <label [for]="'source-name-' + idx" class="field-label">Source / Employer Name <span class="req">*</span></label>
+                  <input
+                    [id]="'source-name-' + idx"
+                    type="text"
+                    formControlName="sourceName"
+                    class="form-input"
+                    placeholder="e.g. Acme Corp Salary"
+                  />
+                  @if (ctrl.get('sourceName')?.invalid && ctrl.get('sourceName')?.touched) {
+                    <p class="field-error">Source name is required.</p>
+                  }
+                </div>
+
+                <!-- Income Type -->
+                <div class="field-group">
+                  <label [for]="'income-type-' + idx" class="field-label">Income Type <span class="req">*</span></label>
+                  <select [id]="'income-type-' + idx" formControlName="incomeType" class="form-input">
+                    @for (it of incomeTypes; track it.key) {
+                      <option [value]="it.key">{{ it.label }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-grid-3">
+                <!-- Declared Amount -->
+                <div class="field-group" [class.has-error]="ctrl.get('declaredAmount')?.invalid && ctrl.get('declaredAmount')?.touched">
+                  <label [for]="'income-amt-' + idx" class="field-label">Expected Net Amount (₹) <span class="req">*</span></label>
+                  <input
+                    [id]="'income-amt-' + idx"
+                    type="number"
+                    min="1"
+                    step="100"
+                    formControlName="declaredAmount"
+                    class="form-input"
+                    placeholder="e.g. 75000"
+                  />
+                  @if (ctrl.get('declaredAmount')?.invalid && ctrl.get('declaredAmount')?.touched) {
+                    <p class="field-error">Please specify a valid income amount.</p>
+                  }
+                </div>
+
+                <!-- Frequency -->
+                <div class="field-group">
+                  <label [for]="'income-freq-' + idx" class="field-label">Payout Frequency <span class="req">*</span></label>
+                  <select [id]="'income-freq-' + idx" formControlName="frequency" class="form-input">
+                    @for (freq of incomeFrequencies; track freq.key) {
+                      <option [value]="freq.key">{{ freq.label }}</option>
+                    }
+                  </select>
+                </div>
+
+                <!-- Expected Day of Month -->
+                <div class="field-group">
+                  <label [for]="'income-day-' + idx" class="field-label">Expected Day (1-31)</label>
+                  <input
+                    [id]="'income-day-' + idx"
+                    type="number"
+                    min="1"
+                    max="31"
+                    formControlName="expectedDayOfMonth"
+                    class="form-input"
+                    placeholder="1"
+                  />
+                </div>
+              </div>
+
+              <!-- Employer / Payer Keyword -->
+              <div class="field-group">
+                <label [for]="'income-keyword-' + idx" class="field-label">Statement Reference Keyword (Optional)</label>
+                <input
+                  [id]="'income-keyword-' + idx"
+                  type="text"
+                  formControlName="employerOrPayerKeyword"
+                  class="form-input"
+                  placeholder="e.g. ACMECORP, INFOSYS, PAYROLL (used to automatically match deposits)"
+                />
+                <p class="field-hint">We will use this keyword to automatically identify salary credits in imported bank PDFs.</p>
+              </div>
+            </div>
+          }
+
+          @if (form.value.hasMultipleIncome) {
+            <button type="button" class="btn-add-source" (click)="addIncomeSource(false)">
+              + Add another income stream
+            </button>
+          }
+        </div>
+
+        <div class="wizard-actions">
+          <button type="button" class="btn-secondary" (click)="prevStep()">
+            &larr; Back
+          </button>
+          <button type="button" class="btn-primary" (click)="nextStep()">
+            Continue to Targets &rarr;
+          </button>
+        </div>
+      </section>
+    }
+
+    <!-- STEP 3: Savings Target & Investment Target -->
+    @if (currentStep === 3) {
+      <section class="wizard-step" aria-labelledby="step3-heading">
+        <div class="step-lead">
+          <span class="step-badge">Phase 3</span>
+          <h1 id="step3-heading" class="step-title">Set your monthly targets</h1>
+          <p class="step-desc">
+            Define realistic guardrails for monthly wealth accumulation. These power your dashboard goal progress bars.
+          </p>
+        </div>
+
+        <div class="summary-pill-banner">
+          <span>Total Declared Monthly Inflow:</span>
+          <strong>{{ getTotalDeclaredIncome() | currency:'INR':'symbol-narrow':'1.0-0' }}</strong>
+        </div>
+
+        <div class="targets-form-grid" [formGroup]="form">
+          <!-- Savings Target -->
+          <div class="target-card">
+            <div class="target-header">
+              <div class="target-icon">🛡️</div>
+              <div class="target-meta">
+                <h3>Monthly Savings Target</h3>
+                <p>Emergency buffer, bank deposits, and liquid reserves.</p>
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="monthlySavingsTarget" class="field-label">Target Amount (₹)</label>
+              <input
+                id="monthlySavingsTarget"
+                type="number"
+                min="0"
+                step="500"
+                formControlName="monthlySavingsTarget"
+                class="form-input"
+                placeholder="e.g. 20000"
+              />
+            </div>
+          </div>
+
+          <!-- Investment Target -->
+          <div class="target-card">
+            <div class="target-header">
+              <div class="target-icon">📈</div>
+              <div class="target-meta">
+                <h3>Monthly Investment Target</h3>
+                <p>Mutual funds, SIPs, stocks, and retirement contributions.</p>
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="monthlyInvestmentTarget" class="field-label">Target Amount (₹)</label>
+              <input
+                id="monthlyInvestmentTarget"
+                type="number"
+                min="0"
+                step="500"
+                formControlName="monthlyInvestmentTarget"
+                class="form-input"
+                placeholder="e.g. 25000"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="wizard-actions">
+          <button type="button" class="btn-secondary" (click)="prevStep()">
+            &larr; Back
+          </button>
+          <button type="button" class="btn-primary" (click)="nextStep()">
+            Continue to Category Allocations &rarr;
+          </button>
+        </div>
+      </section>
+    }
+
+    <!-- STEP 4: Optional Category Allocations -->
+    @if (currentStep === 4) {
+      <section class="wizard-step" aria-labelledby="step4-heading">
+        <div class="step-lead">
+          <span class="step-badge">Phase 4 (Optional)</span>
+          <h1 id="step4-heading" class="step-title">Rough Category Spending Allocations</h1>
+          <p class="step-desc">
+            Optionally set estimated monthly ceilings per category. SpendSense will automatically create your starting monthly budgets from these.
+          </p>
+        </div>
+
+        <div class="allocations-quick-bar">
+          <button type="button" class="btn-quick-suggest" (click)="autoFillCategorySuggestions()">
+            ✨ Auto-suggest based on declared income
+          </button>
+        </div>
+
+        <div class="categories-grid" [formGroup]="categoryAllocationsGroup">
+          @for (cat of categories; track cat.key) {
+            <div class="category-alloc-card">
+              <div class="cat-head">
+                <span class="cat-emoji">{{ cat.icon }}</span>
+                <span class="cat-label">{{ cat.label }}</span>
+              </div>
+              <div class="cat-input-row">
+                <span class="currency-prefix">₹</span>
+                <input
+                  [id]="'cat-alloc-' + cat.key"
+                  type="number"
+                  min="0"
+                  step="500"
+                  [formControlName]="cat.key"
+                  class="form-input cat-input"
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="wizard-actions">
+          <button type="button" class="btn-secondary" (click)="prevStep()" [disabled]="submitting">
+            &larr; Back
+          </button>
+          <button type="button" class="btn-primary btn-complete" (click)="complete()" [disabled]="submitting">
+            {{ submitting ? 'Finalizing Setup...' : 'Complete Onboarding & Go to Dashboard ✓' }}
+          </button>
+        </div>
+      </section>
+    }
+  </main>
+</div>

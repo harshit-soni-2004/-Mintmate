@@ -92,6 +92,12 @@ export class AssistantComponent implements OnInit {
       .replace(/\s*\([A-Z_]{3,}\)/g, ''); // Strip internal category enums like (FOOD)
   }
 
+  categoryLabel(cat?: string | null): string {
+    if (!cat) return 'Other';
+    const c = cat.trim();
+    return c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();
+  }
+
   getVisualHighlight(content: string): AssistantVisualHighlight | null {
     if (!content) return null;
     // Pattern: spending on <Category> was <₹Amount> [across <N> transactions] [(<X>% of total expenses)]

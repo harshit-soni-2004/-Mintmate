@@ -127,6 +127,14 @@ public class CompareSpendingPeriodsTool implements FinancialTool<CompareSpending
                 largestDecreases
         );
 
+        BigDecimal expPct = (comparison.expenses() != null && comparison.expenses().percentageChange() != null)
+                ? comparison.expenses().percentageChange() : BigDecimal.ZERO;
+        String expDir = comparison.expenses() != null ? comparison.expenses().direction().name() : "UNCHANGED";
+        BigDecimal incPct = (comparison.income() != null && comparison.income().percentageChange() != null)
+                ? comparison.income().percentageChange() : BigDecimal.ZERO;
+        String incDir = comparison.income() != null ? comparison.income().direction().name() : "UNCHANGED";
+        BigDecimal sRateChange = comparison.savingsRateChange() != null ? comparison.savingsRateChange() : BigDecimal.ZERO;
+
         StringBuilder summaryBuilder = new StringBuilder();
         summaryBuilder.append(String.format(
                 "Comparison: From %s to %s vs prior period (%s to %s): Expenses changed by %.1f%% (%s), income changed by %.1f%% (%s), and savings rate changed by %.1f percentage points.",
@@ -134,11 +142,11 @@ public class CompareSpendingPeriodsTool implements FinancialTool<CompareSpending
                 comparison.currentTo(),
                 comparison.previousFrom(),
                 comparison.previousTo(),
-                comparison.expenses().percentageChange(),
-                comparison.expenses().direction(),
-                comparison.income().percentageChange(),
-                comparison.income().direction(),
-                comparison.savingsRateChange()
+                expPct,
+                expDir,
+                incPct,
+                incDir,
+                sRateChange
         ));
 
         if (!largestIncreases.isEmpty()) {

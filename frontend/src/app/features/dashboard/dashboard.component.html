@@ -64,20 +64,81 @@
       </div>
     }
 
+    @if (dashboardData.summary.hasOnboardingBaseline === false && !dashboardData.summary.declaredIncome && !dismissedOnboardingBanner) {
+      <div class="onboarding-welcome-banner" role="banner">
+        <div class="onboarding-banner-icon">🚀</div>
+        <div class="onboarding-banner-content">
+          <strong>Calibrate your financial baseline</strong>
+          <p>Declare your expected income and set your monthly targets to unlock accurate savings rates and salary tracking.</p>
+        </div>
+        <div class="onboarding-banner-actions">
+          <a routerLink="/app/onboarding" class="btn-start-onboarding">Complete Setup &rarr;</a>
+          <button type="button" class="btn-dismiss-onboarding" (click)="dismissedOnboardingBanner = true" aria-label="Dismiss banner">✕</button>
+        </div>
+      </div>
+    }
+
+    <!-- Debt Reminder Combined Banner (Overdue / Due within 3 days) -->
+    @if (showDebtBanner && debtReminderBanner) {
+      <div
+        class="debt-reminder-banner"
+        [class.status-overdue]="debtReminderBanner.severity === 'danger'"
+        [class.status-due-soon]="debtReminderBanner.severity === 'warning'"
+        role="alert"
+        aria-live="polite"
+        id="debt-reminder-banner"
+      >
+        <div class="banner-lead">
+          <span class="banner-badge-icon" aria-hidden="true">{{ debtReminderBanner.severity === 'danger' ? '⚠️' : '⏰' }}</span>
+          <div class="banner-text">
+            <strong class="banner-title" id="debt-banner-title">{{ debtReminderBanner.title }}</strong>
+            <span class="banner-sub" id="debt-banner-sub">{{ debtReminderBanner.subtitle }}</span>
+          </div>
+        </div>
+
+        <div class="banner-actions">
+          <a routerLink="/app/debts" class="btn-banner-link" id="btn-debt-banner-link">
+            <span>View in IOUs</span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </a>
+          <button
+            type="button"
+            class="btn-banner-dismiss"
+            id="btn-dismiss-debt-banner"
+            (click)="dismissDebtBanner()"
+            title="Dismiss reminder for 24 hours"
+            aria-label="Dismiss reminder for 24 hours"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    }
+
     <!-- Section 2: ONE Primary Financial Hero Card -->
     <section class="hero-financial-section" aria-label="Primary Financial Summary">
       <div class="hero-card">
         <div class="hero-header">
           <span class="hero-label">Available Balance &amp; Cashflow</span>
-          @if (dashboardData.summary.incomeChangePercentage !== null) {
-            <span class="fintech-pill delta-pill" [class.positive]="dashboardData.summary.incomeChangePercentage >= 0">
-              {{ dashboardData.summary.incomeChangePercentage >= 0 ? '↑ +' : '↓ ' }}{{ dashboardData.summary.incomeChangePercentage }}% this month
+          @if (cashflowDelta; as delta) {
+            <span
+              class="fintech-pill delta-pill"
+              [class.positive]="delta.isPositive"
+              [class.negative]="delta.isNegative"
+              [class.neutral]="delta.isNeutral"
+            >
+              {{ delta.formatted }}
             </span>
           }
         </div>
 
         <div class="hero-number-wrap">
-          <strong class="financial-hero-number">
+          <strong
+            class="financial-hero-number"
+            [class.positive]="dashboardData.summary.netSavings > 0"
+            [class.negative]="dashboardData.summary.netSavings < 0"
+            [class.neutral]="dashboardData.summary.netSavings === 0"
+          >
             {{ dashboardData.summary.netSavings | currency:'INR':'symbol-narrow':'1.0-0' }}
           </strong>
         </div>
@@ -107,8 +168,8 @@
             >
               <defs>
                 <linearGradient id="sparklineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="#8be35a" stop-opacity="0.38"/>
-                  <stop offset="100%" stop-color="#8be35a" stop-opacity="0.0"/>
+                  <stop offset="0%" stop-color="#AAF8CB" stop-opacity="0.38"/>
+                  <stop offset="100%" stop-color="#AAF8CB" stop-opacity="0.0"/>
                 </linearGradient>
               </defs>
 
@@ -186,7 +247,12 @@
         <div class="hero-submetrics">
           <div class="submetric-item savings-card">
             <span class="submetric-label">Net Savings</span>
-            <strong class="metric-value submetric-val" [class.positive]="dashboardData.summary.netSavings >= 0">
+            <strong
+              class="metric-value submetric-val"
+              [class.positive]="dashboardData.summary.netSavings > 0"
+              [class.negative]="dashboardData.summary.netSavings < 0"
+              [class.neutral]="dashboardData.summary.netSavings === 0"
+            >
               {{ dashboardData.summary.netSavings | currency:'INR':'symbol-narrow':'1.0-0' }}
             </strong>
           </div>
@@ -194,8 +260,11 @@
           <div class="submetric-item income-card">
             <span class="submetric-label">Income Inflow</span>
             <strong class="metric-value submetric-val income">
-              {{ dashboardData.summary.totalIncome | currency:'INR':'symbol-narrow':'1.0-0' }}
+              {{ effectiveIncome | currency:'INR':'symbol-narrow':'1.0-0' }}
             </strong>
+            @if (isDeclaredBaselineIncome) {
+              <span class="baseline-subtext">Declared baseline</span>
+            }
           </div>
           <div class="submetric-divider"></div>
           <div class="submetric-item expense-card">
@@ -227,10 +296,10 @@
 
         <div class="insight-body">
           <h3 class="insight-headline">
-            {{ topInsight?.title || "You're spending 10% less this month" }}
+            {{ displayInsightTitle }}
           </h3>
           <p class="insight-desc">
-            {{ topInsight?.description || "Your expenses are down compared with the previous period. You're on track with your goals." }}
+            {{ displayInsightDescription }}
           </p>
         </div>
 
@@ -294,32 +363,97 @@
       </div>
 
       <!-- Hover / Selected Day Popover Banner -->
-      @if (hoveredDateSummary || (selectedDateSummary && selectedDateSummary.transactionCount > 0)) {
+      @if (hoveredDateSummary || selectedDateSummary) {
         <div class="cal-popover-banner" role="status" aria-live="polite">
           <div class="popover-lead">
             <span class="popover-date">{{ (hoveredDateSummary?.date || selectedDateSummary.date) | date:'EEEE, MMMM d' }}</span>
-            <div class="popover-spent-badge">
-              <span class="popover-label">Spent</span>
-              <strong class="popover-amount">
-                {{ (hoveredDateSummary?.totalExpense ?? selectedDateSummary.totalExpense) | currency:'INR':'symbol-narrow':'1.0-0' }}
-              </strong>
-              <span class="popover-tx-count">
-                &middot; {{ (hoveredDateSummary?.transactionCount ?? selectedDateSummary.transactionCount) }} transactions
-              </span>
-            </div>
+            @if ((hoveredDateSummary?.totalExpense ?? selectedDateSummary.totalExpense) > 0) {
+              <div class="popover-spent-badge">
+                <span class="popover-label">Spent</span>
+                <strong class="popover-amount">
+                  {{ (hoveredDateSummary?.totalExpense ?? selectedDateSummary.totalExpense) | currency:'INR':'symbol-narrow':'1.0-0' }}
+                </strong>
+                <span class="popover-tx-count">
+                  &middot; {{ (hoveredDateSummary?.transactionCount ?? selectedDateSummary.transactionCount) }} {{ (hoveredDateSummary?.transactionCount ?? selectedDateSummary.transactionCount) === 1 ? 'transaction' : 'transactions' }}
+                </span>
+              </div>
+            } @else {
+              <div class="popover-empty-notice">
+                <span>No spending on this day</span>
+              </div>
+            }
           </div>
 
-          @if ((hoveredDateSummary?.topCategories || selectedDateSummary.categoryBreakdown).length > 0) {
-            <div class="popover-categories">
-              @for (cat of (hoveredDateSummary?.topCategories || selectedDateSummary.categoryBreakdown).slice(0, 3); track cat.category) {
-                <span class="popover-cat-chip">
-                  {{ categoryLabel(cat.category) }}
-                  <strong>{{ cat.amount | currency:'INR':'symbol-narrow':'1.0-0' }}</strong>
-                </span>
-              }
-            </div>
-          }
+          <div class="popover-actions-wrap">
+            @if ((hoveredDateSummary?.topCategories || selectedDateSummary.categoryBreakdown).length > 0) {
+              <div class="popover-categories">
+                @for (cat of (hoveredDateSummary?.topCategories || selectedDateSummary.categoryBreakdown).slice(0, 3); track cat.category) {
+                  <span class="popover-cat-chip">
+                    {{ categoryLabel(cat.category) }}
+                    <strong>{{ cat.amount | currency:'INR':'symbol-narrow':'1.0-0' }}</strong>
+                  </span>
+                }
+              </div>
+            }
+
+            @if (!hoveredDateSummary && selectedDateSummary && selectedDateSummary.totalExpense > 0) {
+              <button
+                type="button"
+                class="btn-toggle-daily-tx"
+                id="btn-toggle-daily-tx"
+                [attr.aria-expanded]="isDailyTxExpanded"
+                aria-controls="daily-tx-card"
+                (click)="toggleDailyTransactions()"
+                title="{{ isDailyTxExpanded ? 'Hide transactions' : 'View transactions' }}"
+              >
+                <span>{{ isDailyTxExpanded ? 'Hide transactions' : 'View transactions' }}</span>
+                <span class="chevron" [class.expanded]="isDailyTxExpanded" aria-hidden="true">▾</span>
+              </button>
+            }
+          </div>
         </div>
+
+        @if (!hoveredDateSummary && isDailyTxExpanded && selectedDateSummary && selectedDateSummary.totalExpense > 0) {
+          <div id="daily-tx-card" class="daily-tx-expanded-card" role="region" aria-label="Transactions for selected day">
+            @if (dailyTxLoading) {
+              <div class="daily-tx-loading" role="status">
+                <span class="daily-spinner" aria-hidden="true"></span>
+                <span>Loading transactions…</span>
+              </div>
+            } @else if (dailyTxError) {
+              <div class="daily-tx-error" role="alert">
+                <span>{{ dailyTxError }}</span>
+                <button type="button" class="btn-retry-daily-tx" (click)="loadDailyTransactions(selectedDate)">Try again</button>
+              </div>
+            } @else if (!dailyTransactions.length) {
+              <div class="daily-tx-empty">
+                <span>No transactions found for this day.</span>
+              </div>
+            } @else {
+              <div class="daily-tx-list-scroll">
+                @for (tx of dailyTransactions; track tx.id) {
+                  <div
+                    class="daily-tx-row"
+                    (click)="openEdit(tx)"
+                    role="button"
+                    tabindex="0"
+                    (keydown.enter)="openEdit(tx)"
+                    (keydown.space)="$event.preventDefault(); openEdit(tx)"
+                    [attr.aria-label]="(tx.description || tx.merchant || 'Expense') + ', ' + (tx.amount | currency:'INR':'symbol-narrow':'1.0-0')"
+                  >
+                    <div class="tx-item-lead">
+                      <span class="popover-cat-chip" [style.borderColor]="getCategoryColor(tx.category)">
+                        {{ categoryLabel(tx.category) }}
+                      </span>
+                      <span class="tx-item-title">{{ tx.description || tx.merchant || 'Expense' }}</span>
+                    </div>
+                    <strong class="tx-item-amount">{{ tx.amount | currency:'INR':'symbol-narrow':'1.0-0' }}</strong>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
       }
     </section>
 
@@ -405,15 +539,103 @@
           <div class="guardrail-card goal-guardrail">
             <div class="g-header">
               <span class="g-type-label">Savings Target</span>
-              <span class="g-status-badge on-track">On Track</span>
+              @if (savingsTarget && savingsTarget > 0) {
+                <span class="g-status-badge on-track">
+                  {{ (dashboardData.summary.netSavings >= savingsTarget) ? 'Achieved' : 'On Track' }}
+                </span>
+              }
             </div>
+            @if (savingsTarget && savingsTarget > 0) {
+              <div class="g-body">
+                <strong class="g-title">Monthly Target</strong>
+                <p class="g-numbers">
+                  {{ (dashboardData.summary.netSavings > 0 ? dashboardData.summary.netSavings : 0) | currency:'INR':'symbol-narrow':'1.0-0' }}
+                  <span class="g-muted">of {{ savingsTarget | currency:'INR':'symbol-narrow':'1.0-0' }} &middot; {{ Math.min(100, Math.round((Math.max(0, dashboardData.summary.netSavings) / savingsTarget) * 100)) }}%</span>
+                </p>
+                <div class="progress-bar-track">
+                  <div
+                    class="progress-bar-fill"
+                    [style.width.%]="Math.min(100, Math.round((Math.max(0, dashboardData.summary.netSavings) / savingsTarget) * 100))"
+                  ></div>
+                </div>
+              </div>
+            } @else {
+              <div class="g-body">
+                <p class="g-empty">No savings target configured yet.</p>
+                <a routerLink="/app/onboarding" class="btn-text-link">+ Set savings target</a>
+              </div>
+            }
+          </div>
+
+          <!-- Investment Target Card (if declared in onboarding) -->
+          @if (investTarget && investTarget > 0) {
+            <div class="guardrail-card invest-guardrail">
+              <div class="g-header">
+                <span class="g-type-label">Investment Target</span>
+                <span class="g-status-badge on-track">
+                  {{ ((dashboardData.summary.investmentContributions || 0) >= investTarget) ? 'Achieved' : 'Active' }}
+                </span>
+              </div>
+              <div class="g-body">
+                <strong class="g-title">Monthly Allocation</strong>
+                <p class="g-numbers">
+                  {{ (dashboardData.summary.investmentContributions || 0) | currency:'INR':'symbol-narrow':'1.0-0' }}
+                  <span class="g-muted">of {{ investTarget | currency:'INR':'symbol-narrow':'1.0-0' }} &middot; {{ Math.min(100, Math.round(((dashboardData.summary.investmentContributions || 0) / investTarget) * 100)) }}%</span>
+                </p>
+                <div class="progress-bar-track">
+                  <div
+                    class="progress-bar-fill invest-fill"
+                    [style.width.%]="Math.min(100, Math.round(((dashboardData.summary.investmentContributions || 0) / investTarget) * 100))"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Debt / IOU Guardrail Card -->
+          <div class="guardrail-card debt-guardrail" id="dashboard-debt-card">
+            <div class="g-header">
+              <span class="g-type-label">IOUs &amp; Debts</span>
+              @if (activeDebtRemindersCount > 0) {
+                <span class="g-status-badge debt-reminder-badge" id="dash-debt-reminder-badge">
+                  🔔 {{ activeDebtRemindersCount }} {{ activeDebtRemindersCount === 1 ? 'item' : 'items' }}
+                </span>
+              } @else {
+                <span class="g-status-badge settled-badge">Clear</span>
+              }
+            </div>
+
             <div class="g-body">
-              <strong class="g-title">Emergency Fund</strong>
-              <p class="g-numbers">
-                ₹42,000 <span class="g-muted">of ₹1,00,000 &middot; 42%</span>
-              </p>
-              <div class="progress-bar-track">
-                <div class="progress-bar-fill" style="width: 42%;"></div>
+              <div class="debt-metrics-row">
+                <div class="debt-metric-col">
+                  <span class="debt-col-label">Owed to you</span>
+                  <strong class="debt-col-val owed-to-me" id="dash-debt-owed-to-user">
+                    {{ debtOwedToUser | currency:'INR':'symbol-narrow':'1.0-0' }}
+                  </strong>
+                </div>
+                <div class="debt-metric-divider" aria-hidden="true"></div>
+                <div class="debt-metric-col">
+                  <span class="debt-col-label">You owe</span>
+                  <strong class="debt-col-val i-owe" id="dash-debt-owed-by-user">
+                    {{ debtOwedByUser | currency:'INR':'symbol-narrow':'1.0-0' }}
+                  </strong>
+                </div>
+              </div>
+
+              <div class="debt-net-row">
+                <span class="debt-net-label">Net balance</span>
+                <span
+                  class="debt-net-val"
+                  [class.is-positive]="netDebtPosition > 0"
+                  [class.is-negative]="netDebtPosition < 0"
+                  id="dash-debt-net-position"
+                >
+                  {{ netDebtPosition > 0 ? '+' : '' }}{{ netDebtPosition | currency:'INR':'symbol-narrow':'1.0-0' }}
+                </span>
+              </div>
+
+              <div class="debt-card-action">
+                <a routerLink="/app/debts" class="btn-text-link" id="dash-view-debts-link">Manage IOUs →</a>
               </div>
             </div>
           </div>

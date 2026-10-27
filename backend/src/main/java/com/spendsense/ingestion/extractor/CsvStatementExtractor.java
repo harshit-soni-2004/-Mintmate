@@ -42,6 +42,24 @@ public class CsvStatementExtractor implements DocumentExtractor {
     }
 
     @Override
+    public StatementDocumentMetadata extractMetadata(InputStream stream) {
+        if (stream == null) {
+            return StatementDocumentMetadata.empty();
+        }
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
+            List<String> lines = new ArrayList<>();
+            String line;
+            while ((line = reader.readLine()) != null && lines.size() < 60) {
+                lines.add(line);
+            }
+            return BankInstitutionDetector.detectMetadata(lines);
+        } catch (Exception e) {
+            return StatementDocumentMetadata.empty();
+        }
+    }
+
+    @Override
     public List<TransactionCandidate> extract(
         UUID documentId,
         DocumentAccountType accountType,

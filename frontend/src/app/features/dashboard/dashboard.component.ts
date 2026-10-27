@@ -9,6 +9,8 @@ import {
   CategorySpending,
   DailySpending,
   DashboardData,
+  DebtDto,
+  DebtSummaryDto,
   FinancialInsight,
   ProactiveInsightDto,
   SpendingAnomaly,
@@ -18,6 +20,7 @@ import {
   TransactionType,
 } from '../../core/api/api.types';
 import { AuthService } from '../../core/auth/auth.service';
+import { DebtService } from '../../core/api/debt.service';
 import { BudgetService } from '../budgets/budget.service';
 import { InsightsService } from '../insights/insights.service';
 import { AssistantService } from '../assistant/assistant.service';
@@ -63,6 +66,16 @@ export interface DonutSegment {
   color: string;
 }
 
+export interface DebtReminderBannerState {
+  severity: 'danger' | 'warning';
+  title: string;
+  subtitle: string;
+  overdueCount: number;
+  dueSoonCount: number;
+  totalAttentionCount: number;
+  amount: number;
+}
+
 const CATEGORY_COLORS: Record<TransactionCategory, string> = {
   FOOD: '#e67e3d',
   TRAVEL: '#5579d8',
@@ -89,6 +102,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly budgetService = inject(BudgetService);
   private readonly insightsService = inject(InsightsService);
   private readonly assistantService = inject(AssistantService);
+  private readonly debtService = inject(DebtService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
 
@@ -105,9 +119,46 @@ export class DashboardComponent implements OnInit, OnDestroy {
   topInsight: FinancialInsight | null = null;
   recentAnomaly: SpendingAnomaly | null = null;
   activeProactiveInsight: ProactiveInsightDto | null = null;
+  dismissedOnboardingBanner = false;
 
   // Selected period: "YYYY-MM"
   currentYearMonth = new Date().toISOString().slice(0, 7);
+
+  // Debt Reminder Banner State (overdue / due within 3 days)
+  debtSummary: DebtSummaryDto | null = null;
+  debtReminderBanner: DebtReminderBannerState | null = null;
+  isDebtBannerDismissed = false;
+
+  get isDebtBannerSnoozed(): boolean {
+    const userId = this.auth.currentUser()?.id || this.auth.currentUser()?.email || 'default';
+    const snoozedAtStr = localStorage.getItem(`spendsense_debt_banner_snooze_${userId}`);
+    if (!snoozedAtStr) return false;
+    const snoozedAt = Number(snoozedAtStr);
+    if (isNaN(snoozedAt)) return false;
+    return Date.now() - snoozedAt < 24 * 60 * 60 * 1000;
+  }
+
+  get showDebtBanner(): boolean {
+    return !!this.debtReminderBanner && !this.isDebtBannerDismissed && !this.isDebtBannerSnoozed;
+  }
+
+  dismissDebtBanner(): void {
+    const userId = this.auth.currentUser()?.id || this.auth.currentUser()?.email || 'default';
+    localStorage.setItem(`spendsense_debt_banner_snooze_${userId}`, String(Date.now()));
+    this.isDebtBannerDismissed = true;
+  }
+
+  getTodayIST(): string {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+  }
+
+  getDaysUntilDueIST(dueDateStr: string, todayStr: string): number {
+    const [y1, m1, d1] = todayStr.split('-').map(Number);
+    const [y2, m2, d2] = dueDateStr.split('-').map(Number);
+    const todayUtc = Date.UTC(y1, m1 - 1, d1);
+    const dueUtc = Date.UTC(y2, m2 - 1, d2);
+    return Math.round((dueUtc - todayUtc) / (24 * 60 * 60 * 1000));
+  }
 
   // Available Balance & Cashflow dynamic chart state
   cashflowPoints: CashflowPoint[] = [];
@@ -136,6 +187,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     categoryBreakdown: [] as { category: TransactionCategory; amount: number; color: string }[],
     transactions: [] as Transaction[],
   };
+
+  // Expandable Daily Transactions in Spending Calendar
+  isDailyTxExpanded = false;
+  dailyTransactions: Transaction[] = [];
+  dailyTxLoading = false;
+  dailyTxError = '';
 
   hoveredDate: string | null = null;
   hoveredDateSummary: {
@@ -208,9 +265,138 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return 'Good evening';
   }
 
+  readonly Math = Math;
+
+  get displayInsightTitle(): string {
+    if (this.topInsight?.title) {
+      return this.topInsight.title;
+    }
+    const hasSpending = (this.dashboardData?.summary.totalExpenses || 0) > 0;
+    if (!hasSpending) {
+      return 'No spending activity yet this month';
+    }
+    return 'Spending is on track';
+  }
+
+  get displayInsightDescription(): string {
+    if (this.topInsight?.description) {
+      return this.topInsight.description;
+    }
+    const hasSpending = (this.dashboardData?.summary.totalExpenses || 0) > 0;
+    if (!hasSpending) {
+      return 'Once you record transactions or import statements, Spending Insights will automatically surface your trends and category comparisons.';
+    }
+    return 'Your spending is within your usual patterns with no budget alerts or anomalies detected for this period.';
+  }
+
   get topBudget() {
     if (!this.budgetSummary || !this.budgetSummary.budgets.length) return null;
     return this.budgetSummary.budgets.slice().sort((a, b) => b.percentageUsed - a.percentageUsed)[0];
+  }
+
+  get declaredIncome(): number | null {
+    return this.dashboardData?.summary.declaredIncome ?? null;
+  }
+
+  get effectiveIncome(): number {
+    if (!this.dashboardData) return 0;
+    if (this.dashboardData.summary.totalIncome > 0) {
+      return this.dashboardData.summary.totalIncome;
+    }
+    return this.dashboardData.summary.declaredIncome || 0;
+  }
+
+  get isDeclaredBaselineIncome(): boolean {
+    return !!(
+      this.dashboardData &&
+      this.dashboardData.summary.totalIncome === 0 &&
+      this.dashboardData.summary.declaredIncome &&
+      this.dashboardData.summary.declaredIncome > 0
+    );
+  }
+
+  get savingsTarget(): number | null {
+    return this.dashboardData?.summary.savingsTarget ?? this.dashboardData?.summary.monthlySavingsTarget ?? null;
+  }
+
+  get investTarget(): number | null {
+    return this.dashboardData?.summary.investTarget ?? this.dashboardData?.summary.monthlyInvestmentTarget ?? null;
+  }
+
+  get debtOwedToUser(): number {
+    return this.dashboardData?.summary.debtOwedToUser ?? 0;
+  }
+
+  get debtOwedByUser(): number {
+    return this.dashboardData?.summary.debtOwedByUser ?? 0;
+  }
+
+  get netDebtPosition(): number {
+    return this.dashboardData?.summary.netDebtPosition ?? 0;
+  }
+
+  get activeDebtRemindersCount(): number {
+    return this.dashboardData?.summary.activeDebtRemindersCount ?? 0;
+  }
+
+  get cashflowDelta(): {
+    percentage: number;
+    formatted: string;
+    isPositive: boolean;
+    isNegative: boolean;
+    isNeutral: boolean;
+  } | null {
+    if (!this.dashboardData?.summary) return null;
+    const summary = this.dashboardData.summary;
+
+    let changePct: number | null = null;
+    if (
+      typeof summary.incomeChangePercentage === 'number' &&
+      !isNaN(summary.incomeChangePercentage) &&
+      isFinite(summary.incomeChangePercentage)
+    ) {
+      changePct = summary.incomeChangePercentage;
+    } else if (
+      summary.previousPeriodIncome != null &&
+      summary.previousPeriodIncome > 0 &&
+      typeof summary.totalIncome === 'number' &&
+      !isNaN(summary.totalIncome)
+    ) {
+      changePct = Math.round(((summary.totalIncome - summary.previousPeriodIncome) / summary.previousPeriodIncome) * 1000) / 10;
+    }
+
+    if (changePct === null) {
+      return null;
+    }
+
+    const absVal = Math.abs(changePct);
+    const formattedVal = `${absVal % 1 === 0 ? absVal : absVal.toFixed(1)}%`;
+
+    if (changePct > 0) {
+      return {
+        percentage: changePct,
+        formatted: `↑ +${formattedVal} this month`,
+        isPositive: true,
+        isNegative: false,
+        isNeutral: false,
+      };
+    } else if (changePct < 0) {
+      return {
+        percentage: changePct,
+        formatted: `↓ -${formattedVal} this month`,
+        isPositive: false,
+        isNegative: true,
+        isNeutral: false,
+      };
+    } else {
+      return {
+        percentage: 0,
+        formatted: `→ 0% this month`,
+        isPositive: false,
+        isNegative: false,
+        isNeutral: true,
+      };
+    }
   }
 
   ngOnInit(): void {
@@ -218,6 +404,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.loadBudgets();
     this.loadInsights();
     this.loadProactiveInsights();
+    this.loadDebtSummary();
 
     // Automatically refresh dashboard, budgets, and insights whenever any transaction is mutated
     const sub1 = this.transactionService.onTransactionMutated$.subscribe(() => {
@@ -225,6 +412,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.loadBudgets();
       this.loadInsights();
       this.loadProactiveInsights();
+      if (this.isDailyTxExpanded && this.selectedDate) {
+        this.loadDailyTransactions(this.selectedDate);
+      }
     });
 
     const sub2 = this.budgetService.onBudgetMutated$.subscribe(() => {
@@ -233,9 +423,102 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.loadProactiveInsights();
     });
 
+    const sub3 = this.debtService.onDebtMutated$.subscribe(() => {
+      this.loadDashboard(false);
+      this.loadDebtSummary();
+    });
+
     this.mutationSub = new Subscription();
     this.mutationSub.add(sub1);
     this.mutationSub.add(sub2);
+    this.mutationSub.add(sub3);
+  }
+
+  loadDebtSummary(): void {
+    this.isDebtBannerDismissed = this.isDebtBannerSnoozed;
+    this.debtService.getSummary().subscribe({
+      next: (res) => {
+        if (res.data) {
+          this.debtSummary = res.data;
+          this.updateDebtReminderBanner(res.data);
+        } else {
+          this.debtSummary = null;
+          this.debtReminderBanner = null;
+        }
+      },
+      error: () => {
+        this.debtSummary = null;
+        this.debtReminderBanner = null;
+      },
+    });
+  }
+
+  updateDebtReminderBanner(summary: DebtSummaryDto): void {
+    const todayIST = this.getTodayIST();
+
+    const allDebts = [...(summary.overdueDebts || []), ...(summary.upcomingDebts || [])];
+    const uniqueDebts = Array.from(new Map(allDebts.map((d) => [d.id, d])).values());
+
+    const overdueList: DebtDto[] = [];
+    const dueSoonList: DebtDto[] = [];
+
+    for (const d of uniqueDebts) {
+      if (d.status !== 'ACTIVE' || !d.dueDate) continue;
+      const daysUntil = this.getDaysUntilDueIST(d.dueDate, todayIST);
+      if (daysUntil < 0) {
+        overdueList.push(d);
+      } else if (daysUntil <= 3) {
+        dueSoonList.push(d);
+      }
+    }
+
+    const overdueCount = overdueList.length;
+    const dueSoonCount = dueSoonList.length;
+    const totalCount = overdueCount + dueSoonCount;
+
+    if (totalCount === 0) {
+      this.debtReminderBanner = null;
+      return;
+    }
+
+    if (overdueCount > 0) {
+      const overdueAmount = overdueList.reduce((sum, d) => sum + (d.amount || 0), 0);
+      const title =
+        totalCount === 1
+          ? `1 debt needs attention · ₹${overdueAmount.toLocaleString('en-IN')} overdue`
+          : `${totalCount} debts need attention · ₹${overdueAmount.toLocaleString('en-IN')} overdue`;
+      const subtitle =
+        dueSoonCount > 0
+          ? `${overdueCount} overdue, ${dueSoonCount} due within 3 days`
+          : `${overdueCount} overdue`;
+
+      this.debtReminderBanner = {
+        severity: 'danger',
+        title,
+        subtitle,
+        overdueCount,
+        dueSoonCount,
+        totalAttentionCount: totalCount,
+        amount: overdueAmount,
+      };
+    } else {
+      const dueSoonAmount = dueSoonList.reduce((sum, d) => sum + (d.amount || 0), 0);
+      const title =
+        dueSoonCount === 1
+          ? `1 debt due soon · ₹${dueSoonAmount.toLocaleString('en-IN')} due`
+          : `${dueSoonCount} debts due soon · ₹${dueSoonAmount.toLocaleString('en-IN')} due`;
+      const subtitle = 'Due within 3 days';
+
+      this.debtReminderBanner = {
+        severity: 'warning',
+        title,
+        subtitle,
+        overdueCount: 0,
+        dueSoonCount,
+        totalAttentionCount: totalCount,
+        amount: dueSoonAmount,
+      };
+    }
   }
 
   loadProactiveInsights(): void {
@@ -436,13 +719,58 @@ export class DashboardComponent implements OnInit, OnDestroy {
   selectDate(dateString: string): void {
     this.selectedDate = dateString;
     this.updateSelectedDateSummary();
+    if (this.isDailyTxExpanded) {
+      if (this.selectedDateSummary && this.selectedDateSummary.totalExpense > 0) {
+        this.loadDailyTransactions(dateString);
+      } else {
+        this.dailyTransactions = [];
+      }
+    }
+  }
+
+  toggleDailyTransactions(): void {
+    if (!this.selectedDateSummary || this.selectedDateSummary.totalExpense <= 0) {
+      return;
+    }
+    this.isDailyTxExpanded = !this.isDailyTxExpanded;
+    if (this.isDailyTxExpanded) {
+      this.loadDailyTransactions(this.selectedDate);
+    }
+  }
+
+  loadDailyTransactions(dateString: string): void {
+    if (!dateString) return;
+    this.dailyTxLoading = true;
+    this.dailyTxError = '';
+    this.transactionService
+      .list({
+        fromDate: dateString,
+        toDate: dateString,
+        type: 'EXPENSE',
+        page: 0,
+        size: 50,
+        sort: 'newest',
+      })
+      .subscribe({
+        next: (res) => {
+          const raw = res.data ?? [];
+          this.dailyTransactions = raw.filter(
+            (t) => t.transactionType === 'EXPENSE' && t.transactionDate === dateString
+          );
+          this.dailyTxLoading = false;
+        },
+        error: () => {
+          this.dailyTxError = "Couldn't load transactions. Try again.";
+          this.dailyTxLoading = false;
+        },
+      });
   }
 
   updateSelectedDateSummary(): void {
     if (!this.dashboardData) return;
 
     const dayTx = this.dashboardData.periodTransactions.filter(
-      (t) => t.transactionDate === this.selectedDate
+      (t) => t.transactionDate === this.selectedDate && t.transactionType === 'EXPENSE'
     );
 
     let expense = 0;
@@ -450,12 +778,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const catMap = new Map<TransactionCategory, number>();
 
     for (const t of dayTx) {
-      if (t.transactionType === 'EXPENSE') {
-        expense += t.amount;
-        catMap.set(t.category, (catMap.get(t.category) || 0) + t.amount);
-      } else if (t.transactionType === 'INCOME') {
-        income += t.amount;
-      }
+      expense += t.amount;
+      catMap.set(t.category, (catMap.get(t.category) || 0) + t.amount);
     }
 
     const catBreakdown = Array.from(catMap.entries())
@@ -813,7 +1137,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  categoryLabel(category: string): string {
-    return category.charAt(0) + category.slice(1).toLowerCase();
+  categoryLabel(category?: string | null): string {
+    if (!category) return 'Other';
+    const c = category.trim();
+    return c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();
   }
 }

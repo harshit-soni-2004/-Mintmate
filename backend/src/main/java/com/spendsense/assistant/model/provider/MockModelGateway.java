@@ -331,6 +331,17 @@ public class MockModelGateway implements ModelGateway {
             ));
         }
 
+        // Check for general category spending breakdown ("categories in August", "top categories", "spending categories")
+        if (containsAny(userPrompt, "top spending categories", "top categories", "spending categories", "categories in", "category breakdown", "spending by category")) {
+            NaturalLanguageDateResolver.DateRange range = extractDateRange(userPrompt, messages);
+            return AssistantResponse.ofToolCalls(List.of(
+                    new ToolCallRequest(UUID.randomUUID().toString(), "get_spending_by_category", Map.of(
+                            "startDate", range.startDate().toString(),
+                            "endDate", range.endDate().toString()
+                    ))
+            ));
+        }
+
         // Check for category spending inquiries
         if (containsAny(userPrompt, "food", "dining", "restaurant", "swiggy", "zomato")) {
             NaturalLanguageDateResolver.DateRange range = extractDateRange(userPrompt, messages);
@@ -343,7 +354,7 @@ public class MockModelGateway implements ModelGateway {
             ));
         }
 
-        if (containsAny(userPrompt, "travel", "flight", "uber", "ola", "cab")) {
+        if (containsAny(userPrompt, "travel", "travelling", "flight", "uber", "ola", "cab", "petrol", "fuel")) {
             NaturalLanguageDateResolver.DateRange range = extractDateRange(userPrompt, messages);
             return AssistantResponse.ofToolCalls(List.of(
                     new ToolCallRequest(UUID.randomUUID().toString(), "get_spending_by_category", Map.of(
@@ -408,11 +419,19 @@ public class MockModelGateway implements ModelGateway {
         // Check for transactions search
         if (containsAny(userPrompt, "transaction", "transferred", "over ", "under ", "highest", "recent", "largest expense", "biggest expense")) {
             Map<String, Object> args = new HashMap<>();
+            boolean isStrictOver = userPrompt.contains("over ") || userPrompt.contains("greater than") || userPrompt.contains("more than") || userPrompt.contains("above ");
             if (userPrompt.contains("5000") || userPrompt.contains("5,000")) {
                 args.put("minAmount", 5000);
+                if (isStrictOver) {
+                    args.put("minAmountExclusive", true);
+                }
             }
-            if (userPrompt.contains("transfer")) {
+            if (userPrompt.contains("expense") || userPrompt.contains("spending")) {
+                args.put("transactionType", "EXPENSE");
+            } else if (userPrompt.contains("transfer")) {
                 args.put("transactionType", "TRANSFER");
+            } else if (userPrompt.contains("income") || userPrompt.contains("deposit")) {
+                args.put("transactionType", "INCOME");
             }
             return AssistantResponse.ofToolCalls(List.of(
                     new ToolCallRequest(UUID.randomUUID().toString(), "search_transactions", args)
@@ -462,13 +481,18 @@ public class MockModelGateway implements ModelGateway {
 
         if (!summaries.isEmpty()) {
             String combined = String.join(" ", summaries);
+            combined = combined.replaceAll("(?i)</?untrusted_merchant_text>", "").trim();
             if (hasMutationProposal) {
                 return AssistantResponse.text("I can " + combined + ". Would you like me to proceed? Please confirm to apply this change.");
             }
             return AssistantResponse.text(combined);
         }
 
-        return AssistantResponse.text("Here is the verified data from your Mintmate records: " + messages.getLast().content());
+        String rawContent = messages.getLast().content();
+        if (rawContent != null) {
+            rawContent = rawContent.replaceAll("(?i)</?untrusted_merchant_text>", "").trim();
+        }
+        return AssistantResponse.text("Here is the verified data from your Mintmate records: " + rawContent);
     }
 
     private java.math.BigDecimal extractAmount(String text, java.math.BigDecimal defaultAmount) {
@@ -537,6 +561,15 @@ public class MockModelGateway implements ModelGateway {
         }
         if (userPrompt.contains("last year")) {
             return NaturalLanguageDateResolver.resolveRange("last year");
+        }
+
+        // Check for standalone natural language months (e.g. "in August", "for September")
+        for (String m : List.of("january", "jan", "february", "feb", "march", "mar", "april", "apr", "may",
+                "june", "jun", "july", "jul", "august", "aug", "september", "sep", "sept",
+                "october", "oct", "november", "nov", "december", "dec")) {
+            if (java.util.regex.Pattern.compile("\\b" + m + "\\b", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(userPrompt).find()) {
+                return NaturalLanguageDateResolver.resolveRange(m);
+            }
         }
 
         // Check if previous turn had "last month"

@@ -8,6 +8,8 @@ import com.spendsense.categorization.CategorizationService;
 import com.spendsense.categorization.CategorizationSource;
 import com.spendsense.categorization.ConfidenceLevel;
 import com.spendsense.categorization.model.CategorizationCandidate;
+import com.spendsense.categorization.TransactionNormalizer;
+import com.spendsense.categorization.policy.CategorizationConfidencePolicy;
 import com.spendsense.common.exception.ApiException;
 import com.spendsense.account.FinancialAccount;
 import com.spendsense.account.FinancialAccountRepository;
@@ -84,6 +86,10 @@ public class StatementIngestionService {
     private final FinancialAccountService accountService;
     private final FinancialAccountRepository accountRepository;
     private final TransferMatchingService transferMatchingService;
+    private final TransactionNormalizer transactionNormalizer;
+    private final CategorizationConfidencePolicy confidencePolicy;
+    private final com.spendsense.onboarding.IncomeClassificationService incomeClassificationService;
+    private com.spendsense.debt.DebtService debtService;
 
     public StatementIngestionService(
             FinancialDocumentRepository documentRepository,
@@ -99,7 +105,27 @@ public class StatementIngestionService {
     ) {
         this(documentRepository, documentStorage, extractors, candidateValidator, deduplicationService,
                 settlementResolutionService, categorizationService, transactionRepository, userRepository, currentUser,
-                null, null, null);
+                null, null, null, null, null, null, null);
+    }
+
+    public StatementIngestionService(
+            FinancialDocumentRepository documentRepository,
+            DocumentStorage documentStorage,
+            List<DocumentExtractor> extractors,
+            CandidateValidator candidateValidator,
+            DeduplicationService deduplicationService,
+            SettlementResolutionService settlementResolutionService,
+            CategorizationService categorizationService,
+            TransactionRepository transactionRepository,
+            UserRepository userRepository,
+            CurrentUser currentUser,
+            FinancialAccountService accountService,
+            FinancialAccountRepository accountRepository,
+            TransferMatchingService transferMatchingService
+    ) {
+        this(documentRepository, documentStorage, extractors, candidateValidator, deduplicationService,
+                settlementResolutionService, categorizationService, transactionRepository, userRepository, currentUser,
+                accountService, accountRepository, transferMatchingService, null, null, null, null);
     }
 
     @Autowired
@@ -116,7 +142,11 @@ public class StatementIngestionService {
             CurrentUser currentUser,
             @Autowired(required = false) FinancialAccountService accountService,
             @Autowired(required = false) FinancialAccountRepository accountRepository,
-            @Autowired(required = false) TransferMatchingService transferMatchingService
+            @Autowired(required = false) TransferMatchingService transferMatchingService,
+            @Autowired(required = false) TransactionNormalizer transactionNormalizer,
+            @Autowired(required = false) CategorizationConfidencePolicy confidencePolicy,
+            @Autowired(required = false) com.spendsense.onboarding.IncomeClassificationService incomeClassificationService,
+            @Autowired(required = false) com.spendsense.debt.DebtService debtService
     ) {
         this.documentRepository = documentRepository;
         this.documentStorage = documentStorage;
@@ -131,6 +161,14 @@ public class StatementIngestionService {
         this.accountService = accountService;
         this.accountRepository = accountRepository;
         this.transferMatchingService = transferMatchingService;
+        this.transactionNormalizer = transactionNormalizer != null ? transactionNormalizer : new TransactionNormalizer();
+        this.confidencePolicy = confidencePolicy != null ? confidencePolicy : new CategorizationConfidencePolicy(0.85, 0.60);
+        this.incomeClassificationService = incomeClassificationService;
+        this.debtService = debtService;
+    }
+
+    public void setDebtService(com.spendsense.debt.DebtService debtService) {
+        this.debtService = debtService;
     }
 
     /**
@@ -203,6 +241,28 @@ public class StatementIngestionService {
             document.updateStatementDates(minDate, maxDate);
         }
 
+        // Infer metadata (institution name, account number last 4) from document stream if not explicitly provided
+        if ((document.getInstitutionName() == null || document.getInstitutionName().isBlank())
+                || (document.getAccountNumberLast4() == null || document.getAccountNumberLast4().isBlank())) {
+            try (InputStream metaStream = documentStorage.retrieve(user.getId(), storageRef)) {
+                com.spendsense.ingestion.extractor.StatementDocumentMetadata meta = extractor.extractMetadata(metaStream);
+                boolean metaUpdated = false;
+                if ((document.getInstitutionName() == null || document.getInstitutionName().isBlank()) && meta.hasInstitution()) {
+                    document.setInstitutionName(meta.institutionName());
+                    metaUpdated = true;
+                }
+                if ((document.getAccountNumberLast4() == null || document.getAccountNumberLast4().isBlank()) && meta.hasAccountNumberLast4()) {
+                    document.setAccountNumberLast4(meta.accountNumberLast4());
+                    metaUpdated = true;
+                }
+                if (metaUpdated) {
+                    documentRepository.save(document);
+                }
+            } catch (Exception e) {
+                log.debug("Document metadata inference skipped for {}: {}", documentId, e.getMessage());
+            }
+        }
+
         // Ensure account is linked to document
         if (document.getAccount() == null && accountService != null) {
             FinancialAccount account = accountService.getOrCreateForStatement(
@@ -242,6 +302,8 @@ public class StatementIngestionService {
         int skippedRows = 0;
         List<String> warnings = new ArrayList<>();
         Set<String> seenDocumentSignatures = new HashSet<>();
+
+        List<Transaction> importedTxList = new ArrayList<>();
 
         for (TransactionCandidate candidate : candidates) {
             // 1. Candidate validation
@@ -312,6 +374,10 @@ public class StatementIngestionService {
             TransferDirection transferDirection = null;
             TransferMatchStatus transferMatchStatus = TransferMatchStatus.NONE;
 
+            com.spendsense.transaction.IncomeTier incomeTier = null;
+            boolean isIncomeVerified = false;
+            boolean incomeRequiresReview = false;
+
             if (isCashWithdrawal) {
                 finalType = TransactionType.CASH_WITHDRAWAL;
             } else if (isInvestment) {
@@ -321,7 +387,25 @@ public class StatementIngestionService {
                 transferDirection = isCredit ? TransferDirection.IN : TransferDirection.OUT;
                 transferMatchStatus = bilateralCounterpart.isPresent() ? TransferMatchStatus.AUTO_MATCHED : TransferMatchStatus.UNMATCHED;
             } else if (isCredit) {
-                finalType = TransactionType.INCOME;
+                if (incomeClassificationService != null) {
+                    com.spendsense.onboarding.IncomeClassificationResult incRes = incomeClassificationService.classifyCredit(
+                            user, candidate.amount(), candidate.transactionDate(),
+                            candidate.rawDescription(), candidate.rawMerchant(), candidate.classification());
+                    incomeTier = incRes.tier();
+                    isIncomeVerified = incRes.isVerified();
+                    if (incRes.requiresReview()) {
+                        incomeRequiresReview = true;
+                    }
+                    if (incRes.isIncome()) {
+                        finalType = TransactionType.INCOME;
+                    } else {
+                        finalType = TransactionType.TRANSFER;
+                        transferDirection = TransferDirection.IN;
+                        transferMatchStatus = TransferMatchStatus.NONE;
+                    }
+                } else {
+                    finalType = TransactionType.INCOME;
+                }
             } else {
                 finalType = TransactionType.EXPENSE;
             }
@@ -333,7 +417,7 @@ public class StatementIngestionService {
             BigDecimal confidence = BigDecimal.ZERO;
             ConfidenceLevel confidenceLevel = ConfidenceLevel.NONE;
             CategorizationSource source = CategorizationSource.FALLBACK;
-            boolean requiresReview = dupResult.isProbableDuplicate();
+            boolean requiresReview = dupResult.isProbableDuplicate() || incomeRequiresReview;
             TransactionCategory predictedCategory = TransactionCategory.OTHER;
             String alternatives = null;
 
@@ -356,12 +440,13 @@ public class StatementIngestionService {
                     );
                     CategorizationResult catResult = categorizationService.categorize(catReq);
                     if (catResult != null) {
-                        assignedCategory = catResult.category();
                         confidence = BigDecimal.valueOf(catResult.confidence());
                         confidenceLevel = catResult.confidenceLevel();
                         source = catResult.source();
-                        requiresReview = requiresReview || catResult.requiresUserConfirmation();
-                        predictedCategory = catResult.category();
+                        predictedCategory = catResult.predictedCategory();
+                        boolean isLow = confidencePolicy.isLowConfidence(confidenceLevel);
+                        assignedCategory = isLow ? TransactionCategory.OTHER : catResult.category();
+                        requiresReview = requiresReview || catResult.requiresUserConfirmation() || confidencePolicy.requiresConfirmation(confidenceLevel);
                         if (catResult.alternatives() != null && !catResult.alternatives().isEmpty()) {
                             alternatives = serializeAlternatives(catResult.alternatives());
                         }
@@ -418,6 +503,9 @@ public class StatementIngestionService {
                     transferMatchStatus
             );
 
+            transaction.setIncomeTier(incomeTier);
+            transaction.setIncomeVerified(isIncomeVerified);
+
             Transaction saved = transactionRepository.save(transaction);
             if (bilateralCounterpart.isPresent() && transferMatchingService != null) {
                 transferMatchingService.retroactivelyUpgradeAndMatch(saved, bilateralCounterpart.get());
@@ -425,7 +513,17 @@ public class StatementIngestionService {
                 transferMatchingService.attemptMatch(saved);
             }
             existingTransactions.add(saved);
+            importedTxList.add(saved);
             importedTransactions++;
+        }
+
+        // 4b. Debt repayment candidate matching hook (failure-isolated, suggest-only)
+        if (debtService != null && !importedTxList.isEmpty()) {
+            try {
+                debtService.evaluateSuggestionsAfterIngestion(user.getId(), importedTxList);
+            } catch (Exception e) {
+                log.warn("Debt repayment matching post-ingestion hook failed safely for user {}: {}", user.getId(), e.getMessage());
+            }
         }
 
         // 5. Update FinancialDocument lifecycle stats & status
@@ -460,16 +558,20 @@ public class StatementIngestionService {
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Authentication required"));
     }
 
-    private static String cleanMerchant(String rawMerchant, String rawDescription) {
+    private String cleanMerchant(String rawMerchant, String rawDescription) {
         if (rawMerchant != null && !rawMerchant.isBlank()) {
             String clean = rawMerchant.trim();
-            return clean.length() > 120 ? clean.substring(0, 120) : clean;
+            if (transactionNormalizer == null || !transactionNormalizer.isRawBankNarration(clean)) {
+                return clean.length() > 120 ? clean.substring(0, 120) : clean;
+            }
         }
-        if (rawDescription != null && !rawDescription.isBlank()) {
-            String clean = rawDescription.trim();
-            return clean.length() > 120 ? clean.substring(0, 120) : clean;
+        String display = transactionNormalizer != null
+                ? transactionNormalizer.deriveDisplayMerchant(rawMerchant, rawDescription)
+                : null;
+        if (display == null || display.isBlank() || "Unknown merchant".equalsIgnoreCase(display) || "Unknown".equalsIgnoreCase(display)) {
+            return "Unknown merchant";
         }
-        return "Unknown";
+        return display.length() > 120 ? display.substring(0, 120) : display;
     }
 
     private static String cleanDescription(String rawDescription) {

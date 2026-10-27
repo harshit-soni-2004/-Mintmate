@@ -204,4 +204,6 @@ public class FinancialDocument {
     public Instant getUpdatedAt() { return updatedAt; }
     public com.spendsense.account.FinancialAccount getAccount() { return account; }
     public void setAccount(com.spendsense.account.FinancialAccount account) { this.account = account; }
+    public void setInstitutionName(String institutionName) { this.institutionName = institutionName; }
+    public void setAccountNumberLast4(String accountNumberLast4) { this.accountNumberLast4 = accountNumberLast4; }
 }

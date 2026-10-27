@@ -17,9 +17,20 @@ export const routes: Routes = [
       import('./features/auth/register.component').then((m) => m.RegisterComponent),
   },
   {
-    path: 'onboarding',
+    path: 'verify-otp',
     loadComponent: () =>
-      import('./features/onboarding/onboarding-page.component').then((m) => m.OnboardingPageComponent),
+      import('./features/auth/verify-otp.component').then((m) => m.VerifyOtpComponent),
+  },
+  {
+    path: 'verify-email',
+    redirectTo: 'verify-otp',
+    pathMatch: 'full',
+  },
+  {
+    path: 'onboarding',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/onboarding/onboarding-wizard.component').then((m) => m.OnboardingWizardComponent),
   },
   {
     path: 'app',
@@ -52,6 +63,11 @@ export const routes: Routes = [
           import('./features/goals/goals.component').then((m) => m.GoalsComponent),
       },
       {
+        path: 'debts',
+        loadComponent: () =>
+          import('./features/debts/debts.component').then((m) => m.DebtsComponent),
+      },
+      {
         path: 'insights',
         loadComponent: () =>
           import('./features/insights/insights.component').then((m) => m.InsightsComponent),
@@ -65,6 +81,11 @@ export const routes: Routes = [
         path: 'settings',
         loadComponent: () =>
           import('./features/settings/settings.component').then((m) => m.SettingsComponent),
+      },
+      {
+        path: 'onboarding',
+        loadComponent: () =>
+          import('./features/onboarding/onboarding-wizard.component').then((m) => m.OnboardingWizardComponent),
       },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],

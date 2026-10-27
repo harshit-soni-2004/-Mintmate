@@ -223,4 +223,61 @@ class TransactionNormalizerTest {
             }
         }
     }
+
+    @Nested
+    @DisplayName("Structured Indian Bank Narration & Display Merchant Extraction")
+    class IndianBankNarrationAndDisplayTests {
+
+        @Test
+        @DisplayName("Extracts Rapido and strips rail/branch metadata from UPI narration")
+        void extractsRapidoFromUpiNarration() {
+            String raw = "WDL TFR UPI/DR/625481840735/Rapido/UT IB/rapido5223/UPI 0097694162092 AT 03117 VERSOVA (MUMBAI)";
+            assertThat(normalizer.deriveDisplayMerchant(raw, null)).isEqualTo("Rapido");
+            assertThat(normalizer.normalizeMerchant(raw)).isEqualTo("rapido");
+        }
+
+        @Test
+        @DisplayName("Extracts Blinkit from UPI narration")
+        void extractsBlinkitFromUpiNarration() {
+            String raw = "WDL TFR UPI/DR/625238169485/Blinkit/YESB/blinkit@yesbank/Payment";
+            assertThat(normalizer.deriveDisplayMerchant(null, raw)).isEqualTo("Blinkit");
+            assertThat(normalizer.normalize(null, raw).normalizedMerchant()).isEqualTo("blinkit");
+        }
+
+        @Test
+        @DisplayName("Extracts P2P counterparty name from credit UPI narration")
+        void extractsP2pCreditCounterparty() {
+            String raw = "DEP TFR UPI/CR/625547032781/VAARUN S/SRCB/vaarunkapo/UPI 0097737162096 AT 03117 VERSOVA (MUMBAI)";
+            assertThat(normalizer.deriveDisplayMerchant(raw, null)).isEqualTo("Vaarun S");
+            assertThat(normalizer.normalizeMerchant(raw)).isEqualTo("vaarun s");
+        }
+
+        @Test
+        @DisplayName("Extracts POS, NEFT, and IMPS counterparties accurately")
+        void extractsOtherRailsCounterparties() {
+            assertThat(normalizer.deriveDisplayMerchant("NEFT-CR-HDFC000123-SWIGGY-SALARY")).isEqualTo("Swiggy");
+            assertThat(normalizer.deriveDisplayMerchant("IMPS/P2A/425512345678/ZOMATO")).isEqualTo("Zomato");
+        }
+
+        @Test
+        @DisplayName("Failed extraction returns 'Unknown merchant' and NEVER leaks raw bank narration")
+        void doesNotLeakRawBankNarrationWhenExtractionFails() {
+            String unparseable1 = "WDL TFR UPI/DR/625529457685//PYTM/UPI/0097694162092 AT 03117 VERSOVA (MUMBAI)";
+            String unparseable2 = "UPI/DR/1234567890/CR/DR/";
+            String unparseable3 = "WDL TFR 987654321/000123";
+
+            assertThat(normalizer.deriveDisplayMerchant(unparseable1, null)).isEqualTo("Unknown merchant");
+            assertThat(normalizer.deriveDisplayMerchant(null, unparseable2)).isEqualTo("Unknown merchant");
+            assertThat(normalizer.deriveDisplayMerchant(unparseable3, null)).isEqualTo("Unknown merchant");
+            assertThat(normalizer.deriveDisplayMerchant(null, null)).isEqualTo("Unknown merchant");
+            assertThat(normalizer.deriveDisplayMerchant("", "   ")).isEqualTo("Unknown merchant");
+        }
+
+        @Test
+        @DisplayName("Does not falsely mangle words like 'chamber' or 'supermarket'")
+        void preservesIntactWordsAgainstMisleadingSubstrings() {
+            assertThat(normalizer.normalizeMerchant("CHAMBER OF COMMERCE")).isEqualTo("chamber of commerce");
+            assertThat(normalizer.normalizeMerchant("RELIANCE SUPERMARKET")).isEqualTo("reliance supermarket");
+        }
+    }
 }

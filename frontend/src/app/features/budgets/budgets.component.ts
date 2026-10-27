@@ -219,7 +219,8 @@ export class BudgetsComponent implements OnInit, OnDestroy {
   }
 
   categoryLabel(cat: string): string {
-    switch (cat) {
+    if (!cat) return 'Other';
+    switch (cat.toUpperCase()) {
       case 'FOOD': return 'Food & Dining';
       case 'TRAVEL': return 'Travel & Commute';
       case 'SHOPPING': return 'Shopping';
@@ -228,7 +229,7 @@ export class BudgetsComponent implements OnInit, OnDestroy {
       case 'HEALTH': return 'Health';
       case 'EDUCATION': return 'Education';
       case 'PERSONAL': return 'Personal Care';
-      default: return 'Other';
+      default: return cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase();
     }
   }
 

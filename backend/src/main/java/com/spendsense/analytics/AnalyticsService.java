@@ -178,6 +178,36 @@ public class AnalyticsService {
             prevMap.put(cs.category(), cs.totalAmount());
         }
 
+        List<Object[]> reviewRows = transactionRepository.findRequiresReviewCategorySpending(
+                userId, TransactionType.EXPENSE, curRange[0], curRange[1]);
+        Map<TransactionCategory, Long> reviewCountMap = new EnumMap<>(TransactionCategory.class);
+        Map<TransactionCategory, BigDecimal> reviewAmtMap = new EnumMap<>(TransactionCategory.class);
+        if (reviewRows != null) {
+            for (Object[] row : reviewRows) {
+                if (row != null && row.length >= 3 && row[0] instanceof TransactionCategory cat) {
+                    Long cnt = row[1] instanceof Long c ? c : (row[1] instanceof Number n ? n.longValue() : 0L);
+                    BigDecimal amt = row[2] instanceof BigDecimal b ? b : BigDecimal.ZERO;
+                    reviewCountMap.put(cat, cnt != null ? cnt : 0L);
+                    reviewAmtMap.put(cat, amt != null ? amt : BigDecimal.ZERO);
+                }
+            }
+        }
+
+        long totalTx = transactionRepository.countByUserIdAndTypeAndDateBetween(
+                userId, TransactionType.EXPENSE, curRange[0], curRange[1]);
+        long reviewTx = transactionRepository.countRequiresReviewByUserIdAndTypeAndDateBetween(
+                userId, TransactionType.EXPENSE, curRange[0], curRange[1]);
+        long autoTx = Math.max(0, totalTx - reviewTx);
+
+        BigDecimal autoPct = BigDecimal.ZERO.setScale(1, RoundingMode.HALF_UP);
+        BigDecimal reviewPct = BigDecimal.ZERO.setScale(1, RoundingMode.HALF_UP);
+        if (totalTx > 0) {
+            autoPct = BigDecimal.valueOf(autoTx).multiply(BigDecimal.valueOf(100))
+                    .divide(BigDecimal.valueOf(totalTx), 1, RoundingMode.HALF_UP);
+            reviewPct = BigDecimal.valueOf(reviewTx).multiply(BigDecimal.valueOf(100))
+                    .divide(BigDecimal.valueOf(totalTx), 1, RoundingMode.HALF_UP);
+        }
+
         Map<TransactionCategory, CategorySpend> curMap = new EnumMap<>(TransactionCategory.class);
         for (CategorySpend cs : curSpends) {
             curMap.put(cs.category(), cs);
@@ -206,6 +236,9 @@ public class AnalyticsService {
                 topCategory = cs.category();
             }
 
+            long catReviewCount = reviewCountMap.getOrDefault(cs.category(), 0L);
+            BigDecimal catReviewAmt = reviewAmtMap.getOrDefault(cs.category(), BigDecimal.ZERO);
+
             analyses.add(new CategoryAnalysis(
                     cs.category(),
                     curAmt,
@@ -214,7 +247,9 @@ public class AnalyticsService {
                     changeAmt,
                     pctChange,
                     direction,
-                    cs.count()
+                    cs.count(),
+                    catReviewCount,
+                    catReviewAmt
             ));
         }
 
@@ -232,12 +267,23 @@ public class AnalyticsService {
                         changeAmt,
                         pctChange,
                         TrendDirection.DECREASED,
-                        0L
+                        0L,
+                        0L,
+                        BigDecimal.ZERO
                 ));
             }
         }
 
-        return new CategoryBreakdownResponse(totalExpenses, analyses, topCategory);
+        return new CategoryBreakdownResponse(
+                totalExpenses,
+                analyses,
+                topCategory,
+                totalTx,
+                autoTx,
+                reviewTx,
+                autoPct,
+                reviewPct
+        );
     }
 
     @Transactional(readOnly = true)
@@ -401,11 +447,8 @@ public class AnalyticsService {
     }
 
     private BigDecimal calculatePercentageChange(BigDecimal current, BigDecimal previous) {
-        if (previous == null || previous.compareTo(BigDecimal.ZERO) == 0) {
-            if (current != null && current.compareTo(BigDecimal.ZERO) > 0) {
-                return BigDecimal.valueOf(100.00).setScale(2, RoundingMode.HALF_UP);
-            }
-            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        if (previous == null || previous.compareTo(BigDecimal.ZERO) <= 0) {
+            return null;
         }
         return current.subtract(previous)
                 .multiply(BigDecimal.valueOf(100))
@@ -413,6 +456,9 @@ public class AnalyticsService {
     }
 
     private TrendDirection determineDirection(BigDecimal current, BigDecimal previous) {
+        if (previous == null || previous.compareTo(BigDecimal.ZERO) <= 0) {
+            return TrendDirection.UNCHANGED;
+        }
         int cmp = current.compareTo(previous);
         if (cmp > 0) return TrendDirection.INCREASED;
         if (cmp < 0) return TrendDirection.DECREASED;

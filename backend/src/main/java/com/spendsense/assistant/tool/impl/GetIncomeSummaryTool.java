@@ -89,7 +89,8 @@ public class GetIncomeSummaryTool implements FinancialTool<GetIncomeSummaryTool.
 
         BigDecimal prevIncome = comparison.income() != null ? comparison.income().previousAmount() : BigDecimal.ZERO;
         BigDecimal change = comparison.income() != null ? comparison.income().changeAmount() : BigDecimal.ZERO;
-        BigDecimal pctChange = comparison.income() != null ? comparison.income().percentageChange() : BigDecimal.ZERO;
+        BigDecimal pctChange = (comparison.income() != null && comparison.income().percentageChange() != null)
+                ? comparison.income().percentageChange() : BigDecimal.ZERO;
         TrendDirection direction = comparison.income() != null ? comparison.income().direction() : TrendDirection.UNCHANGED;
 
         IncomeSummaryResponse response = new IncomeSummaryResponse(

@@ -1,12 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { ThemeService, ThemePreference } from '../../core/theme/theme.service';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   template: `
     <section class="page settings-page">
       <header class="settings-header">
@@ -73,6 +74,27 @@ import { AuthService } from '../../core/auth/auth.service';
             </div>
             <span class="radio-indicator" *ngIf="themeService.theme() === 'dark'">✓</span>
           </button>
+        </div>
+      </div>
+
+      <!-- Financial Profile & Baseline Setup -->
+      <div class="settings-section">
+        <div class="section-title">
+          <h2>Financial Baseline &amp; Onboarding</h2>
+          <p>Configure your earning persona, declared monthly income, and savings targets.</p>
+        </div>
+        <div class="profile-card">
+          <div class="profile-row" style="align-items: center; justify-content: space-between;">
+            <div>
+              <strong style="color: var(--text-primary); font-size: 0.95rem;">Onboarding Baseline Setup</strong>
+              <p style="margin: 0.2rem 0 0; font-size: 0.8rem; color: var(--text-secondary);">
+                Recalibrate your salary tracking, monthly income sources, and goal guardrails.
+              </p>
+            </div>
+            <a routerLink="/app/onboarding" class="btn-manage-link" style="padding: 0.5rem 1rem; background: var(--accent); color: #fff; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; text-decoration: none;">
+              Open Setup Wizard &rarr;
+            </a>
+          </div>
         </div>
       </div>
 

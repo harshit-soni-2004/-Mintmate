@@ -24,6 +24,23 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface SendOtpRequest {
+  email: string;
+  purpose?: string;
+}
+
+export interface VerifyOtpRequest {
+  email: string;
+  code: string;
+  purpose?: string;
+}
+
+export interface OtpResponse {
+  success: boolean;
+  message: string;
+  resendCooldownSeconds: number;
+}
+
 export type TransactionCategory = 'FOOD' | 'TRAVEL' | 'SHOPPING' | 'ENTERTAINMENT' | 'BILLS' | 'HEALTH' | 'EDUCATION' | 'PERSONAL' | 'OTHER';
 export type TransactionType = 'EXPENSE' | 'INCOME' | 'TRANSFER' | 'INVESTMENT' | 'CASH_WITHDRAWAL';
 export type TransferDirection = 'IN' | 'OUT';
@@ -185,6 +202,16 @@ export interface DashboardSummary {
   expenseChangePercentage: number | null;
   totalTransfers?: number;
   investmentContributions?: number;
+  declaredIncome?: number | null;
+  savingsTarget?: number | null;
+  investTarget?: number | null;
+  monthlySavingsTarget?: number | null;
+  monthlyInvestmentTarget?: number | null;
+  hasOnboardingBaseline?: boolean;
+  debtOwedToUser?: number;
+  debtOwedByUser?: number;
+  netDebtPosition?: number;
+  activeDebtRemindersCount?: number;
 }
 
 export interface CategorySpending {
@@ -307,7 +334,7 @@ export interface TrendMetric {
   currentAmount: number;
   previousAmount: number;
   changeAmount: number;
-  percentageChange: number;
+  percentageChange?: number | null;
   direction: TrendDirection;
 }
 
@@ -322,6 +349,7 @@ export interface PeriodComparison {
   currentSavingsRate: number;
   previousSavingsRate: number;
   savingsRateChange: number;
+  hasPriorPeriodData?: boolean;
 }
 
 export interface CategoryAnalysis {
@@ -330,15 +358,22 @@ export interface CategoryAnalysis {
   percentage: number;
   previousAmount: number;
   changeAmount: number;
-  percentageChange: number;
+  percentageChange?: number | null;
   direction: TrendDirection;
   transactionCount: number;
+  requiresReviewCount?: number;
+  requiresReviewAmount?: number;
 }
 
 export interface CategoryBreakdown {
   totalExpenses: number;
   categories: CategoryAnalysis[];
   topCategory?: TransactionCategory | null;
+  totalTransactions?: number;
+  autoClassifiedCount?: number;
+  requiresReviewCount?: number;
+  autoClassifiedPercentage?: number;
+  requiresReviewPercentage?: number;
 }
 
 export interface SpendingTrendPoint {
@@ -441,4 +476,125 @@ export interface ProactiveInsightDto {
   createdAt: string;
 }
 
+export type UserPersona = 'STUDENT' | 'SALARIED' | 'BUSINESS_OWNER' | 'FREELANCER';
 
+export type IncomeType =
+  | 'SALARY'
+  | 'BUSINESS_REVENUE'
+  | 'FREELANCE'
+  | 'PENSION'
+  | 'STIPEND'
+  | 'INVESTMENT_RETURN';
+
+export type IncomeFrequency = 'MONTHLY' | 'BIWEEKLY' | 'IRREGULAR';
+
+export interface IncomeSourceDto {
+  sourceName: string;
+  incomeType: IncomeType;
+  frequency: IncomeFrequency;
+  declaredAmount: number;
+  expectedDayOfMonth?: number | null;
+  employerOrPayerKeyword?: string | null;
+  primary?: boolean;
+  variable?: boolean;
+}
+
+export interface CategoryAllocationDto {
+  category: TransactionCategory;
+  estimatedAmount: number;
+}
+
+export interface OnboardingRequest {
+  persona: UserPersona;
+  monthlySavingsTarget?: number | null;
+  monthlyInvestmentTarget?: number | null;
+  incomeSources?: IncomeSourceDto[];
+  categoryAllocations?: CategoryAllocationDto[];
+}
+
+export interface OnboardingResponse {
+  profileId: string;
+  persona: UserPersona;
+  onboardingCompleted: boolean;
+  monthlySavingsTarget?: number | null;
+  monthlyInvestmentTarget?: number | null;
+  incomeSources: IncomeSourceDto[];
+  categoryAllocations: CategoryAllocationDto[];
+}
+
+export type DebtType = 'OWED_TO_ME' | 'I_OWE';
+export type DebtStatus = 'ACTIVE' | 'SETTLED' | 'CANCELLED';
+
+export interface DebtDto {
+  id: string;
+  counterpartyName: string;
+  debtType: DebtType;
+  amount: number;
+  dueDate?: string | null;
+  status: DebtStatus;
+  settledAt?: string | null;
+  linkedTransactionId?: string | null;
+  linkedTransactionAmount?: number | null;
+  linkedTransactionDate?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  overdue: boolean;
+}
+
+export interface DebtSummaryDto {
+  totalReceivable: number;
+  totalPayable: number;
+  netDebtPosition: number;
+  activeCount: number;
+  overdueCount: number;
+  upcomingDebts: DebtDto[];
+  overdueDebts: DebtDto[];
+}
+
+export interface CreateDebtRequest {
+  counterpartyName: string;
+  debtType: DebtType;
+  amount: number;
+  dueDate?: string | null;
+  notes?: string | null;
+}
+
+export interface SettleDebtRequest {
+  linkedTransactionId?: string | null;
+}
+export interface GoogleLoginRequest {
+  idToken: string;
+}
+
+export interface DebtCandidateTransactionDto {
+  id: string;
+  amount: number;
+  description?: string | null;
+  merchant?: string | null;
+  transactionDate: string;
+  transactionType: TransactionType;
+  transferDirection?: TransferDirection | null;
+  isTopMatch: boolean;
+  isStrongMatch: boolean;
+  exactAmount: boolean;
+  matchReason?: string | null;
+  score: number;
+}
+
+export interface RecordPaymentAndSettleRequest {
+  amount: number;
+  transactionDate: string;
+  accountId?: string | null;
+  notes?: string | null;
+}
+
+export interface FinancialAccountResponse {
+  id: string;
+  name: string;
+  institutionName?: string | null;
+  accountType: string;
+  accountNumberLast4?: string | null;
+  currency: string;
+  active: boolean;
+  primary: boolean;
+}

@@ -19,8 +19,8 @@ public final class NaturalLanguageDateResolver {
     public static final ZoneId IST_ZONE = ZoneId.of("Asia/Kolkata");
 
     private static final Pattern YEAR_MONTH_PATTERN = Pattern.compile("^(\\d{4})-(0[1-9]|1[0-2])$");
-    private static final Pattern MONTH_YEAR_TEXT_PATTERN = Pattern.compile(
-            "^(january|february|march|april|may|june|july|august|september|october|november|december)\\s+(\\d{4})$",
+    private static final Pattern MONTH_NAME_ONLY_PATTERN = Pattern.compile(
+            "^(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|sept|october|oct|november|nov|december|dec)(?:\\s+(\\d{4}))?$",
             Pattern.CASE_INSENSITIVE
     );
 
@@ -42,6 +42,7 @@ public final class NaturalLanguageDateResolver {
         }
 
         String normalized = expression.trim().toLowerCase(Locale.ROOT);
+        normalized = normalized.replaceAll("^(in|for|during|of)\\s+", "").trim();
 
         switch (normalized) {
             case "today":
@@ -88,11 +89,13 @@ public final class NaturalLanguageDateResolver {
             return new DateRange(ym.atDay(1), ym.atEndOfMonth());
         }
 
-        Matcher monthYearMatcher = MONTH_YEAR_TEXT_PATTERN.matcher(normalized);
-        if (monthYearMatcher.matches()) {
-            String monthStr = monthYearMatcher.group(1).toUpperCase(Locale.ROOT);
-            int year = Integer.parseInt(monthYearMatcher.group(2));
-            Month month = Month.valueOf(monthStr);
+        Matcher monthNameMatcher = MONTH_NAME_ONLY_PATTERN.matcher(normalized);
+        if (monthNameMatcher.matches()) {
+            String monthRaw = monthNameMatcher.group(1).toLowerCase(Locale.ROOT);
+            Month month = parseMonth(monthRaw);
+            int year = monthNameMatcher.group(2) != null
+                    ? Integer.parseInt(monthNameMatcher.group(2))
+                    : now.getYear();
             YearMonth ym = YearMonth.of(year, month);
             return new DateRange(ym.atDay(1), ym.atEndOfMonth());
         }
@@ -104,6 +107,58 @@ public final class NaturalLanguageDateResolver {
 
         // Fallback: current month to date
         return new DateRange(now.withDayOfMonth(1), now);
+    }
+
+    public static YearMonth resolveYearMonth(String expression, LocalDate referenceDate) {
+        LocalDate now = referenceDate != null ? referenceDate : today();
+        if (expression == null || expression.isBlank()) {
+            return YearMonth.from(now);
+        }
+
+        String normalized = expression.trim().toLowerCase(Locale.ROOT);
+        normalized = normalized.replaceAll("^(in|for|during|of)\\s+", "").trim();
+
+        if (normalized.equals("last month") || normalized.equals("previous month")) {
+            return YearMonth.from(now.minusMonths(1));
+        }
+        if (normalized.equals("this month") || normalized.equals("current month")) {
+            return YearMonth.from(now);
+        }
+
+        Matcher ymMatcher = YEAR_MONTH_PATTERN.matcher(normalized);
+        if (ymMatcher.matches()) {
+            return YearMonth.parse(normalized);
+        }
+
+        Matcher monthNameMatcher = MONTH_NAME_ONLY_PATTERN.matcher(normalized);
+        if (monthNameMatcher.matches()) {
+            String monthRaw = monthNameMatcher.group(1).toLowerCase(Locale.ROOT);
+            Month month = parseMonth(monthRaw);
+            int year = monthNameMatcher.group(2) != null
+                    ? Integer.parseInt(monthNameMatcher.group(2))
+                    : now.getYear();
+            return YearMonth.of(year, month);
+        }
+
+        return YearMonth.from(now);
+    }
+
+    private static Month parseMonth(String raw) {
+        return switch (raw) {
+            case "january", "jan" -> Month.JANUARY;
+            case "february", "feb" -> Month.FEBRUARY;
+            case "march", "mar" -> Month.MARCH;
+            case "april", "apr" -> Month.APRIL;
+            case "may" -> Month.MAY;
+            case "june", "jun" -> Month.JUNE;
+            case "july", "jul" -> Month.JULY;
+            case "august", "aug" -> Month.AUGUST;
+            case "september", "sep", "sept" -> Month.SEPTEMBER;
+            case "october", "oct" -> Month.OCTOBER;
+            case "november", "nov" -> Month.NOVEMBER;
+            case "december", "dec" -> Month.DECEMBER;
+            default -> Month.JANUARY;
+        };
     }
 
     public record DateRange(LocalDate startDate, LocalDate endDate) {

@@ -73,9 +73,11 @@ public class GetSpendingSummaryTool implements FinancialTool<GetSpendingSummaryT
         SpendingSummaryResponse summary = analyticsService.getSummary(start, end);
 
         String summaryText = String.format(
-                "From %s to %s, total verified income was ₹%.2f, consumer expenses were ₹%.2f, resulting in net savings of ₹%.2f (savings rate: %.1f%%). Internal transfers out were ₹%.2f, and investment contributions were ₹%.2f.",
+                "From %s to %s, your total consumer spending was ₹%.2f across %d transactions. In this period, total verified income was ₹%.2f, consumer expenses were ₹%.2f, resulting in net savings of ₹%.2f (savings rate: %.1f%%). Internal transfers out were ₹%.2f, and investment contributions were ₹%.2f (both tracked separately and excluded from consumer spending).",
                 summary.fromDate(),
                 summary.toDate(),
+                summary.totalExpenses(),
+                summary.transactionCount(),
                 summary.totalIncome(),
                 summary.totalExpenses(),
                 summary.netSavings(),

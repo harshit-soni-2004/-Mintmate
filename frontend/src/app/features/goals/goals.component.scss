@@ -71,20 +71,20 @@
   gap: 0.45rem;
   padding: 0.72rem 1.25rem;
   border-radius: var(--radius-sm, 8px);
-  background: var(--brand, #127457);
-  color: #ffffff;
+  background: var(--brand);
+  color: var(--color-primary-contrast);
   border: 0;
   font-weight: 650;
   font-size: 0.9rem;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(18, 116, 87, 0.22);
+  box-shadow: 0 4px 14px var(--brand-soft);
   transition: all 0.15s ease;
   white-space: nowrap;
 }
 
 .add-btn:hover {
-  background: var(--brand-hover, #0e5c45);
-  box-shadow: 0 6px 18px rgba(18, 116, 87, 0.3);
+  background: var(--brand-hover);
+  box-shadow: 0 6px 18px var(--brand-soft);
   transform: translateY(-1px);
 }
 
@@ -146,21 +146,25 @@
 }
 
 .metric-card {
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--border, #e5e7eb);
+  position: relative;
+  background: var(--glass-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md, 12px);
   padding: 1.25rem 1.4rem;
-  box-shadow: var(--shadow-xs, 0 1px 2px rgba(0,0,0,0.05));
+  box-shadow: var(--glass-shadow);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 0.9rem;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  overflow: hidden;
 }
 
 .metric-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-sm, 0 4px 6px -1px rgba(0,0,0,0.08));
+  box-shadow: var(--glass-shadow-elevated);
 }
 
 .card-top {
@@ -268,17 +272,19 @@
 .count-badge {
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--muted);
-  background: var(--surface);
-  border: 1px solid var(--border);
+  color: var(--color-text-secondary);
+  background: var(--glass-surface-subtle);
+  border: 1px solid var(--glass-border-subtle);
   padding: 0.2rem 0.6rem;
   border-radius: 9999px;
 }
 
 /* Empty State */
 .empty-state-box {
-  background: var(--surface);
-  border: 1.5px dashed var(--border);
+  background: var(--glass-surface-subtle);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1.5px dashed var(--glass-border);
   border-radius: var(--radius-md, 12px);
   padding: 3.5rem 1.5rem;
   text-align: center;
@@ -322,17 +328,30 @@
 }
 
 .goal-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md, 12px);
   padding: 1.35rem;
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
-  box-shadow: var(--shadow-xs);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: var(--glass-shadow);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
   position: relative;
   overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--glass-highlight);
+    pointer-events: none;
+  }
 }
 
 .goal-card:hover {
@@ -533,8 +552,10 @@
 }
 
 .modal-dialog {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--modal-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg, 16px);
   width: 100%;
   max-width: 480px;
@@ -683,8 +704,8 @@
 .btn-primary {
   padding: 0.65rem 1.25rem;
   border-radius: var(--radius-sm, 8px);
-  background: var(--brand, #127457);
-  color: #ffffff;
+  background: var(--brand);
+  color: var(--color-primary-contrast);
   border: 0;
   font-weight: 650;
   font-size: 0.88rem;
@@ -693,7 +714,7 @@
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--brand-hover, #0e5c45);
+  background: var(--brand-hover);
 }
 
 .btn-primary:disabled {

@@ -17,8 +17,31 @@ public record PeriodComparisonResponse(
         BigDecimal savingsRateChange,
         List<CategoryComparison> categoryChanges,
         List<CategoryComparison> largestIncreases,
-        List<CategoryComparison> largestDecreases
+        List<CategoryComparison> largestDecreases,
+        boolean hasPriorPeriodData
 ) {
+    public PeriodComparisonResponse(
+            LocalDate currentFrom,
+            LocalDate currentTo,
+            LocalDate previousFrom,
+            LocalDate previousTo,
+            TrendMetric income,
+            TrendMetric expenses,
+            TrendMetric netSavings,
+            BigDecimal currentSavingsRate,
+            BigDecimal previousSavingsRate,
+            BigDecimal savingsRateChange,
+            List<CategoryComparison> categoryChanges,
+            List<CategoryComparison> largestIncreases,
+            List<CategoryComparison> largestDecreases
+    ) {
+        this(currentFrom, currentTo, previousFrom, previousTo, income, expenses, netSavings,
+                currentSavingsRate, previousSavingsRate, savingsRateChange,
+                categoryChanges, largestIncreases, largestDecreases,
+                (expenses != null && expenses.previousAmount() != null && expenses.previousAmount().compareTo(BigDecimal.ZERO) > 0)
+                || (income != null && income.previousAmount() != null && income.previousAmount().compareTo(BigDecimal.ZERO) > 0));
+    }
+
     public PeriodComparisonResponse(
             LocalDate currentFrom,
             LocalDate currentTo,
@@ -48,7 +71,7 @@ public record PeriodComparisonResponse(
     }
 
     public BigDecimal percentageChange() {
-        return expenses != null ? expenses.percentageChange() : BigDecimal.ZERO;
+        return expenses != null ? expenses.percentageChange() : null;
     }
 
     public BigDecimal currentIncome() {

@@ -73,6 +73,13 @@
         <span class="nav-label">Goals</span>
       </a>
 
+      <a routerLink="/app/debts" routerLinkActive="active" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/>
+        </svg>
+        <span class="nav-label">IOUs &amp; Debts</span>
+      </a>
+
       <a routerLink="/app/insights" routerLinkActive="active" class="nav-item">
         <svg class="nav-icon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
@@ -208,6 +215,13 @@
             <circle cx="12" cy="6"/>
           </svg>
           <span>Financial Goals</span>
+        </a>
+
+        <a routerLink="/app/debts" class="drawer-link" (click)="closeProfileSheet()">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/>
+          </svg>
+          <span>IOUs &amp; Debts</span>
         </a>
 
         <a routerLink="/app/statements" class="drawer-link" (click)="closeProfileSheet()">

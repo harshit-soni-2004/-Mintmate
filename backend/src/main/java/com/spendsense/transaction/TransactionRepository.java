@@ -78,6 +78,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
     List<Transaction> findByUser_IdAndTransactionDateBetweenOrderByTransactionDateDescCreatedAtDesc(
             UUID userId, LocalDate fromDate, LocalDate toDate);
 
+    List<Transaction> findByUser_IdOrderByTransactionDateDesc(UUID userId);
+
     @Query("SELECT MAX(t.amount) FROM Transaction t " +
            "WHERE t.user.id = :userId AND t.transactionType = :type " +
            "AND t.transactionDate >= :fromDate AND t.transactionDate <= :toDate")
@@ -136,4 +138,67 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
             @Param("direction") TransferDirection direction,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT t FROM Transaction t WHERE t.transactionDate >= :fromDate AND t.transactionDate <= :toDate ORDER BY t.transactionDate ASC, t.createdAt ASC")
+    List<Transaction> findByTransactionDateBetween(
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT t FROM Transaction t WHERE t.transactionDate >= :fromDate AND t.transactionDate <= :toDate ORDER BY t.transactionDate ASC, t.createdAt ASC")
+    List<Transaction> findByTransactionDateBetweenOrderByTransactionDateAsc(
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT COUNT(t.id) FROM Transaction t " +
+           "WHERE t.user.id = :userId " +
+           "AND t.transactionDate >= :fromDate AND t.transactionDate <= :toDate")
+    long countTotalByUserIdAndDateBetween(
+            @Param("userId") UUID userId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT COUNT(t.id) FROM Transaction t " +
+           "WHERE t.user.id = :userId AND t.requiresReview = true " +
+           "AND t.transactionDate >= :fromDate AND t.transactionDate <= :toDate")
+    long countRequiresReviewByUserIdAndDateBetween(
+            @Param("userId") UUID userId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT COUNT(t.id) FROM Transaction t " +
+           "WHERE t.user.id = :userId AND t.transactionType = :type AND t.requiresReview = true " +
+           "AND t.transactionDate >= :fromDate AND t.transactionDate <= :toDate")
+    long countRequiresReviewByUserIdAndTypeAndDateBetween(
+            @Param("userId") UUID userId,
+            @Param("type") TransactionType type,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT t.category, COUNT(t.id), COALESCE(SUM(t.amount), 0) FROM Transaction t " +
+           "WHERE t.user.id = :userId AND t.transactionType = :type AND t.requiresReview = true " +
+           "AND t.transactionDate >= :fromDate AND t.transactionDate <= :toDate " +
+           "GROUP BY t.category")
+    List<Object[]> findRequiresReviewCategorySpending(
+            @Param("userId") UUID userId,
+            @Param("type") TransactionType type,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT t FROM Transaction t WHERE t.user.id = :userId " +
+           "AND t.transactionDate >= :earliestDate " +
+           "AND ((t.transactionType = com.spendsense.transaction.TransactionType.INCOME) " +
+           "     OR (t.transactionType = com.spendsense.transaction.TransactionType.TRANSFER AND t.transferDirection = com.spendsense.transaction.TransferDirection.IN)) " +
+           "ORDER BY t.transactionDate DESC")
+    List<Transaction> findCandidateCreditsForDebt(
+            @Param("userId") UUID userId,
+            @Param("earliestDate") LocalDate earliestDate);
+
+    @Query("SELECT t FROM Transaction t WHERE t.user.id = :userId " +
+           "AND t.transactionDate >= :earliestDate " +
+           "AND ((t.transactionType = com.spendsense.transaction.TransactionType.EXPENSE) " +
+           "     OR (t.transactionType = com.spendsense.transaction.TransactionType.TRANSFER AND t.transferDirection = com.spendsense.transaction.TransferDirection.OUT)) " +
+           "ORDER BY t.transactionDate DESC")
+    List<Transaction> findCandidateDebitsForDebt(
+            @Param("userId") UUID userId,
+            @Param("earliestDate") LocalDate earliestDate);
 }

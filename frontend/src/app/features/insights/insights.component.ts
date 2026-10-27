@@ -1,8 +1,10 @@
 import { CurrencyPipe, DecimalPipe, NgClass } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import {
   AggregationPeriod,
+  CategoryAnalysis,
   FinancialInsight,
   InsightsOverview,
   SpendingAnomaly,
@@ -43,7 +45,7 @@ const CATEGORY_COLORS: Record<TransactionCategory, string> = {
 @Component({
   selector: 'app-insights',
   standalone: true,
-  imports: [ReactiveFormsModule, CurrencyPipe, DecimalPipe, NgClass],
+  imports: [ReactiveFormsModule, CurrencyPipe, DecimalPipe, NgClass, RouterLink],
   templateUrl: './insights.component.html',
   styleUrl: './insights.component.scss',
 })
@@ -76,6 +78,8 @@ export class InsightsComponent implements OnInit {
     amount: number;
     percentage: number;
     color: string;
+    transactionCount?: number;
+    requiresReviewCount?: number;
   }> = [];
 
   // Progressive disclosure toggle
@@ -93,13 +97,19 @@ export class InsightsComponent implements OnInit {
       : null;
   }
 
-  get topCategoryShift() {
+  get topCategoryShift(): CategoryAnalysis | null {
     if (!this.overview?.categories?.categories?.length) return null;
-    // Find category with highest percentage increase or highest change
-    const sorted = [...this.overview.categories.categories].sort(
-      (a, b) => Math.abs(b.percentageChange) - Math.abs(a.percentageChange)
+    const catsWithPrior = this.overview.categories.categories.filter(
+      (c) => c.percentageChange != null && (c.previousAmount ?? 0) > 0
     );
-    return sorted[0] || null;
+    if (catsWithPrior.length > 0) {
+      return [...catsWithPrior].sort(
+        (a, b) => Math.abs(b.percentageChange ?? 0) - Math.abs(a.percentageChange ?? 0)
+      )[0];
+    }
+    return [...this.overview.categories.categories].sort(
+      (a, b) => (b.amount ?? 0) - (a.amount ?? 0)
+    )[0] || null;
   }
 
   toggleDetailedBreakdown(): void {
@@ -248,6 +258,8 @@ export class InsightsComponent implements OnInit {
       amount: number;
       percentage: number;
       color: string;
+      transactionCount?: number;
+      requiresReviewCount?: number;
     }> = [];
 
     if (sorted.length <= 5) {
@@ -257,6 +269,8 @@ export class InsightsComponent implements OnInit {
         amount: c.amount,
         percentage: c.percentage,
         color: this.getCategoryColor(c.category as TransactionCategory),
+        transactionCount: c.transactionCount,
+        requiresReviewCount: c.requiresReviewCount,
       }));
     } else {
       const top4 = sorted.slice(0, 4);
@@ -265,6 +279,8 @@ export class InsightsComponent implements OnInit {
       const otherPct = Number(
         remaining.reduce((sum, c) => sum + c.percentage, 0).toFixed(1)
       );
+      const otherReviewCount = remaining.reduce((sum, c) => sum + (c.requiresReviewCount || 0), 0);
+      const otherTxCount = remaining.reduce((sum, c) => sum + (c.transactionCount || 0), 0);
 
       displayList = top4.map((c) => ({
         category: c.category,
@@ -272,6 +288,8 @@ export class InsightsComponent implements OnInit {
         amount: c.amount,
         percentage: c.percentage,
         color: this.getCategoryColor(c.category as TransactionCategory),
+        transactionCount: c.transactionCount,
+        requiresReviewCount: c.requiresReviewCount,
       }));
 
       if (otherAmount > 0) {
@@ -281,6 +299,8 @@ export class InsightsComponent implements OnInit {
           amount: otherAmount,
           percentage: otherPct,
           color: '#73808c',
+          transactionCount: otherTxCount,
+          requiresReviewCount: otherReviewCount,
         });
       }
     }
@@ -308,8 +328,10 @@ export class InsightsComponent implements OnInit {
     return CATEGORY_COLORS[category] || '#73808c';
   }
 
-  categoryLabel(cat: string): string {
-    return cat.charAt(0) + cat.slice(1).toLowerCase();
+  categoryLabel(cat?: string | null): string {
+    if (!cat) return 'Other';
+    const c = cat.trim();
+    return c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();
   }
 
   getSeverityClass(severity: string): string {

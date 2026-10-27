@@ -114,8 +114,56 @@ h1 {
   color: var(--danger);
   border: 1px solid rgba(196, 56, 56, 0.25);
 }
+.alert-warning {
+  background: rgba(217, 119, 6, 0.1);
+  color: #b45309;
+  border: 1px solid rgba(217, 119, 6, 0.3);
+}
+.alert-success {
+  background: var(--brand-soft);
+  color: var(--brand);
+  border: 1px solid rgba(18, 116, 87, 0.25);
+}
 .alert svg {
   flex-shrink: 0;
+}
+
+.forgot-pwd-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--brand);
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+
+  &:hover:not(:disabled) {
+    text-decoration: underline;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.verify-action-btn {
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-xs);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    opacity: 0.9;
+  }
 }
 
 /* Form & Input Fields */
@@ -168,35 +216,61 @@ h1 {
 .form-input {
   width: 100%;
   padding: 0.72rem 0.85rem 0.72rem 2.5rem;
-  font-size: 0.92rem;
+  font-size: 0.94rem;
   line-height: 1.4;
   color: var(--ink);
+  caret-color: var(--brand);
   background: var(--input-bg);
   border: 1.5px solid var(--input-border);
   border-radius: var(--radius-sm);
   box-shadow: 0 1px 2px rgba(18, 38, 29, 0.04);
   transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
-}
 
-.form-input.has-toggle {
-  padding-right: 2.5rem;
-}
+  &[type="password"] {
+    letter-spacing: 0.12em;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
 
-.form-input::placeholder {
-  color: var(--muted-light);
-  font-size: 0.9rem;
-}
+  &.has-toggle {
+    padding-right: 2.5rem;
+  }
 
-.form-input:hover {
-  border-color: var(--input-border-hover);
-}
+  &::placeholder {
+    color: var(--muted);
+    font-size: 0.9rem;
+    letter-spacing: normal;
+    opacity: 0.85;
+  }
 
-.form-input:focus {
-  border-color: var(--brand);
-  background: #ffffff;
-  outline: none;
-  box-shadow: var(--shadow-focus);
+  &:hover:not(:disabled) {
+    border-color: var(--input-border-hover);
+  }
+
+  &:focus {
+    border-color: var(--brand);
+    background: var(--input-bg);
+    color: var(--ink);
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+
+  &:disabled {
+    background: var(--surface-muted);
+    color: var(--muted);
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--ink);
+    -webkit-box-shadow: 0 0 0px 1000px var(--input-bg) inset;
+    box-shadow: 0 0 0px 1000px var(--input-bg) inset;
+    transition: background-color 5000s ease-in-out 0s;
+    caret-color: var(--brand);
+  }
 }
 
 .form-input:focus + .input-icon,
@@ -243,11 +317,23 @@ h1 {
 }
 
 .has-error .form-input {
-  border-color: var(--danger);
-  background: #fffafa;
+  border-color: var(--input-border-error, var(--danger));
+  background: var(--input-bg-error, rgba(248, 113, 113, 0.12));
+  color: var(--ink);
 }
 .has-error .form-input:focus {
-  box-shadow: 0 0 0 3px rgba(196, 56, 56, 0.18);
+  border-color: var(--input-border-error, var(--danger));
+  background: var(--input-bg-error, rgba(248, 113, 113, 0.15));
+  color: var(--ink);
+  box-shadow: var(--input-focus-error-shadow, 0 0 0 3px rgba(248, 113, 113, 0.28));
+}
+.has-error .form-input:-webkit-autofill,
+.has-error .form-input:-webkit-autofill:hover,
+.has-error .form-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  -webkit-box-shadow: 0 0 0px 1000px var(--input-bg-error, rgba(248, 113, 113, 0.12)) inset;
+  box-shadow: 0 0 0px 1000px var(--input-bg-error, rgba(248, 113, 113, 0.12)) inset;
+  caret-color: var(--ink);
 }
 .has-error .input-icon {
   color: var(--danger);
@@ -341,6 +427,77 @@ h1 {
 }
 .tour-link {
   color: var(--muted);
+}
+
+/* OAuth Divider & Google Button */
+.oauth-divider {
+  display: flex;
+  align-items: center;
+  margin: 1.25rem 0 0.85rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  span {
+    padding: 0 0.75rem;
+  }
+}
+
+.google-auth-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+
+  .google-btn-slot {
+    width: 100%;
+    min-height: 40px;
+    display: flex;
+    justify-content: center;
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  .btn-google-fallback {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    padding: 0.68rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover:not(:disabled) {
+      background: rgba(0, 0, 0, 0.02);
+      border-color: var(--brand);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .google-icon {
+      flex-shrink: 0;
+    }
+  }
 }
 
 /* ==============================================

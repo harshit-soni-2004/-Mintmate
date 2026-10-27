@@ -7,5 +7,18 @@ import java.util.List;
 public record CategoryBreakdownResponse(
         BigDecimal totalExpenses,
         List<CategoryAnalysis> categories,
-        TransactionCategory topCategory
-) {}
+        TransactionCategory topCategory,
+        long totalTransactions,
+        long autoClassifiedCount,
+        long requiresReviewCount,
+        BigDecimal autoClassifiedPercentage,
+        BigDecimal requiresReviewPercentage
+) {
+    public CategoryBreakdownResponse(
+            BigDecimal totalExpenses,
+            List<CategoryAnalysis> categories,
+            TransactionCategory topCategory
+    ) {
+        this(totalExpenses, categories, topCategory, 0L, 0L, 0L, BigDecimal.ZERO, BigDecimal.ZERO);
+    }
+}
