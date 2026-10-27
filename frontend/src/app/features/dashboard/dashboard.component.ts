@@ -1137,7 +1137,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  categoryLabel(category: string): string {
-    return category.charAt(0) + category.slice(1).toLowerCase();
+  categoryLabel(category?: string | null): string {
+    if (!category) return 'Other';
+    const c = category.trim();
+    return c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();
   }
 }

@@ -328,8 +328,10 @@ export class InsightsComponent implements OnInit {
     return CATEGORY_COLORS[category] || '#73808c';
   }
 
-  categoryLabel(cat: string): string {
-    return cat.charAt(0) + cat.slice(1).toLowerCase();
+  categoryLabel(cat?: string | null): string {
+    if (!cat) return 'Other';
+    const c = cat.trim();
+    return c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();
   }
 
   getSeverityClass(severity: string): string {
