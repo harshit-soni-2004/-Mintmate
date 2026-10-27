@@ -3,8 +3,8 @@ package com.spendsense.auth.mail;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
@@ -17,13 +17,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Sends transactional emails via HTTPS (Port 443) using Brevo or Resend REST APIs.
+ * Sends transactional emails via HTTPS (Port 443) using Resend or Brevo REST APIs.
  * This completely bypasses cloud firewall restrictions on outbound SMTP ports (25, 465, 587)
  * such as Render's Free tier firewall.
  */
 @Service
 @Primary
-@ConditionalOnProperty(name = "spendsense.mail.api-key")
 public class RestEmailService implements EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(RestEmailService.class);
@@ -34,47 +33,67 @@ public class RestEmailService implements EmailService {
     private final String provider;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
+    private final ObjectProvider<SmtpEmailService> smtpFallback;
+    private final ObjectProvider<StubEmailService> stubFallback;
 
     public RestEmailService(
-            @Value("${spendsense.mail.api-key:${BREVO_API_KEY:${RESEND_API_KEY:}}}") String apiKey,
+            @Value("${spendsense.mail.api-key:${RESEND_API_KEY:${BREVO_API_KEY:}}}") String apiKey,
             @Value("${spendsense.mail.from:${SPRING_MAIL_USERNAME:iharshsoni@gmail.com}}") String fromEmail,
             @Value("${spendsense.mail.from-name:Mintmate}") String fromName,
             @Value("${spendsense.mail.provider:auto}") String provider,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            ObjectProvider<SmtpEmailService> smtpFallback,
+            ObjectProvider<StubEmailService> stubFallback
     ) {
         this.apiKey = apiKey != null ? apiKey.trim() : "";
         this.fromEmail = fromEmail != null ? fromEmail.trim() : "iharshsoni@gmail.com";
         this.fromName = fromName != null ? fromName.trim() : "Mintmate";
         this.provider = resolveProvider(this.apiKey, provider);
         this.objectMapper = objectMapper;
+        this.smtpFallback = smtpFallback;
+        this.stubFallback = stubFallback;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
-        log.info("Initialized REST Email Service with provider: {}", this.provider);
+
+        if (!this.apiKey.isEmpty()) {
+            log.info("Initialized REST Email Service via HTTPS (Port 443) using provider: {}", this.provider);
+        } else {
+            log.info("No REST API key detected; fallback email dispatchers will be utilized.");
+        }
     }
 
     private String resolveProvider(String key, String configuredProvider) {
-        if ("resend".equalsIgnoreCase(configuredProvider) || key.startsWith("re_")) {
-            return "resend";
+        if ("brevo".equalsIgnoreCase(configuredProvider) || key.startsWith("xkeysib-")) {
+            return "brevo";
         }
-        return "brevo";
+        return "resend";
     }
 
     @Override
     public void sendVerificationOtp(String toEmail, String otpCode) {
         if (apiKey.isEmpty()) {
-            log.warn("No email API key configured. Cannot dispatch email to {}", toEmail);
-            log.info("[BACKUP OTP LOG for {}]: {}", toEmail, otpCode);
+            SmtpEmailService smtp = smtpFallback.getIfAvailable();
+            if (smtp != null) {
+                smtp.sendVerificationOtp(toEmail, otpCode);
+                return;
+            }
+            StubEmailService stub = stubFallback.getIfAvailable();
+            if (stub != null) {
+                stub.sendVerificationOtp(toEmail, otpCode);
+                return;
+            }
+            log.warn("[FALLBACK OTP LOG for {}]: {}", toEmail, otpCode);
             return;
         }
 
         try {
-            if ("resend".equalsIgnoreCase(provider)) {
-                sendViaResend(toEmail, otpCode);
-            } else {
+            if ("brevo".equalsIgnoreCase(provider)) {
                 sendViaBrevo(toEmail, otpCode);
+            } else {
+                sendViaResend(toEmail, otpCode);
             }
-            log.info("Successfully dispatched verification email via {} REST API to {}", provider, toEmail);
+            log.info("Successfully dispatched verification email via {} REST API (HTTPS) to {}", provider, toEmail);
         } catch (Exception e) {
             log.error("Failed to send verification email via REST API to {}: {}", toEmail, e.getMessage());
             log.warn("[FALLBACK OTP LOG for {}]: {}", toEmail, otpCode);
@@ -105,8 +124,12 @@ public class RestEmailService implements EmailService {
     }
 
     private void sendViaResend(String toEmail, String otpCode) throws Exception {
+        String sender = (fromEmail.contains("@") && !fromEmail.endsWith("@gmail.com") && !fromEmail.endsWith("@yahoo.com") && !fromEmail.endsWith("@outlook.com"))
+                ? fromEmail
+                : "onboarding@resend.dev";
+
         Map<String, Object> payload = Map.of(
-                "from", fromName + " <" + (fromEmail.contains("@") ? fromEmail : "onboarding@resend.dev") + ">",
+                "from", fromName + " <" + sender + ">",
                 "to", List.of(toEmail),
                 "subject", "Mintmate Verification Code: " + otpCode,
                 "html", buildHtmlBody(otpCode)
