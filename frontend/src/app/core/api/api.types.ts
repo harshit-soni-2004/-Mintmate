@@ -598,4 +598,3 @@ export interface FinancialAccountResponse {
   active: boolean;
   primary: boolean;
 }
-}
