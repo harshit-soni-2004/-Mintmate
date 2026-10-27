@@ -534,6 +534,8 @@ export interface DebtDto {
   status: DebtStatus;
   settledAt?: string | null;
   linkedTransactionId?: string | null;
+  linkedTransactionAmount?: number | null;
+  linkedTransactionDate?: string | null;
   notes?: string | null;
   createdAt: string;
   overdue: boolean;
@@ -562,4 +564,38 @@ export interface SettleDebtRequest {
 }
 export interface GoogleLoginRequest {
   idToken: string;
+}
+
+export interface DebtCandidateTransactionDto {
+  id: string;
+  amount: number;
+  description?: string | null;
+  merchant?: string | null;
+  transactionDate: string;
+  transactionType: TransactionType;
+  transferDirection?: TransferDirection | null;
+  isTopMatch: boolean;
+  isStrongMatch: boolean;
+  exactAmount: boolean;
+  matchReason?: string | null;
+  score: number;
+}
+
+export interface RecordPaymentAndSettleRequest {
+  amount: number;
+  transactionDate: string;
+  accountId?: string | null;
+  notes?: string | null;
+}
+
+export interface FinancialAccountResponse {
+  id: string;
+  name: string;
+  institutionName?: string | null;
+  accountType: string;
+  accountNumberLast4?: string | null;
+  currency: string;
+  active: boolean;
+  primary: boolean;
+}
 }

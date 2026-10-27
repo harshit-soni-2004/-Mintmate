@@ -5,9 +5,12 @@ import { environment } from '../../../environments/environment';
 import {
   ApiResponse,
   CreateDebtRequest,
+  DebtCandidateTransactionDto,
   DebtDto,
   DebtStatus,
   DebtSummaryDto,
+  FinancialAccountResponse,
+  RecordPaymentAndSettleRequest,
   SettleDebtRequest,
 } from './api.types';
 
@@ -36,6 +39,10 @@ export class DebtService {
     return this.http.get<ApiResponse<DebtDto>>(`${this.url}/${id}`);
   }
 
+  getCandidates(id: string): Observable<ApiResponse<DebtCandidateTransactionDto[]>> {
+    return this.http.get<ApiResponse<DebtCandidateTransactionDto[]>>(`${this.url}/${id}/candidates`);
+  }
+
   create(payload: CreateDebtRequest): Observable<ApiResponse<DebtDto>> {
     return this.http.post<ApiResponse<DebtDto>>(this.url, payload).pipe(
       tap(() => this.mutationSubject.next())
@@ -46,6 +53,26 @@ export class DebtService {
     return this.http.post<ApiResponse<DebtDto>>(`${this.url}/${id}/settle`, payload ?? {}).pipe(
       tap(() => this.mutationSubject.next())
     );
+  }
+
+  linkTransaction(id: string, payload: SettleDebtRequest): Observable<ApiResponse<DebtDto>> {
+    return this.http.post<ApiResponse<DebtDto>>(`${this.url}/${id}/link-transaction`, payload).pipe(
+      tap(() => this.mutationSubject.next())
+    );
+  }
+
+  recordPaymentAndSettle(id: string, payload: RecordPaymentAndSettleRequest): Observable<ApiResponse<DebtDto>> {
+    return this.http.post<ApiResponse<DebtDto>>(`${this.url}/${id}/record-payment-and-settle`, payload).pipe(
+      tap(() => this.mutationSubject.next())
+    );
+  }
+
+  getAccounts(): Observable<ApiResponse<FinancialAccountResponse[]>> {
+    return this.http.get<ApiResponse<FinancialAccountResponse[]>>(`${environment.apiUrl}/accounts`);
+  }
+
+  dismissCandidate(debtId: string, transactionId: string): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.url}/${debtId}/candidates/${transactionId}/dismiss`, {});
   }
 
   cancel(id: string): Observable<ApiResponse<DebtDto>> {

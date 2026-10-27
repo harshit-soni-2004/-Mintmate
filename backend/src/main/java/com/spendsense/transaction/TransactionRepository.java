@@ -183,4 +183,22 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
             @Param("type") TransactionType type,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT t FROM Transaction t WHERE t.user.id = :userId " +
+           "AND t.transactionDate >= :earliestDate " +
+           "AND ((t.transactionType = com.spendsense.transaction.TransactionType.INCOME) " +
+           "     OR (t.transactionType = com.spendsense.transaction.TransactionType.TRANSFER AND t.transferDirection = com.spendsense.transaction.TransferDirection.IN)) " +
+           "ORDER BY t.transactionDate DESC")
+    List<Transaction> findCandidateCreditsForDebt(
+            @Param("userId") UUID userId,
+            @Param("earliestDate") LocalDate earliestDate);
+
+    @Query("SELECT t FROM Transaction t WHERE t.user.id = :userId " +
+           "AND t.transactionDate >= :earliestDate " +
+           "AND ((t.transactionType = com.spendsense.transaction.TransactionType.EXPENSE) " +
+           "     OR (t.transactionType = com.spendsense.transaction.TransactionType.TRANSFER AND t.transferDirection = com.spendsense.transaction.TransferDirection.OUT)) " +
+           "ORDER BY t.transactionDate DESC")
+    List<Transaction> findCandidateDebitsForDebt(
+            @Param("userId") UUID userId,
+            @Param("earliestDate") LocalDate earliestDate);
 }

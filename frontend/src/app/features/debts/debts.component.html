@@ -283,10 +283,48 @@
               <div class="settled-info">
                 <span>Settled on {{ debt.settledAt | date:'mediumDate' }}</span>
                 @if (debt.linkedTransactionId) {
-                  <span class="linked-tx-badge" [title]="'Linked Transaction: ' + debt.linkedTransactionId">
-                    🔗 Tx Linked
-                  </span>
+                  <a
+                    [routerLink]="['/app/transactions']"
+                    [queryParams]="{ search: debt.counterpartyName }"
+                    class="linked-tx-badge"
+                    [title]="'Linked Transaction: ' + debt.linkedTransactionId"
+                  >
+                    Linked: ₹{{ (debt.linkedTransactionAmount != null ? debt.linkedTransactionAmount : debt.amount) | number:'1.0-2' }} · {{ (debt.linkedTransactionDate || debt.settledAt) | date:'mediumDate' }}
+                  </a>
                 }
+              </div>
+            }
+
+            @if (getTopSuggestion(debt.id); as suggestion) {
+              <div class="suggested-match-box" [id]="'debt-suggestion-' + debt.id">
+                <div class="suggestion-header">
+                  <span class="suggestion-tag">💡 Suggested Match</span>
+                  <span class="suggestion-reason">{{ suggestion.matchReason }}</span>
+                </div>
+                <div class="suggestion-details">
+                  <span class="suggestion-desc">{{ suggestion.description || suggestion.merchant || 'Bank transaction' }}</span>
+                  <strong class="suggestion-amount">{{ suggestion.amount | currency:'INR':'symbol-narrow':'1.0-0' }}</strong>
+                  <span class="suggestion-date">· {{ suggestion.transactionDate | date:'mediumDate' }}</span>
+                </div>
+                <div class="suggestion-actions">
+                  <button
+                    type="button"
+                    class="btn-confirm-link"
+                    [id]="'btn-confirm-link-' + debt.id"
+                    [disabled]="submitting"
+                    (click)="confirmAndLink(debt, suggestion)"
+                  >
+                    Confirm &amp; Link
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-dismiss-match"
+                    [id]="'btn-dismiss-match-' + debt.id"
+                    (click)="dismissCandidate(debt, suggestion)"
+                  >
+                    Not a match
+                  </button>
+                </div>
               </div>
             }
           </div>
@@ -458,7 +496,7 @@
 
   <!-- Settle Debt Modal Dialog -->
   @if (showSettleModal && settlingDebt) {
-    <div class="modal-backdrop" (click)="closeSettleModal()">
+    <div class="modal-backdrop" (click)="!settleSubmitting && closeSettleModal()">
       <div
         class="modal-dialog"
         id="settle-debt-modal"
@@ -470,12 +508,19 @@
         <header class="modal-header">
           <div>
             <h3 id="modal-settle-debt-title">Settle Debt</h3>
-            <p class="modal-sub">Mark this record as completed. You can optionally link a transaction as proof.</p>
+            <p class="modal-sub">
+              @if (settleStep === 'SELECT') {
+                Mark this record as completed. You can optionally link a transaction as proof.
+              } @else {
+                Record this payment in your transactions to keep your accounts updated.
+              }
+            </p>
           </div>
           <button
             type="button"
             class="modal-close"
             id="btn-close-settle-modal"
+            [disabled]="settleSubmitting"
             (click)="closeSettleModal()"
             aria-label="Close modal"
           >
@@ -506,43 +551,231 @@
             </div>
           </div>
 
-          <!-- Optional Linked Transaction -->
-          <div class="form-group">
-            <label for="settle-linked-tx" class="field-label">Link Transaction (Optional)</label>
-            <select
-              id="settle-linked-tx"
-              formControlName="linkedTransactionId"
-              class="form-input"
-            >
-              <option value="">-- No linked transaction --</option>
-              @for (tx of recentTransactions; track tx.id) {
-                <option [value]="tx.id">
-                  {{ tx.transactionDate | date:'shortDate' }} &middot; {{ tx.merchant || 'Tx' }} &middot; ₹{{ tx.amount }}
-                </option>
+          @if (settleStep === 'SELECT') {
+            <!-- Step 1: Optional Linked Transaction -->
+            <div class="form-group">
+              <div class="field-label-row">
+                <label for="settle-linked-tx" class="field-label">Link Transaction (Optional)</label>
+                @if (loadingCandidates) {
+                  <span class="loading-candidates-text" id="loading-candidates-indicator">Finding matches...</span>
+                }
+              </div>
+              <select
+                id="settle-linked-tx"
+                formControlName="linkedTransactionId"
+                class="form-input"
+              >
+                <option value="">-- No linked transaction --</option>
+                @if (suggestedCandidates.length) {
+                  <optgroup label="Suggested">
+                    @for (tx of suggestedCandidates; track tx.id) {
+                      <option [value]="tx.id">
+                        {{ tx.isStrongMatch ? '⭐ [Strong Match] ' : '💡 [Suggested] ' }}{{ tx.transactionDate | date:'mediumDate' }} · {{ tx.merchant || tx.description || 'Transaction' }} · {{ tx.amount | currency:'INR':'symbol-narrow':'1.0-0' }}{{ tx.matchReason ? ' (' + tx.matchReason + ')' : '' }}
+                      </option>
+                    }
+                  </optgroup>
+                }
+                @if (otherCandidates.length) {
+                  <optgroup label="Other Transactions">
+                    @for (tx of otherCandidates; track tx.id) {
+                      <option [value]="tx.id">
+                        {{ tx.transactionDate | date:'mediumDate' }} · {{ tx.merchant || tx.description || 'Transaction' }} · {{ tx.amount | currency:'INR':'symbol-narrow':'1.0-0' }}
+                      </option>
+                    }
+                  </optgroup>
+                }
+              </select>
+              @if (topMatchCandidate) {
+                <div class="top-match-indicator" id="top-match-badge" [class.strong-match]="topMatchCandidate.isStrongMatch">
+                  <span class="top-match-star">{{ topMatchCandidate.isStrongMatch ? '★' : '💡' }}</span>
+                  <span>
+                    {{ topMatchCandidate.isStrongMatch ? 'Strong match found:' : 'Suggested candidate:' }}
+                    <strong>{{ topMatchCandidate.merchant || topMatchCandidate.description || 'Transaction' }}</strong>
+                    ({{ topMatchCandidate.amount | currency:'INR':'symbol-narrow':'1.0-0' }}) · {{ topMatchCandidate.matchReason }}
+                    {{ topMatchCandidate.isStrongMatch ? '(Auto-selected)' : '(Select from dropdown to link)' }}
+                  </span>
+                </div>
               }
-            </select>
-            <small class="field-hint">Optional: Associates a real statement transaction with this settlement.</small>
-          </div>
+              <small class="field-hint">
+                @if (settlingDebt.debtType === 'OWED_TO_ME') {
+                  Showing candidate incoming credits from the week of debt creation onwards, ranked by match confidence.
+                } @else {
+                  Showing candidate outgoing debits from the week of debt creation onwards, ranked by match confidence.
+                }
+              </small>
+            </div>
 
-          <!-- Modal Footer -->
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn-secondary"
-              id="btn-cancel-settle"
-              (click)="closeSettleModal()"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="btn-primary"
-              id="btn-confirm-settle"
-              [disabled]="settleSubmitting"
-            >
-              {{ settleSubmitting ? 'Settling...' : 'Confirm Settlement' }}
-            </button>
-          </div>
+            <!-- Modal Footer for Step 1 -->
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn-secondary"
+                id="btn-cancel-settle"
+                (click)="closeSettleModal()"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="btn-primary"
+                id="btn-confirm-settle"
+                [disabled]="settleSubmitting"
+              >
+                {{ settleSubmitting ? 'Settling...' : 'Confirm Settlement' }}
+              </button>
+            </div>
+          } @else if (settleStep === 'PROMPT') {
+            <!-- Step 2: Prompt to record payment -->
+            <div class="prompt-step-box" id="settle-prompt-box">
+              <h4 class="prompt-question" id="prompt-question-text">Record this payment in your transactions?</h4>
+              <p class="prompt-subtext">
+                No transaction was linked. Would you like to create a transaction record for this payment in SpendSense?
+              </p>
+
+              @if (!showRecordCard) {
+                <div class="prompt-actions-row">
+                  <button
+                    type="button"
+                    class="btn-primary"
+                    id="btn-record-yes"
+                    #recordYesBtn
+                    [disabled]="settleSubmitting"
+                    (click)="onRecordPaymentYes()"
+                  >
+                    Yes, record it
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-secondary"
+                    id="btn-record-no"
+                    [disabled]="settleSubmitting"
+                    (click)="onRecordPaymentNo()"
+                  >
+                    {{ settleSubmitting ? 'Settling...' : 'No, just settle' }}
+                  </button>
+                </div>
+                <div class="prompt-back-row">
+                  <button
+                    type="button"
+                    class="btn-link-back"
+                    id="btn-back-to-select"
+                    [disabled]="settleSubmitting"
+                    (click)="settleStep = 'SELECT'"
+                  >
+                    ← Back to transaction selection
+                  </button>
+                </div>
+              } @else {
+                <!-- Inline Card: Prefilled fields -->
+                <div class="record-payment-card" id="record-payment-inline-card">
+                  <div class="transfer-notice">
+                    <span class="notice-icon" aria-hidden="true">ℹ</span>
+                    <span>This is saved as a transfer, so it won't change your income or spending.</span>
+                  </div>
+
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <label class="field-label">Payment Direction</label>
+                      <div class="static-field-badge" id="record-payment-direction-badge">
+                        {{ settlingDebt.debtType === 'OWED_TO_ME' ? 'Incoming Transfer' : 'Outgoing Transfer' }}
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="record-payment-amount" class="field-label">Amount (₹) *</label>
+                      <input
+                        type="number"
+                        id="record-payment-amount"
+                        #recordAmountInput
+                        formControlName="paymentAmount"
+                        class="form-input"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="0.00"
+                        [disabled]="settleSubmitting"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <label for="record-payment-date" class="field-label">Date *</label>
+                      <input
+                        type="date"
+                        id="record-payment-date"
+                        formControlName="paymentDate"
+                        class="form-input"
+                        [max]="todayIst"
+                        [disabled]="settleSubmitting"
+                        required
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label for="record-payment-account" class="field-label">Account</label>
+                      <select
+                        id="record-payment-account"
+                        formControlName="paymentAccountId"
+                        class="form-input"
+                        [disabled]="settleSubmitting"
+                      >
+                        <option value="">-- Select account (optional) --</option>
+                        @for (acc of accounts; track acc.id) {
+                          <option [value]="acc.id">
+                            {{ acc.name }}{{ acc.accountNumberLast4 ? ' (••' + acc.accountNumberLast4 + ')' : '' }}
+                          </option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="record-payment-notes" class="field-label">Note</label>
+                    <input
+                      type="text"
+                      id="record-payment-notes"
+                      formControlName="paymentNotes"
+                      class="form-input"
+                      placeholder="Payment note"
+                      maxlength="200"
+                      [disabled]="settleSubmitting"
+                    />
+                  </div>
+
+                  <div class="record-card-actions">
+                    <div class="card-left-actions">
+                      <button
+                        type="button"
+                        class="btn-secondary"
+                        id="btn-cancel-record-card"
+                        [disabled]="settleSubmitting"
+                        (click)="showRecordCard = false"
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-outline-settle"
+                        id="btn-record-no-card"
+                        [disabled]="settleSubmitting"
+                        (click)="onRecordPaymentNo()"
+                      >
+                        No, just settle
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn-primary"
+                      id="btn-confirm-record-payment"
+                      [disabled]="settleSubmitting"
+                      (click)="confirmRecordPaymentAndSettle()"
+                    >
+                      {{ settleSubmitting ? 'Recording & Settling...' : 'Save & Settle' }}
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
         </form>
       </div>
     </div>

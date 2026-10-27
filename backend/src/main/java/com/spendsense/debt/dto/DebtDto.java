@@ -3,6 +3,7 @@ package com.spendsense.debt.dto;
 import com.spendsense.debt.Debt;
 import com.spendsense.debt.DebtStatus;
 import com.spendsense.debt.DebtType;
+import com.spendsense.transaction.Transaction;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -17,6 +18,8 @@ public record DebtDto(
         DebtStatus status,
         Instant settledAt,
         UUID linkedTransactionId,
+        BigDecimal linkedTransactionAmount,
+        LocalDate linkedTransactionDate,
         String notes,
         Instant createdAt,
         boolean overdue
@@ -26,6 +29,11 @@ public record DebtDto(
                 && debt.getDueDate() != null
                 && debt.getDueDate().isBefore(LocalDate.now());
 
+        Transaction linked = debt.getLinkedTransaction();
+        UUID linkedTxId = linked != null ? linked.getId() : null;
+        BigDecimal linkedTxAmount = linked != null ? linked.getAmount() : null;
+        LocalDate linkedTxDate = linked != null ? linked.getTransactionDate() : null;
+
         return new DebtDto(
                 debt.getId(),
                 debt.getCounterpartyName(),
@@ -34,7 +42,9 @@ public record DebtDto(
                 debt.getDueDate(),
                 debt.getStatus(),
                 debt.getSettledAt(),
-                debt.getLinkedTransaction() != null ? debt.getLinkedTransaction().getId() : null,
+                linkedTxId,
+                linkedTxAmount,
+                linkedTxDate,
                 debt.getNotes(),
                 debt.getCreatedAt(),
                 isOverdue

@@ -89,6 +89,7 @@ public class StatementIngestionService {
     private final TransactionNormalizer transactionNormalizer;
     private final CategorizationConfidencePolicy confidencePolicy;
     private final com.spendsense.onboarding.IncomeClassificationService incomeClassificationService;
+    private com.spendsense.debt.DebtService debtService;
 
     public StatementIngestionService(
             FinancialDocumentRepository documentRepository,
@@ -104,7 +105,7 @@ public class StatementIngestionService {
     ) {
         this(documentRepository, documentStorage, extractors, candidateValidator, deduplicationService,
                 settlementResolutionService, categorizationService, transactionRepository, userRepository, currentUser,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
     }
 
     public StatementIngestionService(
@@ -124,7 +125,7 @@ public class StatementIngestionService {
     ) {
         this(documentRepository, documentStorage, extractors, candidateValidator, deduplicationService,
                 settlementResolutionService, categorizationService, transactionRepository, userRepository, currentUser,
-                accountService, accountRepository, transferMatchingService, null, null, null);
+                accountService, accountRepository, transferMatchingService, null, null, null, null);
     }
 
     @Autowired
@@ -144,7 +145,8 @@ public class StatementIngestionService {
             @Autowired(required = false) TransferMatchingService transferMatchingService,
             @Autowired(required = false) TransactionNormalizer transactionNormalizer,
             @Autowired(required = false) CategorizationConfidencePolicy confidencePolicy,
-            @Autowired(required = false) com.spendsense.onboarding.IncomeClassificationService incomeClassificationService
+            @Autowired(required = false) com.spendsense.onboarding.IncomeClassificationService incomeClassificationService,
+            @Autowired(required = false) com.spendsense.debt.DebtService debtService
     ) {
         this.documentRepository = documentRepository;
         this.documentStorage = documentStorage;
@@ -162,6 +164,11 @@ public class StatementIngestionService {
         this.transactionNormalizer = transactionNormalizer != null ? transactionNormalizer : new TransactionNormalizer();
         this.confidencePolicy = confidencePolicy != null ? confidencePolicy : new CategorizationConfidencePolicy(0.85, 0.60);
         this.incomeClassificationService = incomeClassificationService;
+        this.debtService = debtService;
+    }
+
+    public void setDebtService(com.spendsense.debt.DebtService debtService) {
+        this.debtService = debtService;
     }
 
     /**
@@ -295,6 +302,8 @@ public class StatementIngestionService {
         int skippedRows = 0;
         List<String> warnings = new ArrayList<>();
         Set<String> seenDocumentSignatures = new HashSet<>();
+
+        List<Transaction> importedTxList = new ArrayList<>();
 
         for (TransactionCandidate candidate : candidates) {
             // 1. Candidate validation
@@ -504,7 +513,17 @@ public class StatementIngestionService {
                 transferMatchingService.attemptMatch(saved);
             }
             existingTransactions.add(saved);
+            importedTxList.add(saved);
             importedTransactions++;
+        }
+
+        // 4b. Debt repayment candidate matching hook (failure-isolated, suggest-only)
+        if (debtService != null && !importedTxList.isEmpty()) {
+            try {
+                debtService.evaluateSuggestionsAfterIngestion(user.getId(), importedTxList);
+            } catch (Exception e) {
+                log.warn("Debt repayment matching post-ingestion hook failed safely for user {}: {}", user.getId(), e.getMessage());
+            }
         }
 
         // 5. Update FinancialDocument lifecycle stats & status

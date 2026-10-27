@@ -5,22 +5,39 @@
    - `Debt` entity does not contain a separate `lent_date` / `start_date` field.
    - Per requirement, `createdAt` converted to IST `LocalDate` is used with a named constant `LOOKBACK_DAYS = 7` (`transactionDate >= createdAt.toLocalDate() - 7`).
    - Boundary tests added for exactly 7 days before, 8 days before, and same day.
-2. **Separate Local Database Configuration & Branch Merge Plan**:
-   - **Database Isolation**: Database connectivity is driven via environment variables with zero password fallback in `application.yml`:
-     - `DB_PASSWORD`: Read directly from environment (no default/fallback).
-     - `DB_NAME`: Defaults to branch-scoped database (`spendsense_auth` on `feat/auth-google-email-otp`, `spendsense_debt` on `feat/debt-reminders-and-matching`), overridable via `DB_NAME` or `DB_URL`.
-     - Hand-written DDL and `flyway:repair` are strictly avoided.
-   - **Merge Plan**:
-     - **Step 1**: The auth branch (`feat/auth-google-email-otp`) merges first into `develop` with migrations `V17__add_google_auth_and_email_verification_to_users.sql` and `V18__create_email_otps.sql`.
-     - **Step 2**: The debt branch (`feat/debt-reminders-and-matching`) is then rebased onto `develop`.
-     - **Step 3**: The debt dismissal migration `V17__create_debt_match_dismissals.sql` is renamed to `V19__create_debt_match_dismissals.sql` (renaming only, as it has never been applied to any remote/shared database).
-     - **Step 4**: Complete test verification and merge.
-3. **Statement Import Duplicate Guard for Repayments**:
-   - Rule: When an imported statement transaction matches a manually created repayment (`direction` match, `amount` match, transaction date within +/- 2 days), it is flagged as a potential duplicate (`DUPLICATE_SUSPECT`) rather than automatically merged or discarded, surfacing it in the reconciliation UI for user review.
+2. **Candidate Search & Exact Matching Rules**:
+   - All candidate transactions for a debt are evaluated on-read via `GET /api/v1/debts/{id}/candidates`.
+   - Security Isolation: Scoped strictly to the authenticated user from the security context (`CurrentUser`).
+   - Direction Matching:
+     - `OWED_TO_ME` (receivable): Requires incoming credits (`INCOME` or `TRANSFER` with direction `IN`).
+     - `I_OWE` (payable): Requires outgoing debits (`EXPENSE` or `TRANSFER` with direction `OUT`).
+   - Settled-without-link debts: Qualify for candidate suggestions only if counterparty text matches OR transaction date is within 60 days after `settled_at`.
+3. **Ranking & Scoring Architecture**:
+   - Exact amount match + Counterparty text match: `100` base score (`isStrongMatch = true`).
+   - Exact amount match only: `75` base score.
+   - Close amount match (within 10% or ₹100 difference) + Counterparty match: `55` base score.
+   - Close amount match only: `40` base score.
+   - Counterparty text match only: `30` base score.
+   - Direction/lookback candidate only: `10` base score.
+   - Recency Bonus: `max(0, 10 - min(10, daysBetween(refDate, txDate)))`.
+   - Pre-selection Rule: The settle modal dropdown only pre-selects a candidate if `isStrongMatch` is true.
+4. **Storage & Action Endpoints**:
+   - Candidate suggestions are computed dynamically on read.
+   - Dismissals are persisted in `debt_match_dismissals` table (`V20__create_debt_match_dismissals.sql`).
+   - Dedicated endpoints:
+     - `POST /api/v1/debts/{id}/settle`
+     - `POST /api/v1/debts/{id}/link-transaction`
+     - `POST /api/v1/debts/{id}/candidates/{transactionId}/dismiss`
+5. **Record Payment and Settle Flow (Atomic Settlement)**:
+   - Settle modal includes optional *"Also record this payment in my transactions"* checkbox.
+   - Created as `TRANSFER` in category `OTHER` (invariance of income, expenses, and savings rate).
+   - Single atomic transaction: `POST /api/v1/debts/{id}/record-payment-and-settle`.
+6. **Duplicate Guard on Statement Import**:
+   - Matches against manual debt repayments (`sourceReference.startsWith("debt:repayment:")`) within 2 days with exact amount are flagged as `DUPLICATE_SUSPECT` (`requiresReview = true`) rather than dropped.
 
 ## Workstream B: Authentication (Google Sign-In + Email OTP)
 1. **Pre-Registration Takeover Protection**:
-   - When a user signs in via Google with an existing email whose `email_verified` is false (e.g. unverified account created via password registration):
+   - When a user signs in via Google with an existing email whose `email_verified` is false:
      - The Google `sub` is linked.
      - `email_verified` is marked `true`.
      - `password_hash` is invalidated (`user.invalidatePassword()`, set to `null`).
