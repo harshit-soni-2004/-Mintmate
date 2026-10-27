@@ -468,6 +468,11 @@ h1 {
     }
   }
 
+  .google-btn-slot:not(:empty) ~ .btn-google-fallback,
+  .google-btn-slot:not(:empty) + .btn-google-fallback {
+    display: none !important;
+  }
+
   .btn-google-fallback {
     width: 100%;
     display: flex;

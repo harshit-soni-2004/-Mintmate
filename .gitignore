@@ -32,6 +32,7 @@ Thumbs.db
 # Secrets / local overrides
 .env
 .env.local
+oauth/
 backend/src/main/resources/application-local.yml
 frontend/src/environments/environment.local.ts
 
