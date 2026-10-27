@@ -40,6 +40,7 @@ public class SmtpEmailService implements EmailService {
             log.info("Successfully dispatched verification email to {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send verification email to {}: {}", toEmail, e.getMessage());
+            log.warn("[FALLBACK OTP LOG for {}]: {}", toEmail, otpCode);
         }
     }
 }
