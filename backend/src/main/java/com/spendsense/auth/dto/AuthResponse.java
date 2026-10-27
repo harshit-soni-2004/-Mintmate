@@ -7,4 +7,8 @@ public record AuthResponse(String accessToken, String tokenType, UserResponse us
     public static AuthResponse bearer(String token, UserResponse user) {
         return new AuthResponse(token, "Bearer", user);
     }
+
+    public static AuthResponse pendingVerification(UserResponse user) {
+        return new AuthResponse(null, null, user);
+    }
 }

@@ -24,6 +24,23 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface SendOtpRequest {
+  email: string;
+  purpose?: string;
+}
+
+export interface VerifyOtpRequest {
+  email: string;
+  code: string;
+  purpose?: string;
+}
+
+export interface OtpResponse {
+  success: boolean;
+  message: string;
+  resendCooldownSeconds: number;
+}
+
 export type TransactionCategory = 'FOOD' | 'TRAVEL' | 'SHOPPING' | 'ENTERTAINMENT' | 'BILLS' | 'HEALTH' | 'EDUCATION' | 'PERSONAL' | 'OTHER';
 export type TransactionType = 'EXPENSE' | 'INCOME' | 'TRANSFER' | 'INVESTMENT' | 'CASH_WITHDRAWAL';
 export type TransferDirection = 'IN' | 'OUT';
@@ -543,6 +560,6 @@ export interface CreateDebtRequest {
 export interface SettleDebtRequest {
   linkedTransactionId?: string | null;
 }
-
-
-
+export interface GoogleLoginRequest {
+  idToken: string;
+}

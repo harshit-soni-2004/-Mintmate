@@ -1,3 +1,12 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/${DB_NAME:spendsense}?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD}
+  flyway:
+    enabled: true
 app:
+  trust-forwarded-headers: ${APP_TRUST_FORWARDED_HEADERS:false}
   jwt:
     secret: test-only-spendsense-jwt-hs256-secret-key-32b
