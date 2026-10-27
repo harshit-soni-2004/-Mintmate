@@ -1,16 +1,16 @@
-name: mintmate
+name: spendsense
 
 services:
   mysql:
     image: mysql:8.4
-    container_name: mintmate-mysql
+    container_name: spendsense-mysql
     environment:
-      MYSQL_DATABASE: spendsense
-      MYSQL_USER: spendsense
-      MYSQL_PASSWORD: spendsense
-      MYSQL_ROOT_PASSWORD: spendsense
+      MYSQL_DATABASE: ${DB_NAME:-spendsense}
+      MYSQL_USER: ${DB_USERNAME:-spendsense}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-spendsense_secure_pass}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-spendsense_root_pass}
     ports:
-      - "3306:3306"
+      - "${DB_PORT:-3306}:3306"
     command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
     volumes:
       - spendsense_mysql:/var/lib/mysql
@@ -19,6 +19,45 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: spendsense-backend
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:mysql://mysql:3306/${DB_NAME:-spendsense}?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8
+      DB_USERNAME: ${DB_USERNAME:-spendsense}
+      DB_PASSWORD: ${DB_PASSWORD:-spendsense_secure_pass}
+      JWT_SECRET: ${JWT_SECRET:-spendsense-super-secret-production-jwt-key-minimum-32-chars!}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+    ports:
+      - "8080:8080"
+    volumes:
+      - spendsense_documents:/app/data/documents
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: spendsense-frontend
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    restart: unless-stopped
 
 volumes:
   spendsense_mysql:
+  spendsense_documents:
