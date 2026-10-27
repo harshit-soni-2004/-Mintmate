@@ -23,7 +23,7 @@ public class GoogleIdTokenVerifierImpl implements GoogleTokenVerifier {
     private final GoogleIdTokenVerifier verifier;
 
     @org.springframework.beans.factory.annotation.Autowired
-    public GoogleIdTokenVerifierImpl(@Value("${spendsense.auth.google.client-id:643600067186-lfnqh2n2lagtevutnpbc0shfu4mmj0gp.apps.googleusercontent.com}") String clientId) {
+    public GoogleIdTokenVerifierImpl(@Value("${spendsense.auth.google.client-id:${GOOGLE_CLIENT_ID:643600067186-lfnqh2n2lagtevutnpbc0shfu4mmj0gp.apps.googleusercontent.com}}") String clientId) {
         this(clientId, new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
                 .setAudience((clientId != null && !clientId.trim().isEmpty()) ? Collections.singletonList(clientId.trim()) : Collections.emptyList())
                 .setIssuers(List.of("https://accounts.google.com", "accounts.google.com"))
