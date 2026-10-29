@@ -1,5 +1,7 @@
 # Mintmate
 
+> 🚀 **Live Demo:** [https://mintmate-lyart.vercel.app/](https://mintmate-lyart.vercel.app/)
+
 Personal financial intelligence: import transactions, understand spending, and interact with an AI assistant in natural language.
 
 Stack: **Angular** → **Spring Boot REST** → **MySQL**. Modular monolith.
